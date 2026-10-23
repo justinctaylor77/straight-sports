@@ -5,7 +5,9 @@ const gnews = (q) =>
 
 const CFB = [
   { id: 'ap', name: 'AP', kind: 'Wire service', defaultOn: true,
-    url: gnews('site:apnews.com college football when:4d'), via: 'Google News' },
+    url: gnews('site:apnews.com college football when:4d'), via: 'Google News',
+    // keep only college-football items (the fuzzy search also returns NFL and soccer stories)
+    must: '(\\bcollege|NCAA|\\bCFP\\b|Heisman|Big Ten|\\bSEC\\b|\\bACC\\b|Big 12|Mountain West|Sun Belt|\\bMAC\\b|No\\. \\d+|\\bState\\b|bowl\\b|coach|Notre Dame|Crimson Tide|Buckeyes|Longhorns|Wolverines|Bulldogs|Sooners|Ducks|Gators|Tigers|Hurricanes|Seminoles|Aggies|Huskies|Trojans|Bruins)' },
   { id: 'cbs', name: 'CBS Sports', kind: 'National', defaultOn: true,
     url: 'https://www.cbssports.com/rss/headlines/college-football/' },
   { id: 'yahoo', name: 'Yahoo Sports', kind: 'National', defaultOn: true,
