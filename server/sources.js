@@ -41,10 +41,19 @@ const CFB = [
 ];
 
 // Per-sport outlets (ids are namespaced so saved CFB choices keep working).
+const NFL_T = 'Cardinals|Falcons|Ravens|Bills|Panthers|Bears|Bengals|Browns|Cowboys|Broncos|Lions|Packers|Texans|Colts|Jaguars|Chiefs|Raiders|Chargers|Rams|Dolphins|Vikings|Patriots|Saints|Giants|Jets|Eagles|Steelers|49ers|Niners|Seahawks|Buccaneers|Bucs|Titans|Commanders';
+const MLB_T = 'Diamondbacks|D-backs|Braves|Orioles|Red Sox|Cubs|White Sox|Reds|Guardians|Rockies|Tigers|Astros|Royals|Angels|Dodgers|Marlins|Brewers|Twins|Mets|Yankees|Athletics|Phillies|Pirates|Padres|Giants|Mariners|Cardinals|Rays|Rangers|Blue Jays|Nationals';
+const MUST = {
+  nfl: `\\b(NFL|Super Bowl|quarterback|touchdown|football|${NFL_T})\\b`,
+  mlb: `\\b(MLB|baseball|World Series|ALCS|NLCS|pitcher|home run|inning|${MLB_T})\\b`,
+  golf: '\\b(golf|golfer|PGA|LPGA|LIV|Ryder Cup|Solheim|Masters|DP World Tour|birdie|bogey|Augusta)\\b',
+  tennis: '\\b(tennis|ATP|WTA|Wimbledon|Roland Garros|French Open|US Open|Australian Open|Grand Slam|Davis Cup|Billie Jean King Cup)\\b',
+};
 const ESPN_NEWS = (p) => `https://site.api.espn.com/apis/site/v2/sports/${p}/news?limit=50`;
 const pro = (sp, label, o) => [
-  { id: `${sp}-ap`, name: 'AP', kind: 'Wire service', defaultOn: true, url: gnews(`site:apnews.com ${o.ap} when:4d`), via: 'Google News' },
-  { id: `${sp}-reuters`, name: 'Reuters', kind: 'Wire service', defaultOn: true, url: gnews(`site:reuters.com ${o.ap} when:7d`), via: 'Google News' },
+  // Google News site: searches are fuzzy and pull in unrelated wire stories, so wire items must mention the sport.
+  { id: `${sp}-ap`, name: 'AP', kind: 'Wire service', defaultOn: true, url: gnews(`site:apnews.com ${o.ap} when:4d`), via: 'Google News', must: MUST[sp] },
+  { id: `${sp}-reuters`, name: 'Reuters', kind: 'Wire service', defaultOn: true, url: gnews(`site:reuters.com ${o.ap} when:7d`), via: 'Google News', must: MUST[sp] },
   { id: `${sp}-cbs`, name: 'CBS Sports', kind: 'National', defaultOn: true, url: `https://www.cbssports.com/rss/headlines/${o.cbs}/` },
   ...(o.yahoo ? [{ id: `${sp}-yahoo`, name: 'Yahoo Sports', kind: 'National', defaultOn: true, url: `https://sports.yahoo.com/${o.yahoo}/rss.xml` }] : []),
   ...(o.nyt ? [{ id: `${sp}-nyt`, name: 'New York Times', kind: 'National', defaultOn: true, url: `https://rss.nytimes.com/services/xml/rss/nyt/${o.nyt}.xml` }] : []),

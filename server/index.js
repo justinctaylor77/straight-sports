@@ -121,7 +121,11 @@ async function loadFeed(src) {
     }
     const xml = await fetchText(src.url);
     const feed = await parser.parseString(xml);
-    return (feed.items || []).slice(0, src.url.includes('news.google.com') ? 40 : 60).map((it) => normItem(it, src));
+    const items = (feed.items || []).slice(0, src.url.includes('news.google.com') ? 40 : 60).map((it) => normItem(it, src));
+    if (!src.must) return items;
+    const re = new RegExp(src.must, 'i');
+    const not = /golf[- ]balls?[- ]sized|size of (a )?golf balls?|hail/i; // weather stories that only mention golf balls
+    return items.filter((x) => re.test(`${x.title} ${x.categories}`) && !(src.id.startsWith('golf-') && not.test(x.title)));
   });
 }
 
