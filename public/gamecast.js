@@ -128,15 +128,16 @@ function drives(d, ctx) {
 function leaders(d, ctx) {
   if (!d.leaders || !d.leaders.length || d.state === 'pre') return '';
   return `<h2>Leaders</h2><div class="gc-leaders">${d.leaders.map((tm) => { const t = [d.home, d.away].find((s) => s.team.id === tm.teamId);
-    return `<div class="card"><div class="lh"><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="20" height="20" /><b>${esc(tm.abbr)}</b></div>${tm.cats.slice(0, 3).map((c) => `<div class="r"><span class="faint small">${esc(c.cat)}</span><b>${esc(c.name)}</b><span class="small">${esc(c.line)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
+    return `<div class="card"><div class="lh"><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="20" height="20" /><b>${esc(tm.abbr)}</b></div>${tm.cats.slice(0, 3).map((c) => `<div class="r"><span class="faint small">${esc(c.cat)}</span><b>${c.id ? `<a href="#/player/${esc(c.id)}">${esc(c.name)}</a>` : esc(c.name)}</b><span class="small">${esc(c.line)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
 }
 function footballCast(d, ctx) {
   let body = '';
   if (d.state === 'pre') body = preGame(d) + `<p class="muted small">Down & distance, drives, win probability and team stats appear here once the game kicks off.</p>`;
   else if (castState.tab === 'plays') body = drives(d, ctx);
   else if (castState.tab === 'stats') body = statCompare(d, ctx) + leaders(d, ctx);
+  else if (castState.tab === 'box') body = boxTables(d, ctx);
   else body = (d.state === 'in' ? field(d, ctx) : '') + lineScore(d) + wpChart(d, ctx) + scoringList(d, ctx) + (d.state === 'post' ? leaders(d, ctx) : '');
-  return header(d, ctx) + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Drives'], ['stats', 'Team stats']])) + body
+  return header(d, ctx) + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Drives'], ['stats', 'Team stats'], ['box', 'Box score']])) + body
     + footer(d, d.state === 'in' ? 'Field graphic is schematic (away team attacks right).' : '');
 }
 
@@ -156,7 +157,7 @@ function baseballCast(d, ctx) {
   } else if (castState.tab === 'plays') {
     body = d.plays.length ? `<div class="gc-innings">${d.plays.map((h, i) => `<details class="card inning" ${i < 2 ? 'open' : ''}><summary><b>${esc(h.label)}</b><span class="faint small">${h.items.length} plays</span></summary><ol class="plays">${h.items.map((p) => `<li class="${p.score ? 'scored' : ''}">${esc(p.text)}${p.score ? ` <b class="small">${esc(d.away.team.abbr)} ${p.away}, ${esc(d.home.team.abbr)} ${p.home}</b>` : ''}</li>`).join('')}</ol></details>`).join('')}</div>` : '<div class="card empty">No plays yet.</div>';
   } else if (castState.tab === 'stats') {
-    body = statCompare(d, ctx) + (d.pitchers || []).map((t) => `<h2>${esc(t.abbr)} pitching</h2><div class="card scroll-x"><table class="tbl"><thead><tr><th>Pitcher</th><td>IP</td><td>H</td><td>R</td><td>ER</td><td>BB</td><td>K</td></tr></thead><tbody>${t.rows.map((r) => `<tr><th>${esc(r.name)}${r.note ? ` <span class="faint small">${esc(r.note)}</span>` : ''}</th><td>${esc(r.ip)}</td><td>${esc(r.h)}</td><td>${esc(r.r)}</td><td>${esc(r.er)}</td><td>${esc(r.bb)}</td><td>${esc(r.k)}</td></tr>`).join('')}</tbody></table></div>`).join('');
+    body = statCompare(d, ctx) + (d.box && d.box.length ? boxTables(d, ctx) : (d.pitchers || []).map((t) => `<h2>${esc(t.abbr)} pitching</h2>`).join(''));
   } else {
     if (d.state === 'in' && s) {
       body += `<div class="card gc-bases">${diamond(s)}
@@ -168,7 +169,7 @@ function baseballCast(d, ctx) {
     body += lineScore(d, { min: 9, extra: ['hits', 'errors'] }) + wpChart(d, ctx);
     if (d.scoring && d.scoring.length) body += `<h2>Scoring plays</h2><div class="card panel gc-scoring">${d.scoring.slice().reverse().map((p) => `<div class="sp"><span class="faint small inn">${esc(p.inning)}</span><div class="small">${esc(p.text)}</div><span class="sc">${p.away}–${p.home}</span></div>`).join('')}</div>`;
   }
-  return header(d, ctx) + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Play-by-play'], ['stats', 'Box']])) + body + footer(d);
+  return header(d, ctx) + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Play-by-play'], ['stats', 'Box score']])) + body + footer(d);
 }
 
 // ---------- golf ----------
@@ -186,7 +187,7 @@ function scorecard(d, pid, ctx) {
       <tr><th>R${rd.r}</th>${hs.map((h) => { const g = got(h.n); return `<td>${g ? `<span class="${cls(g.rel)}">${g.s}</span>` : ''}</td>`; }).join('')}<td><b>${sum(hs.map((h) => (got(h.n) || {}).s)) || ''}</b></td></tr></tbody></table>`;
   };
   const rounds = card.filter((r) => r.holes && r.holes.length).reverse();
-  return `<div class="gc-card"><div class="pc-head"><img src="${esc(p.flag)}" alt="" width="22" height="16" /><b>${esc(p.name)}</b><span class="faint small">${esc(p.country || '')}</span>
+  return `<div class="gc-card"><div class="pc-head"><img src="${esc(p.flag)}" alt="" width="22" height="16" /><b>${esc(p.name)}</b><span class="faint small">${esc(p.country || '')}</span><a class="btn small ghost" href="#/player/${esc(p.id)}">Season & schedule ›</a>
       <button class="btn small ${ctx.follows(p.id) ? 'primary' : ''}" data-pfollow="${esc(p.id)}" data-pname="${esc(p.name)}" data-pflag="${esc(p.flag)}">${ctx.follows(p.id) ? '✓ Following' : '+ Follow'}</button></div>
     <div class="pc-sum"><span>Pos <b>${esc(p.pos || '–')}</b></span><span>Total <b>${esc(p.score)}</b></span><span>Today <b>${esc(p.today || '–')}</b></span><span>Thru <b>${esc(p.thru || '–')}</b></span>${p.rounds.map((r) => `<span>R${r.r} <b>${r.strokes ?? '–'}</b></span>`).join('')}</div>
     ${rounds.length ? rounds.map((rd) => `<div class="scroll-x">${nine(rd, 0)}${nine(rd, 9)}</div>`).join('') : '<p class="faint small">No hole-by-hole scores yet.</p>'}
@@ -197,6 +198,7 @@ export function golfRow(p, ctx, open) {
     <span class="pos">${esc(p.pos || '–')}</span><img src="${esc(p.flag)}" alt="" width="20" height="14" loading="lazy" />
     <span class="nm">${esc(p.name)}${ctx.follows(p.id) ? ' <span class="star">●</span>' : ''}</span>
     <span class="tp ${String(p.score).startsWith('-') ? 'under' : ''}">${esc(p.score)}</span><span class="td">${esc(p.today || '')}</span>
+    <span class="rds">${[1, 2, 3, 4].map((n) => { const r = (p.rounds || []).find((x) => x.r === n); return `<i>${r ? esc(r.strokes) : ''}</i>`; }).join('')}</span>
     <span class="th">${p.state === 'pre' && p.teeTime ? new Date(p.teeTime).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : esc(p.thru || '')}</span></button>`;
 }
 function golfCast(d, ctx) {
@@ -210,8 +212,8 @@ function golfCast(d, ctx) {
       <div class="gc-meta">${[d.course, d.par && `Par ${d.par}`, d.purse && `Purse ${d.purse}`, d.cut && d.cut.score != null && `Cut ${d.cut.score > 0 ? '+' : ''}${d.cut.score === 0 ? 'E' : d.cut.score}`].filter(Boolean).map(esc).join(' · ')}</div></div>${ctx.watch ? ctx.watch(d) : ''}</div>
     ${mine.length ? `<h2>Your players</h2><div class="card lb">${mine.map(row).join('')}</div>` : ''}
     <h2>Leaderboard <span class="count">${d.players.length}</span></h2>
-    <div class="card lb"><div class="lb-row hd"><span class="pos">Pos</span><span></span><span class="nm">Player</span><span class="tp">Total</span><span class="td">Today</span><span class="th">Thru</span></div>${rows}</div>
-    <p class="faint small">Tap a player for the hole-by-hole scorecard.</p>${footer(d, 'Golf: no live shot tracking or world ranking in the free feed.')}`;
+    <div class="card lb"><div class="lb-row hd"><span class="pos">Pos</span><span></span><span class="nm">Player</span><span class="tp">Total</span><span class="td">Today</span><span class="rds"><i>R1</i><i>R2</i><i>R3</i><i>R4</i></span><span class="th">Thru</span></div>${rows}</div>
+    <p class="faint small">Round-by-round strokes in R1–R4. Tap a player for the hole-by-hole scorecard and a link to their season.</p>${footer(d, 'Golf: no live shot tracking or world ranking in the free feed.')}`;
 }
 
 // ---------- tennis ----------
@@ -239,7 +241,7 @@ function tennisCast(d, ctx) {
     ${d.note ? `<div class="card gc-note2">${esc(d.note)}</div>` : ''}
     ${d.state === 'in' ? `<div class="card gc-serve"><i></i>${esc((ps.find((p) => p.serving) || {}).name || 'Server not reported')}${ps.some((p) => p.serving) ? ' is serving' : ''}</div>` : ''}
     ${extra}
-    <div class="card gc-pre">${ps.map((p) => `<div class="r"><span>${p.flag ? `<img src="${esc(p.flag)}" alt="" width="18" height="12" /> ` : ''}${esc(p.name)}</span><b>${p.seed ? `Seed ${p.seed}` : 'Unseeded'}${p.country ? ` · ${esc(p.country)}` : ''}</b>
+    <div class="card gc-pre">${ps.map((p) => `<div class="r"><span>${p.flag ? `<img src="${esc(p.flag)}" alt="" width="18" height="12" /> ` : ''}<a href="#/player/${esc(p.id)}">${esc(p.name)}</a></span><b>${p.seed ? `Seed ${p.seed}` : 'Unseeded'}${p.country ? ` · ${esc(p.country)}` : ''}</b>
       <button class="btn small ${ctx.follows(p.id) ? 'primary' : ''}" data-pfollow="${esc(p.id)}" data-pname="${esc(p.name)}" data-pflag="${esc(p.flag || '')}">${ctx.follows(p.id) ? '✓ Following' : '+ Follow'}</button></div>`).join('')}</div>
     <p class="muted small">Point-by-point score and match stats (aces, break points) aren’t in ESPN’s free tennis feed — set scores, the server and results only.</p>
     ${d.related && d.related.length ? `<h2>${esc(d.round || 'Same round')}</h2><div class="grid">${d.related.map((m) => tennisMatch(m, ctx)).join('')}</div>` : ''}
@@ -255,8 +257,11 @@ function playerFollow(p, ctx, cls = 'pf') {
 }
 function boxTables(d, ctx) {
   if (!d.box || !d.box.length) return '<div class="card empty">Box score appears once the game starts.</div>';
-  return d.box.map((t) => `<h2>${esc(t.abbr)} box score</h2>${t.groups.map((g) => `<div class="card scroll-x box-card"><table class="tbl box"><thead><tr><th>${esc(cap(g.name) || 'Player')}</th>${g.labels.map((l) => `<td>${esc(l)}</td>`).join('')}</tr></thead>
-    <tbody>${g.rows.map((r) => { const mine = ctx.follows(r.id); return `<tr class="${mine ? 'mine' : ''} ${r.starter ? '' : 'bench'}"><th><span class="pn">${playerFollow({ ...r, teamId: t.teamId }, ctx)}<span>${esc(r.name)}${r.pos ? ` <small class="faint">${esc(r.pos)}</small>` : ''}</span></span></th>${r.stats.map((v) => `<td>${esc(v)}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div>`).join('')}`).join('');
+  const P = (r) => (r.id ? `<a href="#/player/${esc(r.id)}">${esc(r.name)}</a>` : esc(r.name));
+  return `<p class="faint small">Tap a name for that player’s season and career stats.</p>` + d.box.map((t) => { const side = t.side === 'home' ? d.home : d.away;
+    return `<h2 class="box-h">${side && side.team ? `<img src="${esc(ctx.logo(side.team))}" alt="" width="22" height="22" />` : ''}${esc(t.abbr)} box score</h2>${t.groups.map((g) => `<div class="card scroll-x box-card"><table class="tbl box"><thead><tr><th>${esc(cap(g.name) || 'Player')}</th>${g.labels.map((l, i) => `<td title="${esc((g.descs || [])[i] || l)}">${esc(l)}</td>`).join('')}</tr></thead>
+    <tbody>${g.rows.map((r) => { const mine = ctx.follows(r.id); return `<tr class="${mine ? 'mine' : ''} ${r.starter ? '' : 'bench'}"><th><span class="pn">${playerFollow({ ...r, teamId: t.teamId }, ctx)}<span>${P(r)}${r.pos ? ` <small class="faint">${esc(r.pos)}</small>` : ''}</span></span></th>${r.stats.map((v) => `<td>${esc(v)}</td>`).join('')}</tr>`; }).join('')}
+    ${g.totals && g.totals.some((v) => v !== '' && v != null) ? `<tr class="tot"><th>Team</th>${g.totals.map((v) => `<td><b>${esc(v)}</b></td>`).join('')}</tr>` : ''}</tbody></table></div>`).join('')}`; }).join('');
 }
 const cap = (x) => (x ? x[0].toUpperCase() + x.slice(1) : '');
 function lineups(d, ctx) {
@@ -282,7 +287,7 @@ function playList(d, ctx, list, empty) {
 function leadersG(d, ctx) {
   if (!d.leaders || !d.leaders.length || d.state === 'pre') return '';
   return `<h2>Leaders</h2><div class="gc-leaders">${d.leaders.map((tm) => { const t = [d.home, d.away].find((s) => s.team.id === tm.teamId);
-    return `<div class="card"><div class="lh"><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="20" height="20" /><b>${esc(tm.abbr)}</b></div>${tm.cats.slice(0, 3).map((c) => `<div class="r ${c.id && ctx.follows(c.id) ? 'mine' : ''}"><span class="faint small">${esc(c.cat)}</span><b>${esc(c.name)}${c.id && ctx.follows(c.id) ? ' <span class="star">★</span>' : ''}</b><span class="small">${esc(c.line)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
+    return `<div class="card"><div class="lh"><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="20" height="20" /><b>${esc(tm.abbr)}</b></div>${tm.cats.slice(0, 3).map((c) => `<div class="r ${c.id && ctx.follows(c.id) ? 'mine' : ''}"><span class="faint small">${esc(c.cat)}</span><b>${c.id ? `<a href="#/player/${esc(c.id)}">${esc(c.name)}</a>` : esc(c.name)}${c.id && ctx.follows(c.id) ? ' <span class="star">★</span>' : ''}</b><span class="small">${esc(c.line)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
 }
 function yourPlayers(d, ctx) {
   const rows = [];

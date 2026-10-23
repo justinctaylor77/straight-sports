@@ -102,6 +102,29 @@ const go = async (p, h, w = 1400) => { await p.goto(`${BASE}/${h}`); await ready
     await p2.tap('#onb [data-prov="yttv"]').catch((e) => errors.push('prov tap ' + e.message)); await p2.waitForTimeout(400); await shot(p2, 'phone-36-onboarding-watch-picked');
     await c2.close();
   }
+  if (on('v8')) { // Ridge theme, schedules, tickets, box scores, player stats
+    const [c, p] = await ctx(PHONE, { ...seeded, watch: { providers: ['yttv'] } });
+    const top = (sel, off = 70) => p.evaluate(([q, o]) => { const e = document.querySelector(q); if (e) { e.scrollIntoView({ block: 'start' }); scrollBy(0, -o); } }, [sel, off]);
+    await go(p, '#/home', 2500); await shot(p, 'phone-40-home-ridge');
+    await go(p, '#/rankings/grok', 1800); await shot(p, 'phone-41-jt-top25');
+    await go(p, '#/schedule/252', 2500); await shot(p, 'phone-42-byu-schedule');
+    await top('.sx-item .tix', 260); await p.waitForTimeout(300); await shot(p, 'phone-43-ticket-line');
+    const tix = await p.evaluate(() => [...document.querySelectorAll('.tix')].map((a) => `${a.textContent.trim()} -> ${a.href}`).slice(0, 3)); notes.push('tickets: ' + tix.join(' | '));
+    await top('h2:nth-of-type(2)', 70); await shot(p, 'phone-44-byu-results');
+    await go(p, '#/player/nfl:a3918298', 3000); await shot(p, 'phone-45-allen-season');
+    await top('h2:nth-of-type(2)', 70); await shot(p, 'phone-46-allen-career');
+    await p.tap('[data-ptab="log"]'); await p.waitForTimeout(600); await shot(p, 'phone-47-allen-gamelog');
+    await p.tap('[data-ptab="schedule"]'); await p.waitForTimeout(2500); await shot(p, 'phone-48-allen-schedule');
+    await go(p, '#/player/golf:9478', 4000); await shot(p, 'phone-49-scheffler-season');
+    await p.tap('[data-ptab="results"]'); await p.waitForTimeout(600); await shot(p, 'phone-50-scheffler-results');
+    await p.tap('[data-ptab="schedule"]'); await p.waitForTimeout(600); await shot(p, 'phone-51-scheffler-schedule');
+    await go(p, '#/game/nfl/401873010', 2500); await p.tap('[data-gctab="box"]'); await p.waitForTimeout(800); await top('.box-h', 110); await shot(p, 'phone-52-nfl-boxscore');
+    await go(p, '#/game/mlb/401930515', 2500); await p.tap('[data-gctab="stats"]'); await p.waitForTimeout(800); await top('.box-h', 110); await shot(p, 'phone-53-mlb-boxscore');
+    await go(p, '#/player/mlb:a33192', 3500); await shot(p, 'phone-54-mlb-player-stats');
+    await go(p, '#/player/tennis:3623', 4000); await shot(p, 'phone-55-tennis-player');
+    await go(p, '#/team/252', 2500); await shot(p, 'phone-56-team-byu');
+    await c.close();
+  }
   if (on('desk')) {
     const [c, p] = await ctx(DESK); await go(p, '#/home', 2500); await shot(p, 'desktop-01-home-cfb');
     await go(p, '#/game/nfl/401873010', 2200); await shot(p, 'desktop-02-gamecast-nfl');

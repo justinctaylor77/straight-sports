@@ -916,3 +916,120 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
 .gk-how-list li + li { margin-top: 4px; }
 .gk-how-card { padding: 14px 16px; margin: 0 0 12px; }
 .gk-split + .gk-how-card { margin-top: 4px; }
+
+/* ============ Ridge founders theme ============
+   Black is the base; basecamp orange = primary actions + live; olive = secondary, tabs, follows.
+   Change the palette here — everything below reads these variables. (:not(#_) out-ranks the per-sport accents above.) */
+:root:not(#_) {
+  --ridge-black: #0B0B0B; --ridge-s1: #141414; --ridge-s2: #1C1C1C;
+  --ridge-olive: #5A6B3A; --ridge-olive-l: #7A8B4F;
+  --ridge-orange: #E8702A; --ridge-orange-h: #F08A47;
+  --ridge-text: #F2EFE8;
+}
+/* dark (default) */
+:root:not(#_):not([data-theme="light"]) {
+  --bg: var(--ridge-black); --surface: var(--ridge-s1); --surface-2: var(--ridge-s2); --outer: #070707;
+  --text: var(--ridge-text); --muted: #c2bdb3; --faint: #948f86; --border: rgba(242,239,232,.10); --chip: rgba(242,239,232,.07);
+  --accent: var(--ridge-orange); --accent-h: var(--ridge-orange-h); --accent-ink: var(--ridge-black); --accent-soft: rgba(232,112,42,.16);
+  --olive: var(--ridge-olive); --olive-t: var(--ridge-olive-l); --olive-ink: var(--ridge-text); --olive-soft: rgba(122,139,79,.20);
+  --live: var(--ridge-orange); --warn: #e9b44c;
+  --glass: rgba(20,20,20,.82); --glass-2: rgba(28,28,28,.70); --hl: rgba(242,239,232,.06); --scrim: rgba(11,11,11,.64);
+  --shadow: 0 6px 24px rgba(0,0,0,.45);
+}
+/* light (opt-in): off-white paper, black ink; darker tints of the same orange/olive so text stays readable */
+:root:not(#_)[data-theme="light"] {
+  --bg: var(--ridge-text); --surface: #ffffff; --surface-2: #f7f5f0; --outer: #e9e5dc;
+  --text: var(--ridge-black); --muted: #46443f; --faint: #6b6860; --border: #ddd8cd; --chip: #ebe7de;
+  --accent: #B9541A; --accent-h: var(--ridge-orange); --accent-ink: #ffffff; --accent-soft: rgba(232,112,42,.14);
+  --olive: var(--ridge-olive); --olive-t: #4a5830; --olive-ink: #ffffff; --olive-soft: rgba(90,107,58,.14);
+  --live: #B9541A; --glass: rgba(255,255,255,.88); --glass-2: rgba(255,255,255,.72); --scrim: rgba(242,239,232,.8);
+}
+@media (prefers-color-scheme: light) {
+  :root:not(#_):not([data-theme]) , :root:not(#_)[data-theme="system"] {
+    --bg: var(--ridge-text); --surface: #ffffff; --surface-2: #f7f5f0; --outer: #e9e5dc;
+    --text: var(--ridge-black); --muted: #46443f; --faint: #6b6860; --border: #ddd8cd; --chip: #ebe7de;
+    --accent: #B9541A; --accent-ink: #ffffff; --accent-soft: rgba(232,112,42,.14);
+    --olive-t: #4a5830; --olive-ink: #ffffff; --olive-soft: rgba(90,107,58,.14);
+    --live: #B9541A; --glass: rgba(255,255,255,.88); --glass-2: rgba(255,255,255,.72); --scrim: rgba(242,239,232,.8);
+  }
+}
+/* primary actions: orange (+ hover tint) */
+.btn.primary:hover, .wbtn.prov.mine:hover { background: var(--accent-h); border-color: var(--accent-h); }
+.wbtn, .btn.primary, .watch { --accent: var(--ridge-orange); }
+:root[data-theme="light"] .wbtn, :root[data-theme="light"] .btn.primary { --accent: #B9541A; }
+/* tabs: olive */
+.seg button.on, .sportbar .chip.on { --accent: var(--olive); --accent-ink: var(--olive-ink); }
+.nav a.active, .seg-a.grok-tab, .chip.on, .dot.on, .dot.done { --accent: var(--olive-t); --accent-soft: var(--olive-soft); }
+.sportbar .chip.on { box-shadow: 0 4px 16px -4px rgba(90,107,58,.55); }
+/* follows: olive */
+.game.mine, .rank-row.mine, .st-row.mine, .lb-row.mine, .gk-row.mine, .ro-row.mine, .lu-row.mine, .ev-card.mine, .ev-row.mine, .ev-bout.big.mine,
+.box tr.mine, .br-t.mine, .star, .pf, .pick-row.on, .tile.on, .switch input:checked, #fol, .sc-follow {
+  --accent: var(--olive-t); --accent-soft: var(--olive-soft); --accent-ink: var(--olive-ink);
+}
+.pf.on, #fol.primary, .btn.primary[data-pfollow], .btn.primary[data-sfollow] { background: var(--olive); border-color: var(--olive); color: var(--olive-ink); }
+.switch input:checked { background: var(--olive); }
+/* the card stripe for your games stays olive; the watch buttons inside stay orange */
+.game.mine .watch, .game.mine .wbtn { --accent: var(--ridge-orange); --accent-soft: rgba(232,112,42,.16); --accent-ink: var(--ridge-black); }
+/* results + charts */
+.sched-row .res.W { color: var(--olive-t); } .sched-row .res.L { color: var(--accent); }
+.gk-split .p { background: var(--olive); color: var(--olive-ink); }
+.gk-split .r { color: var(--ridge-black); }
+.dot-co, .gk-dot.co { border-color: var(--olive-t); }
+.mv.up { color: var(--olive-t); background: var(--olive-soft); }
+/* non-core sports used to get a catalog accent — Ridge keeps one palette everywhere */
+:root:not(#_)[data-xa] { --accent: var(--ridge-orange); --accent-soft: rgba(232,112,42,.16); }
+:root:not(#_)[data-xa][data-theme="light"] { --accent: #B9541A; }
+
+/* ---------- v8: schedule + player pages, box scores, golf rounds ---------- */
+.more-link { float: right; font-size: 13px; font-weight: 600; color: var(--accent); text-transform: none; letter-spacing: 0; }
+.sx-list { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.sx-item { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.sx-item.live { box-shadow: inset 3px 0 0 var(--live); }
+.sx-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sx-sc { font-variant-numeric: tabular-nums; font-size: 18px; }
+.livet { color: var(--live); font-weight: 700; }
+.sx-mid { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sx-mid .opp, .sx-row .opp { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 650; }
+.sx-mid .opp img { width: 26px; height: 26px; object-fit: contain; }
+.sx-mid .opp a { color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sx-mid .va { color: var(--faint); font-size: 13px; font-weight: 500; min-width: 18px; }
+.sx-ven { margin-top: -4px; }
+.sx-item .watch { margin: 0; }
+.tix { font-size: 11.5px; color: var(--muted); text-decoration: none; align-self: flex-start; border-bottom: 1px dotted currentColor; line-height: 1.5; }
+.tix b { color: var(--accent); font-weight: 700; }
+.tix:hover { color: var(--accent); }
+.sx-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 6px; margin: 0 -6px; border-bottom: 1px solid var(--border); font-size: 14px; color: inherit; text-decoration: none; }
+.sx-row:last-child { border-bottom: 0; }
+.sx-row .opp img { width: 22px; height: 22px; object-fit: contain; }
+.sx-row .res { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.sx-row .res.W, .tbl .res.W { color: var(--olive-t, var(--accent)); } .sx-row .res.L, .tbl .res.L { color: var(--accent); }
+.sx-row.tn .opp { display: block; font-weight: 500; }
+.sx-row.tn .opp a { color: inherit; text-decoration: underline dotted; }
+.card .more { display: block; text-align: center; padding: 10px; font-weight: 600; color: var(--accent); }
+.player-hero img.hs { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: var(--surface-2); }
+.player-hero img.flag { width: 64px; height: 44px; object-fit: cover; border-radius: 6px; }
+.ps-cats { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.ps-cat h4 { margin: 0 0 8px; }
+.ps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.ps-grid > div { display: flex; flex-direction: column; align-items: flex-start; padding: 6px 8px; border-radius: 8px; background: var(--surface-2); }
+.ps-grid b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.ps-grid span { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .03em; }
+.ps-h { margin: 14px 0 6px; font-size: 14px; color: var(--muted); }
+.tbl tr.tot th, .tbl tr.tot td { border-top: 1px solid var(--border); }
+.tbl tr[data-href] { cursor: pointer; }
+.tbl td.l { text-align: left; }
+.tbl td.opp-c { white-space: nowrap; } .tbl td.opp-c img { vertical-align: -3px; margin: 0 3px; }
+.tbl.box th a, .gc-leaders b a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--faint); }
+.box-h { display: flex; align-items: center; gap: 8px; }
+.ro-row a.nm { color: inherit; text-decoration: none; }
+.pick-row:has(+ .pick-go) { width: calc(100% - 44px); display: inline-flex; vertical-align: top; }
+.pick-go { display: inline-flex; width: 44px; min-height: 56px; align-items: center; justify-content: center; vertical-align: top; border-bottom: 1px solid var(--border); font-size: 22px; color: var(--accent); text-decoration: none; }
+.lb-row { grid-template-columns: 36px 20px minmax(0, 1fr) 42px 36px 92px 46px; }
+.lb-row .rds { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lb-row .rds i { font-style: normal; }
+@media (max-width: 520px) {
+  .lb-row { grid-template-columns: 30px 18px minmax(0, 1fr) 38px 84px 40px; gap: 4px; }
+  .lb-row .td { display: none; }
+  .sx-list, .ps-cats { grid-template-columns: 1fr; }
+}
+.tbl.golf th, .tbl.golf td.l { white-space: normal; } .tbl.golf td.l { min-width: 120px; max-width: 170px; } .tbl.golf thead th:nth-child(2) { text-align: left; }

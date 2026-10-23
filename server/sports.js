@@ -353,6 +353,20 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     return { h, st, home: side('home'), away: side('away') };
   }
 
+  // Player box score for both teams (every group ESPN sends: passing/rushing/…, batting/pitching, skaters/goalies …)
+  function boxOf(d, sport, home, { cols = 9 } = {}) {
+    const sp = SPORTS[sport];
+    const PREF = { hockey: { goalies: ['SA', 'GA', 'SV', 'SV%', 'TOI'], _: ['G', 'A', 'SOG', '+/-', 'TOI', 'PIM', 'HT', 'BS'] } };
+    const side = (id) => (String(id) === String(home && home.team && home.team.espnId) ? 'home' : 'away');
+    return ((d.boxscore && d.boxscore.players) || []).map((t) => ({ teamId: tid(sport, t.team.id), abbr: t.team.abbreviation, side: side(t.team.id), logo: t.team.logo || null,
+      groups: (t.statistics || []).map((g) => { const labels = g.labels || []; const pref = PREF[sp.family] && (PREF[sp.family][g.name] || PREF[sp.family]._);
+        const ix = pref ? pref.map((l) => labels.indexOf(l)).filter((i) => i >= 0) : labels.slice(0, cols).map((_, i) => i);
+        const nm = g.text ? g.text.replace(new RegExp(`^(${[t.team.displayName, t.team.location, t.team.shortDisplayName].filter(Boolean).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\s+`), '') : (g.name || g.type || '');
+        return { name: nm, labels: ix.map((i) => labels[i]), descs: ix.map((i) => (g.descriptions || [])[i] || ''),
+          totals: (g.totals || []).length ? ix.map((i) => g.totals[i]) : null,
+          rows: (g.athletes || []).filter((a) => a.athlete && (a.stats || []).length).map((a) => ({ id: ath(sport, a.athlete), name: a.athlete.shortName || a.athlete.displayName, full: a.athlete.displayName, pos: a.athlete.position && a.athlete.position.abbreviation, starter: !!a.starter, headshot: a.athlete.headshot && a.athlete.headshot.href, stats: ix.map((i) => a.stats[i]) })) }; }).filter((g) => g.rows.length) })).filter((t) => t.groups.length)
+      .sort((a, b) => (a.side === 'away' ? -1 : 1) - (b.side === 'away' ? -1 : 1));
+  }
   async function footballCast(sport, id) {
     const d = await fetchJSON(`${SITE}/${SPORTS[sport].path}/summary?event=${id}`);
     const { h, st, home, away } = headerSides(d, sport);
@@ -406,9 +420,10 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const ta = bt.find((x) => x.homeAway === 'away') || bt[0]; const th = bt.find((x) => x.homeAway === 'home') || bt[1];
     out.stats = ta && th ? (ta.statistics || []).map((s) => ({ label: s.label, away: s.displayValue, home: ((th.statistics || []).find((k) => k.name === s.name) || {}).displayValue }))
       .filter((s) => !/^(Passing 1st downs|Rushing 1st downs|1st downs from penalties|Defensive \/ Special Teams TDs)$/i.test(s.label)) : [];
+    out.box = boxOf(d, sport, home, { cols: 12 });
     // leaders
     out.leaders = (d.leaders || []).map((tm) => ({ teamId: tm.team && tid(sport, tm.team.id), abbr: tm.team && tm.team.abbreviation,
-      cats: (tm.leaders || []).map((c) => ({ cat: c.displayName, name: c.leaders && c.leaders[0] && c.leaders[0].athlete && c.leaders[0].athlete.shortName, line: c.leaders && c.leaders[0] && c.leaders[0].displayValue })).filter((c) => c.name) }));
+      cats: (tm.leaders || []).map((c) => ({ cat: c.displayName, id: c.leaders && c.leaders[0] && ath(sport, c.leaders[0].athlete), name: c.leaders && c.leaders[0] && c.leaders[0].athlete && c.leaders[0].athlete.shortName, line: c.leaders && c.leaders[0] && c.leaders[0].displayValue })).filter((c) => c.name) }));
     return out;
   }
 
@@ -459,6 +474,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const ta = bt.find((x) => x.homeAway === 'away') || bt[0]; const th = bt.find((x) => x.homeAway === 'home') || bt[1];
     const rowsB = [['Hits', 'hits'], ['Home runs', 'homeRuns'], ['Walks', 'walks'], ['Strikeouts (batting)', 'strikeouts'], ['Left on base', 'LOB'], ['Stolen bases', 'stolenBases']];
     out.stats = ta && th ? rowsB.map(([label, n]) => ({ label, away: pick(ta, 'batting', [n])[0], home: pick(th, 'batting', [n])[0] })).filter((r) => r.away !== '–' || r.home !== '–') : [];
+    out.box = boxOf(d, sport, home, { cols: 14 });
     // pitchers used (from box score players)
     out.pitchers = ((d.boxscore && d.boxscore.players) || []).map((t) => {
       const g = (t.statistics || []).find((s) => s.type === 'pitching'); if (!g) return null;
@@ -593,13 +609,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const bt = (d.boxscore && d.boxscore.teams) || [];
     const ta = bt.find((x) => x.homeAway === 'away' || teamSide(x.team && x.team.id) === 'away'); const th = bt.find((x) => x.homeAway === 'home' || teamSide(x.team && x.team.id) === 'home');
     out.stats = ta && th ? (ta.statistics || []).filter((s) => s.label && s.displayValue != null).map((s) => ({ label: s.label, away: s.displayValue, home: ((th.statistics || []).find((k) => k.name === s.name) || {}).displayValue ?? '–' })).slice(0, 16) : [];
-    const COLS = 9;
-    const PREF = { hockey: { goalies: ['SA', 'GA', 'SV', 'SV%', 'TOI'], _: ['G', 'A', 'SOG', '+/-', 'TOI', 'PIM', 'HT', 'BS'] } };
-    out.box = ((d.boxscore && d.boxscore.players) || []).map((t) => ({ teamId: tid(sport, t.team.id), abbr: t.team.abbreviation, side: teamSide(t.team.id),
-      groups: (t.statistics || []).map((g) => { const labels = g.labels || []; const pref = PREF[sp.family] && (PREF[sp.family][g.name] || PREF[sp.family]._);
-        const ix = pref ? pref.map((l) => labels.indexOf(l)).filter((i) => i >= 0) : labels.slice(0, COLS).map((_, i) => i);
-        return { name: g.name || g.type || '', labels: ix.map((i) => labels[i]),
-        rows: (g.athletes || []).filter((a) => a.athlete && (a.stats || []).length).map((a) => ({ id: ath(sport, a.athlete), name: a.athlete.shortName || a.athlete.displayName, full: a.athlete.displayName, pos: a.athlete.position && a.athlete.position.abbreviation, starter: !!a.starter, headshot: a.athlete.headshot && a.athlete.headshot.href, stats: ix.map((i) => a.stats[i]) })) }; }).filter((g) => g.rows.length) })).filter((t) => t.groups.length);
+    out.box = boxOf(d, sport, home, { cols: 9 });
     // Soccer line-ups
     out.lineups = (d.rosters || []).map((r) => ({ teamId: r.team && tid(sport, r.team.id), abbr: r.team && r.team.abbreviation, side: r.homeAway || teamSide(r.team && r.team.id), formation: r.formation || null,
       players: (r.roster || []).filter((p) => p.athlete).map((p) => ({ id: ath(sport, p.athlete), name: p.athlete.displayName, jersey: p.jersey, pos: p.position && p.position.abbreviation, starter: !!p.starter, subbedIn: !!p.subbedIn, headshot: p.athlete.headshot && p.athlete.headshot.href })) })).filter((r) => r.players.length);

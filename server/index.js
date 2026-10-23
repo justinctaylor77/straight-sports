@@ -105,6 +105,10 @@ app.get(['/api/grok-top25/history', '/api/jt-top25/history'], top25Hist);
 app.get('/api/players/:sport', wrap((req) => { const s = sportOf(req); if (!['golf', 'tennis'].includes(s) && kindOf(s) !== 'event') throw bad('players: golf, tennis or event sports'); return SP.players(s); }));
 app.get('/api/game/:sport/:id', wrap((req) => { const s = sportOf(req); if (!s) throw bad('unknown sport'); if (!/^[a-z]{0,4}-?\d+$/.test(req.params.id)) throw bad('bad id'); return SP.gamecast(s, req.params.id).then((d) => WATCH.attach(s, d)); }));
 app.get('/api/team/:id', wrap((req) => SP.teamPage(req.params.id).then((d) => { const m = String(req.params.id).match(/^([a-z0-9]+):/); return WATCH.attach(m ? m[1] : 'cfb', d); })));
+const TICKETS = require('./tickets')({ cached, fetchJSON });
+const PEOPLE = require('./people')({ cached, fetchJSON, SP, TICKETS });
+app.get('/api/schedule/team/:id', wrap((req) => PEOPLE.teamSchedule(req.params.id).then((d) => WATCH.attach(d.sport, d))));
+app.get('/api/player/:id', wrap((req) => PEOPLE.player(req.params.id)));
 app.get('/api/watch', wrap(async (req) => { const s = sportOf(req); if (!s) throw bad('unknown sport'); return { sport: s, games: await WATCH.forSport(s) }; }));
 
 // ---------- routes: news ----------
