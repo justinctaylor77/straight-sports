@@ -1,0 +1,9 @@
+node_modules/
+*.log
+tunnel.log
+screenshots/
+.cache/
+.npm/
+.DS_Store
+.env
+.env.*
