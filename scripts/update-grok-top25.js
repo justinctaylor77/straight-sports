@@ -40,7 +40,16 @@ run.ranks = run.ranks.map((r) => {
   return { ...r, prev: p, move: prev ? (p == null ? 'new' : p - r.rank) : null };
 });
 run.droppedOut = prev ? prev.ranks.filter((r) => !seen.has(r.team.toLowerCase())).map((r) => ({ team: r.team, prev: r.rank })) : [];
-run.notes = { risersFallers: null, apVsGrok: null, nextWeek: null, cfpOutlook: null, ...(run.notes || {}) };
+// notes: Grok's own text, stored verbatim. If Grok gives one combined "risers/fallers + AP vs Grok"
+// paragraph, put it in risersFallers and either repeat it in apVsGrok or leave apVsGrok out (the app shows one box).
+const NOTE_KEYS = ['risersFallers', 'apVsGrok', 'nextWeek', 'cfpOutlook'];
+const notesIn = run.notes || {};
+for (const k of Object.keys(notesIn)) if (!NOTE_KEYS.includes(k)) die(`unknown notes key "${k}" (expected ${NOTE_KEYS.join(', ')})`);
+for (const k of NOTE_KEYS) if (notesIn[k] != null && typeof notesIn[k] !== 'string') die(`notes.${k} must be a string or null`);
+run.notes = Object.fromEntries(NOTE_KEYS.map((k) => [k, (notesIn[k] || '').trim() || null]));
+if (run.notes.risersFallers && !run.notes.apVsGrok) run.notes.apVsGrok = run.notes.risersFallers;
+const missing = NOTE_KEYS.filter((k) => !run.notes[k]);
+if (missing.length) console.warn(`update-grok-top25: warning: notes missing ${missing.join(', ')} (the Notes tab will say "Not included")`);
 run.justMissed = run.justMissed || [];
 run.updatedAt = new Date().toISOString();
 

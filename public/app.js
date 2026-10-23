@@ -648,7 +648,8 @@ async function viewGrok(quick) {
   else {
     const n = g.notes || {};
     const box = (t, v) => `<div class="card nt"><h3>${t}</h3><p class="${v ? '' : 'na'}">${v ? esc(v) : 'Not included in this week’s Grok output.'}</p></div>`;
-    body = `<div class="gk-notes">${box('Risers & fallers', n.risersFallers)}${box('AP vs Grok', n.apVsGrok)}${box('What to watch next week', n.nextWeek)}${box('CFP outlook', n.cfpOutlook)}</div>
+    const same = n.risersFallers && n.apVsGrok && n.risersFallers.trim() === n.apVsGrok.trim();
+    body = `<div class="gk-notes">${same ? box('Risers & fallers · AP vs Grok', n.risersFallers) : box('Risers & fallers', n.risersFallers) + box('AP vs Grok', n.apVsGrok)}${box('What to watch next week', n.nextWeek)}${box('Grok’s CFP outlook', n.cfpOutlook)}${n.cfpOutlook ? '<p class="gk-note">This is Grok’s own outlook text. The Bracket tab is computed separately from the Grok order using the 5+7 format.</p>' : ''}</div>
       ${(g.apTop5 || []).length ? `<h2>AP top 5 this week</h2><div class="card panel">${g.apTop5.map((a) => `<div class="rank-row"><span class="n">${a.rank}</span><img src="${esc(gLogo(a.info))}" alt="" loading="lazy" /><span><b>${esc(gName(a))}</b></span></div>`).join('')}</div>` : ''}`;
   }
   const hist = (g.history || []).slice().reverse();

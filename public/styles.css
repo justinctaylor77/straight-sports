@@ -872,3 +872,8 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
 .lb.mini .lb-row { grid-template-columns: 30px 22px minmax(0, 1fr) 40px 34px 58px; }
 .search-wrap:has(.pick-sel) > .search { flex: none; height: auto; }
 .pick-sel select { max-width: none !important; flex: auto; }
+/* compare chart: wrap names instead of truncating */
+.gk-crow .tn { align-items: center; }
+.gk-crow .tn span { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.15; overflow-wrap: anywhere; }
+.gk-crow { padding: 6px 0; }
+@media (max-width: 480px) { .gk-axis, .gk-crow { grid-template-columns: 112px minmax(0, 1fr) 40px; gap: 6px; } .gk-crow .tn { font-size: 12px; gap: 5px; } .gk-crow .tn img { width: 18px; height: 18px; } }

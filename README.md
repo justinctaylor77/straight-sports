@@ -57,9 +57,16 @@ Input schema (`run.json`):
   ],
   "justMissed": ["Auburn"],
   "apTop5": [{ "rank": 1, "team": "Miami" }],
-  "notes": { "risersFallers": "…", "apVsGrok": null, "nextWeek": null, "cfpOutlook": null }
+  "notes": {                       // Grok's own text, copied verbatim every week
+    "risersFallers": "Biggest risers in the hybrid view are…",
+    "apVsGrok": "AP has Miami #1, …",      // optional; if Grok writes one combined paragraph, omit it and the script reuses risersFallers
+    "nextWeek": "Week 8 features Utah vs. Houston, …",
+    "cfpOutlook": "Projected byes: Ohio State …"   // shown as "Grok's CFP outlook"; the Bracket tab is computed separately
+  }
 }
 ```
+
+Notes keys must be one of the four above and must be strings. Any that are missing get a warning and show "Not included in this week's Grok output."
 
 The script adds `prev`, `move` (number, `"new"` or `null` for the first week), `previous` and `droppedOut`.
 

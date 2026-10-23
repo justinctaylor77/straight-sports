@@ -57,7 +57,7 @@ const go = async (p, h, w = 1400) => { await p.goto(`${BASE}/${h}`); await ready
   }
   if (on('grok')) {
     const [c, p] = await ctx(); await go(p, '#/rankings/grok', 1500); await shot(p, 'phone-13-grok-top25');
-    for (const [t, n] of [['chart', '14-grok-compare'], ['bracket', '15-grok-bracket'], ['notes', '16-grok-notes']]) { await p.tap(`[data-gt="${t}"]`); await p.waitForTimeout(700); await shot(p, `phone-${n}`, t === 'bracket'); }
+    for (const [t, n] of [['chart', '14-grok-compare'], ['bracket', '15-grok-bracket'], ['notes', '16-grok-notes']]) { await p.tap(`[data-gt="${t}"]`); await p.waitForTimeout(700); await shot(p, `phone-${n}`, true); }
     await go(p, '#/rankings', 1200); await shot(p, 'phone-17-rankings-cfb');
     await c.close();
   }
