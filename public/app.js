@@ -1,13 +1,25 @@
-import { LEAGUE_MUTES, DEFAULTS, SPORTS, SPORT_IDS, sportOfId, loadSettings, saveSettings, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch } from './gamecast.js';
+import { LEAGUE_MUTES, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
+import { GROUPS as SPORT_GROUPS } from './catalog.js';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js';
+import * as BD from './backdrop.js';
 
 // ---------------- state ----------------
 let S = loadSettings();
 let TEAMS = []; let CONFS = []; let SOURCES = [];
-const TEAMS_BY = { cfb: [], nfl: [], mlb: [] }; const DIVS_BY = { cfb: [], nfl: [], mlb: [] };
+const TEAMS_BY = {}; const DIVS_BY = {}; // team lists per team sport, loaded on demand
 const PLAYERS_BY = {}; // golf / tennis player lists, loaded on demand
 const SP = () => S.sport; const SPI = () => SPORTS[S.sport];
-const teamSport = (sp) => ['cfb', 'nfl', 'mlb'].includes(sp);
+const teamSport = (sp) => (SPORTS[sp] || {}).kind === 'team';
+const eventSport = (sp) => (SPORTS[sp] || {}).kind === 'event';
+const newsSport = (sp) => (SPORTS[sp] || {}).kind === 'news';
+async function ensureTeams(sp) {
+  if (!teamSport(sp) || (TEAMS_BY[sp] && TEAMS_BY[sp].length)) return;
+  if (!ensureTeams[sp]) ensureTeams[sp] = api(`/api/teams?sport=${sp}`, 36e5).then((d) => {
+    TEAMS_BY[sp] = d.teams.map((t) => ({ ...t, sport: sp })); DIVS_BY[sp] = d.conferences || [];
+    TEAMS = Object.values(TEAMS_BY).flat(); if (sp === 'cfb') CONFS = DIVS_BY.cfb;
+  }).catch(() => { TEAMS_BY[sp] = TEAMS_BY[sp] || []; DIVS_BY[sp] = DIVS_BY[sp] || []; }).finally(() => { ensureTeams[sp] = null; });
+  return ensureTeams[sp];
+}
 const view = document.getElementById('view');
 let refreshTimer = null;
 let SILENT = false; // true during background refreshes (no skeleton flash)
@@ -17,12 +29,15 @@ const ITEMS = new Map(); const GROUPS = new Map(); let POOL = [];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const $ = (sel, root = document) => root.querySelector(sel);
 // Teams (all team sports) and followed/muted players share one id space: "252" (CFB), "nfl:3", "mlb:8", "golf:9478", "tennis:3623".
-const playerEnt = (id) => { const p = S.players[id]; return p ? { id, name: p.name, short: p.name, location: p.name, logo: p.flag, logoDark: p.flag, sport: sportOfId(id), player: true } : null; };
+const playerEnt = (id) => { const p = S.players[id]; return p ? { id, name: p.name, short: p.short || p.name, location: p.name, logo: p.flag, logoDark: p.flag, sport: sportOfId(id), team: p.team || null, pos: p.pos || '', player: true } : null; };
 const teamById = (id) => TEAMS.find((t) => t.id === String(id)) || playerEnt(String(id));
 const entities = () => [...TEAMS, ...Object.keys(S.players).map(playerEnt)];
 const followsIn = (sp) => S.follow.filter((id) => sportOfId(id) === sp);
 const follows = (id) => S.follow.includes(String(id));
-const rememberPlayer = (id, name, flag) => { S.players[id] = { name, flag: flag || '' }; };
+const rememberPlayer = (id, name, flag, extra = {}) => { if (!id || !name) return; const o = { ...(S.players[id] || {}), name, flag: flag || (S.players[id] || {}).flag || '' }; for (const [k, v] of Object.entries(extra)) if (v) o[k] = v; S.players[id] = o; };
+// teams the user cares about in a sport: followed teams + the teams of followed players
+const myTeamIds = () => new Set([...S.follow, ...S.follow.map((id) => (S.players[id] || {}).team).filter(Boolean)]);
+const myPlayersOn = (teamId) => S.follow.filter((id) => isAthleteId(id) && (S.players[id] || {}).team === teamId).map((id) => S.players[id]);
 const isDark = () => (S.theme === 'dark') || (S.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
 const logo = (t) => (t ? (isDark() ? t.logoDark || t.logo : t.logo) : '');
 const toggle = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
@@ -42,7 +57,7 @@ function applyTheme() {
   if (S.theme === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = S.theme;
   // one theme-color that matches the app background, so the status bar blends in when installed
   const metas = document.querySelectorAll('meta[name="theme-color"]');
-  metas.forEach((m, i) => { if (i) m.remove(); else { m.removeAttribute('media'); m.content = isDark() ? '#0f1216' : '#f6f7f9'; } });
+  metas.forEach((m, i) => { if (i) m.remove(); else { m.removeAttribute('media'); m.content = isDark() ? '#06080c' : '#f6f7f9'; } });
 }
 
 // ---------------- app bar (sticky compact header) ----------------
@@ -100,7 +115,8 @@ function filterNews(items, { straight = S.straightOnly } = {}) {
 function newsPath(extraTeams, sp = S.sport) {
   const src = sportSources(sp).filter((s) => sourceOn(s.id)).map((s) => s.id).join(',');
   const ids = extraTeams ? [extraTeams] : followsIn(sp);
-  const q = teamSport(sp) ? `&teams=${encodeURIComponent(ids.join(','))}` : `&names=${encodeURIComponent(ids.map((id) => (teamById(id) || {}).name).filter(Boolean).join('|'))}`;
+  const tm = ids.filter((id) => !isAthleteId(id)); const nm = ids.filter(isAthleteId).map((id) => (teamById(id) || {}).name).filter(Boolean);
+  const q = `${teamSport(sp) && tm.length ? `&teams=${encodeURIComponent(tm.join(','))}` : ''}${nm.length ? `&names=${encodeURIComponent(nm.join('|'))}` : ''}`;
   return `/api/news?sport=${sp}&sources=${encodeURIComponent(src)}${q}`;
 }
 
@@ -108,15 +124,16 @@ function newsPath(extraTeams, sp = S.sport) {
 function teamRow(c, ev) {
   const t = c.team || {};
   const lost = ev.state === 'post' && !c.winner && (ev.home.winner || ev.away.winner);
-  const mine = S.follow.includes(t.id);
+  const mine = S.follow.includes(t.id); const mp = myPlayersOn(t.id);
   const poss = ev.state === 'in' && ev.possession && ev.possession === t.id;
   return `<div class="trow ${lost ? 'lost' : ''}">
     <img src="${esc(logo(t))}" alt="" loading="lazy" width="28" height="28" />
-    <a class="nm" href="#/team/${t.id}">${c.rank ? `<span class="rk">${c.rank}</span>` : ''}<b>${esc(t.short || t.name)}</b>${mine ? '<span class="star" title="Following">●</span>' : ''}${poss ? '<span class="poss" title="Possession">◂</span>' : ''}<span class="rec">${esc(c.record || '')}</span></a>
+    <a class="nm" href="#/team/${t.id}">${c.rank ? `<span class="rk">${c.rank}</span>` : ''}<b>${esc(t.short || t.name)}</b>${mine ? '<span class="star" title="Following">●</span>' : mp.length ? `<span class="star" title="Your player${mp.length > 1 ? 's' : ''}: ${esc(mp.map((p) => p.name).join(', '))}">★</span>` : ''}${poss ? '<span class="poss" title="Possession">◂</span>' : ''}<span class="rec">${esc(c.record || '')}</span></a>
     <span class="sc">${ev.state === 'pre' ? '' : esc(c.score ?? '')}</span></div>`;
 }
 function gameCard(ev) {
-  const mine = S.follow.includes(ev.home.team?.id) || S.follow.includes(ev.away.team?.id);
+  const mine = isMineEv(ev);
+  const mp = [...myPlayersOn(ev.away.team?.id), ...myPlayersOn(ev.home.team?.id)];
   let status;
   if (ev.state === 'in') status = `<span class="live">LIVE · ${esc(ev.detail)}</span>`;
   else if (ev.state === 'post') status = `<b>${esc(ev.detail)}</b>`;
@@ -131,7 +148,7 @@ function gameCard(ev) {
     ${ev.note ? `<div class="gnote">${esc(ev.note)}${ev.series && !/starts/i.test(ev.series) ? ` · ${esc(ev.series)}` : ''}</div>` : ''}
     <div class="status">${status}<span>${esc(ev.broadcast || '')}</span></div>
     ${teamRow(ev.away, ev)}${teamRow(ev.home, ev)}
-    <div class="meta">${live}${extra}<span>${esc(ev.venue || '')}</span>${ev.conferenceGame ? '<span>· Conf</span>' : ''}${ev.neutral ? '<span>· Neutral</span>' : ''}<span class="gc-go">Gamecast ›</span></div></div>`;
+    <div class="meta">${live}${extra}${mp.length ? `<span class="yp-tag">★ ${esc(mp.slice(0, 2).map((p) => p.short || p.name.split(' ').slice(-1)[0]).join(', '))}</span>` : ''}<span>${esc(ev.venue || '')}</span>${ev.conferenceGame ? '<span>· Conf</span>' : ''}${ev.neutral ? '<span>· Neutral</span>' : ''}<span class="gc-go">Gamecast ›</span></div></div>`;
 }
 const miniBases = (b) => `<svg class="mini-bases" viewBox="0 0 30 20" aria-label="Runners"><rect x="20" y="8" width="6" height="6" transform="rotate(45 23 11)" class="${b.on1 ? 'on' : ''}"/><rect x="12" y="1" width="6" height="6" transform="rotate(45 15 4)" class="${b.on2 ? 'on' : ''}"/><rect x="4" y="8" width="6" height="6" transform="rotate(45 7 11)" class="${b.on3 ? 'on' : ''}"/></svg>`;
 const TYPE_LABEL = { opinion: 'Opinion', analysis: 'Analysis', betting: 'Betting', media: 'Video/Audio' };
@@ -178,12 +195,12 @@ function sortGames(a, b) {
 function renderSideTeams() {
   const el = $('#side-teams'); if (!el) return;
   const l = S.follow.map(teamById).filter(Boolean).filter((t) => S.sports.includes(t.sport || 'cfb'));
-  el.innerHTML = l.length ? `<div class="side-lbl">Following</div>${l.map((t) => `<a href="${t.player ? `#/scores` : `#/team/${t.id}`}" data-team="${t.id}" data-sp="${t.sport || 'cfb'}"><img src="${esc(logo(t))}" alt="" width="22" height="22" class="${t.player ? 'flag' : ''}" /><span>${esc(t.short)}</span><small>${esc(SPORTS[t.sport || 'cfb'].short)}</small></a>`).join('')}` : '';
+  el.innerHTML = l.length ? `<div class="side-lbl">Following</div>${l.map((t) => `<a href="${t.player ? (t.team ? `#/team/${t.team}` : '#/scores') : `#/team/${t.id}`}" data-team="${t.id}" data-sp="${t.sport || 'cfb'}"><img src="${esc(logo(t))}" alt="" width="22" height="22" class="${t.player ? 'flag' : ''}" /><span>${esc(t.short)}</span><small>${esc((SPORTS[t.sport || 'cfb'] || {}).short || '')}</small></a>`).join('')}` : '';
 }
 
 // ---------------- views ----------------
 const sbPath = (sp, extra = '') => `/api/scoreboard?sport=${sp}${extra}`;
-const isMineEv = (e) => S.follow.includes(e.home.team?.id) || S.follow.includes(e.away.team?.id);
+const isMineEv = (e) => { if (e.comps) return e.comps.some((c) => c.competitors.some((x) => S.follow.includes(x.id))); const m = myTeamIds(); return m.has(e.home.team?.id) || m.has(e.away.team?.id); };
 const dayKey = (iso) => new Date(iso).toLocaleDateString('en-CA');
 const dayLabel = (iso) => { const k = dayKey(iso); const t = dayKey(new Date().toISOString()); const y = dayKey(new Date(Date.now() - 864e5).toISOString()); const tm = dayKey(new Date(Date.now() + 864e5).toISOString());
   return k === t ? 'Today' : k === y ? 'Yesterday' : k === tm ? 'Tomorrow' : new Date(iso).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }); };
@@ -207,41 +224,47 @@ async function viewHome() {
   setBar('Home');
   const sp = S.sport;
   const today = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-  paint(LT(SPORTS[sp].name, today) + `<div class="cols"><section><h2>${sp === 'golf' ? 'This week' : sp === 'tennis' ? 'Your players' : 'Your games'}</h2>${SK.games(3)}</section><section><h2>Top stories for you</h2>${SK.news(6)}</section></div>`);
+  paint(LT(SPORTS[sp].name, today) + `<div class="cols"><section><h2>${sp === 'golf' ? 'This week' : sp === 'tennis' ? 'Your players' : eventSport(sp) ? 'Events' : 'Your games'}</h2>${SK.games(3)}</section><section><h2>Top stories for you</h2>${SK.news(6)}</section></div>`);
   if (sp === 'golf') return homeGolf(today);
   if (sp === 'tennis') return homeTennis(today);
+  if (eventSport(sp)) return homeEvents(today);
+  if (newsSport(sp)) return homeNewsOnly(today);
+  await ensureTeams(sp);
   const [sb, news] = await Promise.allSettled([api(sbPath(sp), 30e3), api(newsPath(), 5 * 60e3)]);
   const mf = muteFilter();
   let html = '';
   if (sb.status === 'fulfilled') {
     const evs = sb.value.events.filter((e) => !mf.game(e));
     let mine = evs.filter(isMineEv).sort(sortGames);
-    if (sp === 'mlb') { // one per team: live, else next, else latest
-      const pick = new Map(); for (const e of mine) for (const id of [e.home.team.id, e.away.team.id]) if (S.follow.includes(id) && !pick.has(id)) pick.set(id, e);
+    if (SPORTS[sp].daily) { // one per team: live, else next, else latest
+      const my = myTeamIds(); const ord = (e) => (e.state === 'in' ? 0 : e.state === 'pre' ? 1 : 2);
+      const byTeam = [...mine].sort((a, b) => ord(a) - ord(b) || (a.state === 'post' ? Date.parse(b.date) - Date.parse(a.date) : Date.parse(a.date) - Date.parse(b.date)));
+      const pick = new Map(); for (const e of byTeam) for (const id of [e.home.team.id, e.away.team.id]) if (my.has(id) && !pick.has(id)) pick.set(id, e);
       mine = [...new Set(pick.values())].sort(sortGames);
     }
     const confSet = new Set(S.conferences);
     const live = evs.filter((e) => e.state === 'in' && !mine.includes(e) && (sp !== 'cfb' || !confSet.size || confSet.has(e.home.conferenceId) || confSet.has(e.away.conferenceId)));
-    const sub = sp === 'mlb' ? today : `Week ${esc(sb.value.week)} · ${today}`;
+    const sub = SPORTS[sp].daily || !sb.value.week ? today : `Week ${esc(sb.value.week)} · ${today}`;
     html += LT(SPORTS[sp].name, sub);
     html += `<div class="cols"><section><h2>Your games <span class="count">${mine.length}</span><a class="h2-link" href="#/scores">All scores ›</a></h2>`;
-    html += mine.length ? `<div class="grid">${mine.map(gameCard).join('')}</div>` : `<div class="card empty">${followsIn(sp).length ? (sp === 'mlb' ? 'No games for your teams in the last week or next few days.' : 'No games for your teams this week (bye week?).') : noFollowMsg(sp)}</div>`;
+    html += mine.length ? `<div class="grid">${mine.map(gameCard).join('')}</div>` : `<div class="card empty">${followsIn(sp).length ? (SPORTS[sp].daily ? 'No games for your teams in the last few days or the next few.' : 'No games for your teams this week (bye week?).') : noFollowMsg(sp)}</div>`;
     if (live.length) html += `<h2>Live now <span class="count">${live.length}</span></h2><div class="grid">${live.slice(0, 6).map(gameCard).join('')}</div>`;
     if (!mine.length && !live.length) {
       const next = evs.filter((e) => e.state !== 'post').sort(sortGames).slice(0, 4);
       if (next.length) html += `<h2>Coming up</h2><div class="grid">${next.map(gameCard).join('')}</div>`;
     }
+    if (sp === 'cfb') html += await grokPromo();
     if (followsIn(sp).length) {
       try {
-        if (sp === 'cfb') {
-          const rk = await api('/api/rankings?sport=cfb', 10 * 60e3);
-          const ap = rk.polls.find((p) => p.id === 'ap');
-          const ranked = ap ? ap.ranks.filter((r) => S.follow.includes(r.team.id)) : [];
-          html += `<h2>Your teams in the AP poll<a class="h2-link" href="#/rankings">Top 25 ›</a></h2><div class="card panel">${ranked.length ? ranked.map(rankRow).join('') : '<div class="empty">None of your teams are ranked this week.</div>'}</div>`;
-        } else {
-          const st = await api(`/api/rankings?sport=${sp}`, 10 * 60e3);
-          const rows = st.groups.flatMap((g) => g.rows.map((r) => ({ ...r, div: g.name }))).filter((r) => S.follow.includes(r.team.id));
-          if (rows.length) html += `<h2>Your teams in the standings<a class="h2-link" href="#/rankings">Standings ›</a></h2><div class="card panel">${rows.map((r) => standRow(r, sp, true)).join('')}</div>`;
+        const my = myTeamIds();
+        const rk = await api(`/api/rankings?sport=${sp}`, 10 * 60e3);
+        if (rk.polls) {
+          const ap = rk.polls.find((p) => p.id === 'ap') || rk.polls[0];
+          const ranked = ap ? ap.ranks.filter((r) => my.has(r.team.id)) : [];
+          html += `<h2>Your teams in the ${esc(ap ? (ap.id === 'ap' ? 'AP poll' : ap.name) : 'poll')}<a class="h2-link" href="#/rankings">Top 25 ›</a></h2><div class="card panel">${ranked.length ? ranked.map(rankRow).join('') : '<div class="empty">None of your teams are ranked this week.</div>'}</div>`;
+        } else if (rk.groups) {
+          const rows = rk.groups.flatMap((g) => g.rows.map((r) => ({ ...r, div: g.name }))).filter((r) => my.has(r.team.id));
+          if (rows.length) html += `<h2>Your teams in the standings<a class="h2-link" href="#/rankings">Standings ›</a></h2>${rk.cols ? genStandTable({ name: 'Your teams', rows }, rk.cols, true) : `<div class="card panel">${rows.map((r) => standRow(r, sp, true)).join('')}</div>`}`;
         }
       } catch { /* optional */ }
     }
@@ -250,6 +273,39 @@ async function viewHome() {
   html = await newsColumn(html, news);
   view.innerHTML = html + '</div>';
   scheduleRefresh(sb.status === 'fulfilled' && sb.value.events.some((e) => e.state === 'in'));
+}
+
+// event sports (UFC, F1, NASCAR, IndyCar): your fighters/drivers first, then live, upcoming, latest
+async function homeEvents(today) {
+  const sp = S.sport;
+  const [eb, news] = await Promise.allSettled([api(sbPath(sp), 30e3), api(newsPath(), 5 * 60e3)]);
+  let html = LT(SPORTS[sp].name, today) + '<div class="cols"><section>';
+  const ctx = castCtx(); let anyLive = false;
+  if (eb.status === 'fulfilled') {
+    const evs = eb.value.events || []; anyLive = evs.some((e) => e.state === 'in');
+    const mine = evs.filter(isMineEv);
+    const live = evs.filter((e) => e.state === 'in' && !mine.includes(e));
+    const next = evs.filter((e) => e.state === 'pre' && !mine.includes(e)).sort((a, b) => Date.parse(a.date) - Date.parse(b.date)).slice(0, 2);
+    const last = evs.filter((e) => e.state === 'post' && !mine.includes(e)).sort((a, b) => Date.parse(b.date) - Date.parse(a.date)).slice(0, 2);
+    html += `<h2>Your ${esc(SPORTS[sp].what)} <span class="count">${mine.length}</span><a class="h2-link" href="#/scores">All events ›</a></h2>`;
+    html += mine.length ? mine.map((e) => eventCard(e, ctx)).join('') : `<div class="card empty">${followsIn(sp).length ? `Your ${esc(SPORTS[sp].what)} aren’t on these cards.` : noFollowMsg(sp)}</div>`;
+    if (live.length) html += `<h2>Live now</h2>${live.map((e) => eventCard(e, ctx)).join('')}`;
+    if (next.length) html += `<h2>Coming up</h2>${next.map((e) => eventCard(e, ctx)).join('')}`;
+    if (last.length) html += `<h2>Latest results</h2>${last.map((e) => eventCard(e, ctx)).join('')}`;
+    if (!evs.length) html += '<div class="card empty">No events this week.</div>';
+  } else html += errBox(eb.reason);
+  html += '</section>';
+  html = await newsColumn(html, news);
+  view.innerHTML = html + '</div>';
+  scheduleRefresh(anyLive);
+}
+// news-only sports (boxing): ESPN has no usable scoreboard, so headlines only
+async function homeNewsOnly(today) {
+  const sp = S.sport;
+  const news = (await Promise.allSettled([api(newsPath(), 5 * 60e3)]))[0];
+  let html = LT(SPORTS[sp].name, today) + `<div class="cols"><section><h2>Scores</h2><div class="card empty">${esc(SPORTS[sp].name)} is headlines-only: ESPN’s free feeds don’t carry live ${esc(SPORTS[sp].name.toLowerCase())} results.</div></section>`;
+  html = await newsColumn(html, news, 'Top stories');
+  view.innerHTML = html + '</div>';
 }
 
 // golf: tournament card (leaders + your players)
@@ -310,8 +366,12 @@ async function viewScores(quick) {
   setBar('Scores');
   if (sp === 'golf') return scoresGolf(quick);
   if (sp === 'tennis') return scoresTennis(quick);
+  if (eventSport(sp)) return scoresEvents(quick);
+  if (newsSport(sp)) { view.innerHTML = LT('Scores') + `<div class="card empty">${esc(SPORTS[sp].name)} is headlines-only — ESPN’s free feeds have no ${esc(SPORTS[sp].name.toLowerCase())} scoreboard. <a href="#/news">Read the news ›</a></div>`; return; }
+  await ensureTeams(sp);
+  const weekly = !SPORTS[sp].daily;
   if (!scoresMode) scoresMode = S.conferences.length ? 'conf' : 'all';
-  const wk = scoresWeek && sp !== 'mlb' ? `&week=${scoresWeek.split(':')[1]}&seasontype=${scoresWeek.split(':')[0]}` : '';
+  const wk = scoresWeek && weekly ? `&week=${scoresWeek.split(':')[1]}&seasontype=${scoresWeek.split(':')[0]}` : '';
   const path = sbPath(sp, wk);
   if (!quick) paint(LT('Scores', SK.sub()) + `<div class="toolbar sticky"><span class="sk w30 btnlike"></span><span class="sk w40 btnlike"></span></div><h2>Your teams</h2>${SK.games(3)}<h2><span class="sk w15 sm inline"></span></h2>${SK.games(6)}`);
   let sb;
@@ -344,23 +404,36 @@ async function viewScores(quick) {
     const up = days.filter(([, g]) => g.some((e) => e.state === 'pre')); const past = days.filter(([, g]) => !g.some((e) => e.state === 'pre')).reverse();
     for (const [, g] of [...up, ...past]) sections.push(`<h2>${esc(dayLabel(g[0].date))} <span class="count">${g.length}</span></h2><div class="grid">${g.map(gameCard).join('')}</div>`);
   }
-  if (sp !== 'mlb') {
+  if (weekly && sb.calendar && sb.calendar.length) {
     const cur = `${sb.seasontype}:${sb.week}`; const sel = (scoresWeek || cur);
     const curLabel = (sb.calendar.find((w) => `${w.seasontype}:${w.week}` === sel) || {});
     const weekOpts = sb.calendar.map((w) => `<option value="${w.seasontype}:${w.week}" ${`${w.seasontype}:${w.week}` === sel ? 'selected' : ''}>${esc(w.label)}${w.detail ? ` (${esc(w.detail)})` : ''}</option>`).join('');
     toolbar = `<select class="btn" id="week" aria-label="Week" data-cur="${cur}">${weekOpts}</select>`;
     sub = `${esc(curLabel.label || `Week ${sb.week}`)}${curLabel.detail ? ` · ${esc(curLabel.detail)}` : ''} · your local time`;
     if (sp === 'cfb') toolbar += `<div class="seg" role="tablist"><button data-mode="mine" class="${scoresMode === 'mine' ? 'on' : ''}">My teams</button><button data-mode="conf" class="${scoresMode === 'conf' ? 'on' : ''}">My confs</button><button data-mode="all" class="${scoresMode === 'all' ? 'on' : ''}">All FBS</button></div>`;
-  } else sub = 'Last 7 days and the next 3 · your local time';
+  } else sub = `${sp === 'mlb' ? 'Last 7 days and the next 3' : 'Recent and upcoming days'} · your local time`;
   view.innerHTML = LT('Scores', sub) + `
     ${toolbar ? `<div class="toolbar sticky">${toolbar}</div>` : ''}
     ${mutedCount ? `<div class="notice">${mutedCount} game${mutedCount > 1 ? 's' : ''} hidden (muted teams)</div>` : ''}
-    <h2>Your teams <span class="count">${mine.length}</span></h2>
-    ${mine.length ? `<div class="grid">${mine.map(gameCard).join('')}</div>` : `<div class="card empty">${followsIn(sp).length ? 'No games for your teams in this window.' : `You aren’t following any ${esc(SPORTS[sp].short)} teams yet. <a href="#/settings/teams">Pick teams</a>.`}</div>`}
+    <h2>${followsIn(sp).some(isAthleteId) ? 'Your teams & players' : 'Your teams'} <span class="count">${mine.length}</span></h2>
+    ${mine.length ? `<div class="grid">${mine.map(gameCard).join('')}</div>` : `<div class="card empty">${followsIn(sp).length ? 'No games for your teams or players in this window.' : `You aren’t following any ${esc(SPORTS[sp].short)} teams or players yet. <a href="#/settings/teams">Pick some</a>.`}</div>`}
     ${sp === 'cfb' && scoresMode === 'mine' ? '' : (sections.join('') || '<div class="empty">No other games.</div>')}`;
   const w = $('#week'); if (w) w.onchange = (e) => { tick(); scoresWeek = e.target.value === w.dataset.cur ? '' : e.target.value; viewScores(); };
   view.querySelectorAll('[data-mode]').forEach((b) => (b.onclick = () => { tick(); scoresMode = b.dataset.mode; viewScores(true); }));
   scheduleRefresh(!scoresWeek && evs.some((e) => e.state === 'in'));
+}
+async function scoresEvents(quick) {
+  const sp = S.sport;
+  if (!quick) paint(LT('Events', SK.sub()) + SK.games(4));
+  let eb; try { eb = await api(sbPath(sp), 30e3); } catch (e) { view.innerHTML = LT('Events') + errBox(e); return; }
+  const ctx = castCtx(); const evs = (eb.events || []).slice();
+  const mine = evs.filter(isMineEv); const rest = evs.filter((e) => !mine.includes(e));
+  const o = { in: 0, pre: 1, post: 2 };
+  rest.sort((a, b) => o[a.state] - o[b.state] || (a.state === 'post' ? Date.parse(b.date) - Date.parse(a.date) : Date.parse(a.date) - Date.parse(b.date)));
+  view.innerHTML = LT(`${esc(SPORTS[sp].short)} events`, `${evs.length} on ESPN’s board · your local time`)
+    + (mine.length ? `<h2>Your ${esc(SPORTS[sp].what)} <span class="count">${mine.length}</span></h2><div class="grid">${mine.map((e) => eventCard(e, ctx, { n: 6 })).join('')}</div>` : '')
+    + `<h2>${mine.length ? 'Everything else' : 'Events'} <span class="count">${rest.length}</span></h2><div class="grid">${rest.map((e) => eventCard(e, ctx, { n: 6 })).join('') || '<div class="empty">Nothing scheduled right now.</div>'}</div>`;
+  scheduleRefresh(evs.some((e) => e.state === 'in'));
 }
 async function scoresGolf(quick) {
   if (!quick) paint(LT('Leaderboard', SK.sub()) + `<div class="toolbar sticky"><span class="sk w40 btnlike"></span></div>${SK.rows(14)}`);
@@ -411,6 +484,10 @@ async function viewNews() {
   const render = () => {
     const { items, hidden } = filterNews(data.items);
     let list = newsMode === 'mine' && followsIn(S.sport).length ? items.filter((i) => i.mine.length) : items;
+    if (newsMode === 'all' && followsIn(S.sport).length) { // boost: stories about your teams/players rank as if 12h newer
+      const sc = (i) => (Date.parse(i.published || 0) || 0) + (i.mine.length ? 12 * 36e5 : 0);
+      list = list.slice().sort((a, b) => sc(b) - sc(a));
+    }
     if (newsQuery) { const q = newsQuery.toLowerCase(); list = list.filter((i) => (i.title + ' ' + i.summary + ' ' + i.source).toLowerCase().includes(q)); }
     const cl = topClusters(list, 6); const used = new Set(cl.flat().map((x) => x.link));
     const rest = list.filter((i) => !used.has(i.link));
@@ -451,12 +528,34 @@ function standRow(r, sp, withDiv) {
     <span class="n">${esc(r.w)}-${esc(r.l)}${r.t && r.t !== '0' ? `-${esc(r.t)}` : ''}</span><span class="n">${esc(r.pct || '')}</span>
     <span class="n">${esc(sp === 'mlb' ? (r.gb || '') : (r.diff || ''))}</span><span class="n faint">${esc(r.streak || '')}</span></a>`;
 }
+// generic standings table (NBA/NHL/soccer…): columns come from the server
+function genStandTable(g, cols, withDiv) {
+  const my = myTeamIds();
+  return `<div class="card panel st-gen"><div class="st-row hd" style="--nc:${cols.length}"><span></span><span class="nm">${esc(g.name)}</span>${cols.map((c) => `<span class="n">${esc(c)}</span>`).join('')}</div>
+    ${g.rows.map((r) => `<a class="st-row ${my.has(r.team.id) ? 'mine' : ''}" style="--nc:${cols.length}" href="#/team/${esc(r.team.id)}"><img src="${esc(logo(r.team))}" alt="" loading="lazy" /><span class="nm"><b>${esc(r.team.short || r.team.location)}</b>${withDiv && r.div ? ` <span class="faint small">${esc(r.div)}</span>` : ''}</span>${(r.cells || []).map((c) => `<span class="n">${esc(c)}</span>`).join('')}</a>`).join('')}</div>`;
+}
 async function viewRankings(quick) {
   const sp = S.sport; const lbl = SPI().tab4;
+  if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/grok')) return viewGrok(quick);
   setBar(lbl);
+  if (newsSport(sp)) { view.innerHTML = LT(lbl) + `<div class="card empty">ESPN’s free feeds have no ${esc(SPI().name)} rankings. <a href="#/news">Read the news ›</a></div>`; return; }
   if (!quick) paint(LT(lbl, SK.sub()) + `<div class="toolbar sticky"><span class="sk w40 btnlike"></span></div>${SK.rows(12)}`);
   let d; try { d = await api(`/api/rankings?sport=${sp}`, 10 * 60e3); } catch (e) { view.innerHTML = LT(lbl) + errBox(e); return; }
   const mf = muteFilter();
+  if (d.cols && d.groups) {
+    const lg = [...new Set(d.groups.map((g) => g.league || ''))];
+    view.innerHTML = LT('Standings', `${d.season ? `${esc(d.season)} · ` : ''}ESPN`) + (d.groups.length ? lg.map((L) => `${lg.length > 1 && L ? `<h2>${esc(L)}</h2>` : ''}<div class="st-grid">${d.groups.filter((g) => (g.league || '') === L).map((g) => genStandTable({ ...g, rows: g.rows.filter((r) => !mf.teamId(r.team.id)) }, d.cols)).join('')}</div>`).join('') : '<div class="card empty">Standings aren’t posted yet this season.</div>');
+    return;
+  }
+  if (eventSport(sp)) {
+    const now = Date.now();
+    const ev = (d.schedule || []).map((e) => ({ ...e, state: Date.parse(e.end || e.start) < now ? 'post' : Date.parse(e.start) <= now ? 'in' : 'pre' }));
+    const row = (e) => `<a class="sched-row golf ${e.state === 'in' ? 'live' : ''}" href="#/game/${sp}/${esc(e.id)}"><span class="faint small">${new Date(e.start).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span><span class="opp"><b>${esc(e.label)}</b></span><span class="small ${e.state === 'in' ? 'live' : 'faint'}">${e.state === 'in' ? 'LIVE' : e.state === 'post' ? 'Final' : ''}</span></a>`;
+    const up = ev.filter((e) => e.state !== 'post'); const past = ev.filter((e) => e.state === 'post').reverse();
+    view.innerHTML = LT('Schedule', `${esc(SPI().name)} season · ESPN`) + `<div class="cols"><section><h2>Upcoming</h2><div class="card panel">${up.map(row).join('') || '<div class="empty">Season complete.</div>'}</div></section>
+      <section><h2>Completed</h2><div class="card panel">${past.slice(0, 40).map(row).join('') || '<div class="empty">None yet.</div>'}</div></section></div>`;
+    return;
+  }
   if (sp === 'nfl' || sp === 'mlb') {
     let lg = [...new Set(d.groups.map((g) => g.league))];
     view.innerHTML = LT('Standings', `${sp === 'nfl' ? 'By division' : 'Regular season, by division'} · ESPN`) + lg.map((L) => `<h2>${esc(L)}</h2><div class="st-grid">${d.groups.filter((g) => g.league === L).map((g) => `<div class="card panel"><div class="st-row hd"><span></span><span class="nm">${esc(g.name)}</span><span class="n">W-L</span><span class="n">Pct</span><span class="n">${sp === 'mlb' ? 'GB' : 'Diff'}</span><span class="n">Strk</span></div>${g.rows.filter((r) => !mf.teamId(r.team.id)).map((r) => standRow(r, sp)).join('')}</div>`).join('')}</div>`).join('');
@@ -484,12 +583,84 @@ async function viewRankings(quick) {
   const poll = d.polls.find((p) => p.id === pollId) || d.polls[0];
   const ranks = poll.ranks.filter((r) => !mf.teamId(r.team.id)); const hiddenN = poll.ranks.length - ranks.length;
   view.innerHTML = LT('Rankings', `${esc(poll.headline || poll.name)}${poll.date ? ` · ${new Date(poll.date).toLocaleDateString()}` : ''}`) + `
-    <div class="toolbar sticky"><div class="seg">${d.polls.map((p) => `<button data-poll="${p.id}" class="${p.id === poll.id ? 'on' : ''}">${p.id === 'ap' ? 'AP Top 25' : p.id === 'usa' ? 'Coaches Poll' : esc(p.name)}</button>`).join('')}</div></div>
+    <div class="toolbar sticky"><div class="seg">${d.polls.map((p) => `<button data-poll="${p.id}" class="${p.id === poll.id ? 'on' : ''}">${p.id === 'ap' ? 'AP Top 25' : p.id === 'usa' ? 'Coaches Poll' : esc(p.name)}</button>`).join('')}${sp === 'cfb' ? '<a class="seg-a grok-tab" href="#/rankings/grok">Grok Top 25</a>' : ''}</div></div>
     ${hiddenN ? `<div class="notice">${hiddenN} muted team(s) hidden</div>` : ''}
     <div class="card panel">${ranks.map(rankRow).join('')}</div>
     ${poll.others.length ? `<h2>Others receiving votes</h2><p class="muted small">${poll.others.filter((o) => !mf.teamId(o.team.id)).map((o) => `<a href="#/team/${o.team.id}">${esc(o.team.location)}</a> ${o.points}`).join(' · ')}</p>` : ''}
     <p class="faint small">Points shown with first-place votes in parentheses. Source: ESPN public rankings data.</p>`;
   view.querySelectorAll('[data-poll]').forEach((b) => (b.onclick = () => { tick(); pollId = b.dataset.poll; viewRankings(true); }));
+}
+
+// ---------------- Grok Top 25 (user's weekly Grok automation; live AP/Coaches/CFP from ESPN) ----------------
+let grokTab = 'top'; let grokDate = '';
+const gLogo = (i) => (i ? logo({ logo: i.logo, logoDark: i.logoDark }) : '');
+const gName = (x) => (x && x.info ? x.info.short : x && x.team) || 'TBD';
+async function grokPromo() {
+  try {
+    const g = await api('/api/grok-top25', 10 * 60e3);
+    return `<a class="card gk-promo" href="#/rankings/grok"><div><div class="gk-kicker">Week ${esc(g.week)} · independent hybrid</div><div class="gk-title">Grok Top 25</div><div class="faint small">${g.ranks.slice(0, 4).map((r) => `${r.rank}. ${esc(gName(r))}`).join(' · ')}</div></div><span class="go">View ›</span></a>`;
+  } catch { return ''; }
+}
+function grokChart(g, lp) {
+  const pos = (r) => `${((Math.min(r, 25) - 1) / 24) * 100}%`;
+  const rows = g.ranks.map((r) => {
+    const ap = r.live?.ap; const co = r.live?.coaches; const prev = r.prev;
+    const lo = Math.min(r.rank, ap || 26); const hi = Math.max(r.rank, ap || 26);
+    const d = ap ? ap - r.rank : null;
+    return `<div class="gk-crow" style="--tc:#${esc(r.info?.color || '888')}"><span class="tn"><img src="${esc(gLogo(r.info))}" alt="" loading="lazy" /><span>${r.rank}. ${esc(gName(r))}</span></span>
+      <span class="gk-track" role="img" aria-label="${esc(gName(r))}: Grok ${r.rank}, AP ${ap || 'unranked'}, Coaches ${co || 'unranked'}">
+        <span class="gk-bar" style="left:${pos(lo)};width:calc(${pos(Math.min(hi, 25))} - ${pos(lo)})"></span>
+        ${prev ? `<span class="gk-dot last" style="left:${pos(prev)}"></span>` : ''}
+        <span class="gk-dot co ${co ? '' : 'off'}" style="left:${pos(co || 25)}"></span><span class="gk-dot ap ${ap ? '' : 'off'}" style="left:${pos(ap || 25)}"></span><span class="gk-dot grok" style="left:${pos(r.rank)}"></span></span>
+      <span class="gk-diff ${d > 0 ? 'mv up' : d < 0 ? 'mv dn' : ''}">${d == null ? 'AP NR' : d === 0 ? '=' : d > 0 ? `+${d}` : d}</span></div>`;
+  }).join('');
+  return `<div class="card gk-chart"><div class="gk-legend"><span><i class="dot-grok"></i>Grok</span><span><i class="dot-ap"></i>AP</span><span><i class="dot-co"></i>Coaches</span>${g.ranks.some((r) => r.prev) ? '<span><i class="gk-dot last" style="position:static;display:inline-block;margin:0 5px 0 0"></i>Grok last week</span>' : ''}<span>CFP: ${lp.cfpReleased ? 'shown in Top 25 tab' : 'not released'}</span></div>
+    <div class="gk-axis"><span></span><span class="ticks"><span>1</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25</span></span><span>vs AP</span></div>${rows}
+    <p class="gk-note">“+n” means Grok ranks the team n spots higher than the AP voters. Dots at the right edge are unranked in that poll.</p></div>`;
+}
+function grokBracket(b) {
+  const my = myTeamIds();
+  const T = (s, tag) => s ? `<div class="br-t ${my.has(s.info?.id) ? 'mine' : ''}" style="--tc:#${esc(s.info?.color || '888')}"><span class="sd">${s.seed}</span><img src="${esc(gLogo(s.info))}" alt="" loading="lazy" /><span class="n">${esc(gName(s))}<small>${s.champ ? `${esc(s.conference)} champ (proj.)` : `No. ${s.rank}`}</small></span>${tag || ''}</div>` : '<div class="br-t tbd"><span class="sd"></span><span></span><span class="n">TBD</span></div>';
+  const r1 = Object.fromEntries(b.firstRound.map((m) => [m.id, m]));
+  const fr = b.quarterfinals.map((q) => r1[q.from]).map((m) => `<div class="card br-game"><div class="host">${esc(m.site)}</div>${T(m.home, '<span class="tg">Home</span>')}${T(m.away)}</div>`).join('');
+  const qf = b.quarterfinals.map((q) => { const m = r1[q.from]; return `<div class="card br-game"><div class="host">Quarterfinal · bowl site</div>${T(q.top, '<span class="tg bye">Bye</span>')}<div class="br-t tbd"><span class="sd"></span><span></span><span class="n">Winner ${m.home.seed}/${m.away.seed}</span></div></div>`; }).join('');
+  const sf = (b.semifinals || []).map((s, i) => `<div class="card br-game"><div class="host">Semifinal ${i + 1}</div>${s.from.map((f) => { const q = b.quarterfinals.find((x) => x.id === f); const m = q && r1[q.from]; return `<div class="br-t tbd"><span class="sd"></span><span></span><span class="n">${q ? `${esc(gName(q.top))} or ${m.home.seed}/${m.away.seed} winner` : 'TBD'}</span></div>`; }).join('')}</div>`).join('') + '<div class="card br-game"><div class="host">National championship</div><div class="br-t tbd"><span class="sd"></span><span></span><span class="n">Semifinal winners</span></div></div>';
+  return `<h2>Projected conference champions</h2><div class="gk-champs">${b.champions.map((c) => `<div class="card gk-champ" style="--tc:#${esc(c.info?.color || '888')}"><img src="${esc(gLogo(c.info))}" alt="" loading="lazy" /><div><div class="cf">${esc(c.conference)}</div><b>${esc(gName(c))}</b><span class="pj">Projected · Grok No. ${c.rank}</span></div></div>`).join('')}</div>
+    <h2>12-team bracket</h2><div class="br"><div class="br-col"><h3>First round</h3>${fr}</div><div class="br-col"><h3>Quarterfinals</h3>${qf}</div><div class="br-col"><h3>Semis & final</h3>${sf}</div></div>
+    <p class="gk-note">${esc(b.note || '')} Format: the top 5 conference champions get in; the 4 highest-ranked champions get byes and seeds 1–4; seeds 5–12 play first-round games at the higher seed’s campus.</p>`;
+}
+async function viewGrok(quick) {
+  setBar('Grok Top 25', { back: '#/rankings' });
+  if (!quick) paint(LT('Grok Top 25', SK.sub()) + SK.rows(12));
+  let g; try { g = await api(`/api/grok-top25${grokDate ? `?date=${grokDate}` : ''}`, 10 * 60e3); } catch (e) { view.innerHTML = LT('Grok Top 25') + errBox(e); return; }
+  const lp = g.livePolls || {}; const my = myTeamIds();
+  const P = (n, v, cfp) => `<span>${n} <b>${v || (cfp && !lp.cfpReleased ? '—' : 'NR')}</b></span>`;
+  const mv = (r) => r.move === 'new' ? '<span class="mv new">New</span>' : r.move == null ? '' : `<span class="mv ${r.move > 0 ? 'up' : r.move < 0 ? 'dn' : 'eq'}">${r.move ? (r.move > 0 ? '▲' + r.move : '▼' + -r.move) : '–'}</span>`;
+  let body = '';
+  if (grokTab === 'top') {
+    body = `<div class="card gk-list">${g.ranks.map((r) => `<a class="gk-row ${my.has(r.info?.id) ? 'mine' : ''}" href="${r.info ? `#/team/${esc(r.info.id)}` : '#/rankings/grok'}" style="--tc:#${esc(r.info?.color || '888')}"><span class="gk-rank">${r.rank}</span><img src="${esc(gLogo(r.info))}" alt="" loading="lazy" />
+      <span class="gk-nm"><b>${esc(gName(r))}</b><span class="rec">${esc(r.record)} · ${esc(r.conference || '')}</span> ${mv(r)}<div class="gk-why">${esc(r.reason || '')}</div></span>
+      <span class="gk-polls">${P('AP', r.live?.ap)}${P('Coaches', r.live?.coaches)}${P('CFP', r.live?.cfp, true)}</span></a>`).join('')}</div>
+      ${g.justMissed?.length ? `<h2>Just missed</h2><p class="muted small">${g.justMissed.map((j) => j.info ? `<a href="#/team/${esc(j.info.id)}">${esc(j.info.short)}</a>` : esc(j.team)).join(' · ')}</p>` : ''}
+      ${g.droppedOut?.length ? `<h2>Dropped out</h2><p class="muted small">${g.droppedOut.map((x) => esc(x.team || x)).join(' · ')}</p>` : ''}`;
+  } else if (grokTab === 'chart') body = grokChart(g, lp);
+  else if (grokTab === 'bracket') body = g.bracket ? grokBracket(g.bracket) : '<div class="card empty">No bracket for this week.</div>';
+  else {
+    const n = g.notes || {};
+    const box = (t, v) => `<div class="card nt"><h3>${t}</h3><p class="${v ? '' : 'na'}">${v ? esc(v) : 'Not included in this week’s Grok output.'}</p></div>`;
+    body = `<div class="gk-notes">${box('Risers & fallers', n.risersFallers)}${box('AP vs Grok', n.apVsGrok)}${box('What to watch next week', n.nextWeek)}${box('CFP outlook', n.cfpOutlook)}</div>
+      ${(g.apTop5 || []).length ? `<h2>AP top 5 this week</h2><div class="card panel">${g.apTop5.map((a) => `<div class="rank-row"><span class="n">${a.rank}</span><img src="${esc(gLogo(a.info))}" alt="" loading="lazy" /><span><b>${esc(gName(a))}</b></span></div>`).join('')}</div>` : ''}`;
+  }
+  const hist = (g.history || []).slice().reverse();
+  view.innerHTML = `<div class="card gk-hero"><div class="gk-kicker">Week ${esc(g.week)} · ${new Date(g.date + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</div><h1 class="gk-title">Grok Top 25</h1>
+      <div class="gk-method">${esc(g.method?.note || '')}</div>
+      <div class="gk-src"><span class="gk-tag grok">Grok order</span><span class="gk-tag live">Live AP · Coaches${lp.cfpReleased ? ' · CFP' : ''} from ESPN</span>${lp.cfpReleased ? '' : '<span class="gk-tag">CFP rankings: not released</span>'}</div></div>
+    <div class="gk-sub"><div class="seg">${[['top', 'Top 25'], ['chart', 'Compare'], ['bracket', 'Bracket'], ['notes', 'Notes']].map(([k, n]) => `<button data-gt="${k}" class="${k === grokTab ? 'on' : ''}">${n}</button>`).join('')}</div>
+      ${hist.length > 1 ? `<select id="gdate" class="btn" aria-label="Week">${hist.map((d) => `<option value="${d}" ${d === g.date ? 'selected' : ''}>${d}</option>`).join('')}</select>` : ''}</div>
+    ${body}
+    <p class="faint small">Grok order from your weekly automation (data/grok-top25). AP, Coaches and CFP numbers are pulled live from ESPN and never estimated.</p>`;
+  view.querySelectorAll('[data-gt]').forEach((b) => (b.onclick = () => { tick(); grokTab = b.dataset.gt; viewGrok(true); }));
+  const sel = $('#gdate'); if (sel) sel.onchange = () => { grokDate = sel.value === hist[0] ? '' : sel.value; viewGrok(true); };
 }
 
 // ---------------- Gamecast ----------------
@@ -503,13 +674,35 @@ async function viewGame(sp, id, quick) {
   if (!location.hash.startsWith(`#/game/${sp}/${id}`)) return;
   setBar(castTitle(d), { back: `#/${lastTab}` });
   const y = window.scrollY;
+  gameBackdrop(sp, d);
   view.innerHTML = `<div class="gc gc-${d.kind}">${renderGamecast(d, castCtx())}</div>`;
   if (quick) window.scrollTo(0, y);
   castLive = d.state === 'in';
   scheduleRefresh(castLive, 20e3);
 }
 
+function gameBackdrop(sp, d) {
+  try {
+    if (d.home && d.away && d.home.team && d.away.team) {
+      const T = (x) => ({ ...(teamById(x.team.id) || {}), ...x.team, logo: logo(x.team) });
+      return BD.setGame(T(d.away), T(d.home), sp);
+    }
+    if (d.kind === 'golf') {
+      const pick = (d.players || []).find((p) => p.id === castState.player) || (d.players || []).find((p) => follows(p.id)) || (d.players || [])[0];
+      return BD.setPlayers(sp, pick ? [pick.flag] : []);
+    }
+    if (d.kind === 'tennis') return BD.setPlayers(sp, (d.players || []).map((p) => p.flag));
+    if (d.kind === 'event') {
+      const c = (d.comps || []).find((x) => x.id === castState.player) || (d.comps || []).find((x) => x.state === 'in') || (d.comps || [])[0];
+      const cs = c ? c.competitors.slice().sort((a, b) => (follows(b.id) - follows(a.id)) || ((a.order || 99) - (b.order || 99))) : [];
+      return BD.setPlayers(sp, cs.slice(0, d.family === 'mma' ? 2 : 1).map((x) => x.headshot || x.flag));
+    }
+    BD.setSport(sp);
+  } catch { BD.setSport(sp); }
+}
+const UNIT = (sp) => ({ baseball: 'Runs', soccer: 'Goals', hockey: 'Goals' }[(SPORTS[sp] || {}).family] || 'Points');
 async function viewTeam(id) {
+  await ensureTeams(sportOfId(id));
   const meta = teamById(id) || {};
   setBar(meta.short || 'Team', { back: `#/${lastTab}` });
   paint(`<div class="card team-hero" style="--team:#${esc(meta.color || '1f6f5c')}">${meta.logo ? `<img src="${esc(logo(meta))}" alt="" />` : '<span class="sk logo big"></span>'}<div><h1>${esc(meta.name || '')}</h1><div class="sk w30 sm"></div></div></div>
@@ -517,6 +710,8 @@ async function viewTeam(id) {
     <div class="cols"><section><h2>Schedule</h2>${SK.rows(10)}</section><section><h2>Season stats</h2>${SK.news(3)}</section></div>`);
   let d; try { d = await api(`/api/team/${id}`, 2 * 60e3); } catch (e) { view.innerHTML = errBox(e); return; }
   const t = d.team;
+  if (!location.hash.startsWith('#/team/')) return;
+  BD.setTeam({ ...meta, ...t, logo: logo(t.logo ? t : meta) }, meta.sport || sportOfId(id));
   setBar(t.name, { back: `#/${lastTab}` });
   const following = S.follow.includes(t.id); const muted = S.muteTeams.includes(t.id);
   const sched = d.schedule.map((ev) => {
@@ -533,12 +728,13 @@ async function viewTeam(id) {
       <div><h1>${esc(t.name)}</h1><div class="muted">${esc(t.standing || '')}${meta.conference ? ` · ${esc(meta.conference)}` : ''}</div></div>
       <div class="actions"><button class="btn ${following ? 'primary' : ''}" id="fol">${following ? '✓ Following' : '+ Follow'}</button><button class="btn ${muted ? 'danger' : ''}" id="mut">${muted ? 'Muted' : 'Mute'}</button></div></div>
     <h2>Record & scoring</h2><div class="kv">${recs}${meta.confRecord ? `<div class="card"><div class="v">${esc(meta.confRecord)}</div><div class="l">Conference</div></div>` : ''}
-      ${t.ppg != null ? `<div class="card"><div class="v">${(+t.ppg).toFixed(1)}</div><div class="l">${meta.sport === 'mlb' ? 'Runs' : 'Points'} per game</div></div>` : ''}
-      ${t.oppg != null ? `<div class="card"><div class="v">${(+t.oppg).toFixed(1)}</div><div class="l">${meta.sport === 'mlb' ? 'Runs' : 'Points'} allowed / game</div></div>` : ''}
+      ${t.ppg != null ? `<div class="card"><div class="v">${(+t.ppg).toFixed(1)}</div><div class="l">${UNIT(meta.sport || sportOfId(id))} per game</div></div>` : ''}
+      ${t.oppg != null ? `<div class="card"><div class="v">${(+t.oppg).toFixed(1)}</div><div class="l">${UNIT(meta.sport || sportOfId(id))} allowed / game</div></div>` : ''}
       ${meta.streak ? `<div class="card"><div class="v">${esc(meta.streak)}</div><div class="l">Streak</div></div>` : ''}</div>
     <div class="cols"><section><h2>Schedule</h2><div class="card panel">${sched || '<div class="empty">No schedule.</div>'}</div></section>
-    <section><h2>Season stats</h2><div class="stat-groups">${d.stats.map((g) => `<div class="card"><h4>${esc(g.name)}</h4>${g.items.map((s) => `<div class="r"><span>${esc(s.label)}</span><b>${esc(s.value)}</b></div>`).join('')}</div>`).join('') || `<div class="empty">${meta.sport === 'mlb' ? 'Season stats aren’t in ESPN’s free MLB team feed.' : 'No stats yet.'}</div>`}</div>
-    <h2>Latest news</h2><div id="team-news">${SK.news(4)}</div></section></div>`;
+    <section><h2>Season stats</h2><div class="stat-groups">${d.stats.map((g) => `<div class="card"><h4>${esc(g.name)}</h4>${g.items.map((s) => `<div class="r"><span>${esc(s.label)}</span><b>${esc(s.value)}</b></div>`).join('')}</div>`).join('') || `<div class="empty">${meta.sport === 'mlb' ? 'Season stats aren’t in ESPN’s free MLB team feed.' : 'No season stats in ESPN’s free feed yet.'}</div>`}</div>
+    <h2>Latest news</h2><div id="team-news">${SK.news(4)}</div></section></div>
+    ${(d.roster || []).length ? `<h2>Roster <span class="count">${d.roster.length} · ★ to follow a player</span></h2><div class="card panel roster">${d.roster.map((p) => `<div class="ro-row ${follows(p.id) ? 'mine' : ''}">${p.headshot ? `<img class="hs" src="${esc(p.headshot)}" alt="" loading="lazy" />` : '<span class="hs"></span>'}<span class="nm"><b>${esc(p.name)}</b> <span class="faint small">${esc([p.jersey ? '#' + p.jersey : '', p.pos].filter(Boolean).join(' · '))}</span></span><button class="pf ${follows(p.id) ? 'on' : ''}" data-pfollow="${esc(p.id)}" data-pname="${esc(p.name)}" data-pflag="${esc(p.headshot || '')}" data-pteam="${esc(t.id)}" data-ppos="${esc(p.pos || '')}" aria-pressed="${follows(p.id)}" aria-label="${follows(p.id) ? 'Unfollow' : 'Follow'} ${esc(p.name)}">${follows(p.id) ? '★' : '☆'}</button></div>`).join('')}</div>` : ''}`;
   $('#fol').onclick = () => { tick(); S.follow = following ? S.follow.filter((x) => x !== t.id) : [...S.follow, t.id]; if (!following) S.muteTeams = S.muteTeams.filter((x) => x !== t.id); save(); toast(following ? `Unfollowed ${t.name}` : `Following ${t.name}`); SILENT = true; viewTeam(id).finally(() => (SILENT = false)); };
   $('#mut').onclick = () => { tick(); S.muteTeams = muted ? S.muteTeams.filter((x) => x !== t.id) : [...S.muteTeams, t.id]; if (!muted) S.follow = S.follow.filter((x) => x !== t.id); save(); toast(muted ? `Unmuted ${t.name}` : `Muted ${t.name}`); SILENT = true; viewTeam(id).finally(() => (SILENT = false)); };
   try {
@@ -551,7 +747,26 @@ async function viewTeam(id) {
 }
 
 // ---------------- preference pickers (shared by onboarding + settings sub-screens) ----------------
-let teamQ = ''; let teamConf = ''; let muteQ = ''; let pickSport = null;
+let teamQ = ''; let teamConf = ''; let muteQ = ''; let pickSport = null; let pickMode = 'teams'; let browseTeam = '';
+const ATH = new Map(); const ROSTER = new Map(); let athTimer = 0;
+const pickRoot = () => document.querySelector('#onb') || view;
+const regrid = () => { const g = $('[data-part="grid"]', pickRoot()); if (g) g.innerHTML = partHTML('grid'); };
+function searchAthletes(sp, q) { // debounced ESPN athlete search (free public endpoint)
+  const k = `${sp}|${q.toLowerCase()}`; if (ATH.has(k)) return ATH.get(k);
+  clearTimeout(athTimer);
+  athTimer = setTimeout(async () => {
+    ATH.set(k, 'loading');
+    try { ATH.set(k, await api(`/api/athletes?sport=${sp}&q=${encodeURIComponent(q)}`, 10 * 60e3)); } catch { ATH.set(k, []); }
+    if (pSport() === sp && teamQ.trim().toLowerCase() === q.toLowerCase()) regrid();
+  }, 280);
+  return 'loading';
+}
+async function loadRoster(id) {
+  if (ROSTER.has(id)) return; ROSTER.set(id, 'loading');
+  try { ROSTER.set(id, await api(`/api/roster/${encodeURIComponent(id)}`, 36e5)); } catch { ROSTER.set(id, []); }
+  if (browseTeam === id) regrid();
+}
+const playerRow = (p, sub) => `<button class="pick-row ${follows(p.id) ? 'on' : ''}" data-tfollow="${esc(p.id)}" data-pname="${esc(p.name)}" data-pflag="${esc(p.headshot || p.flag || '')}" data-pteam="${esc(p.teamId || '')}" data-ppos="${esc(p.pos || '')}" aria-pressed="${follows(p.id)}"><img src="${esc(p.headshot || p.flag || '')}" alt="" class="${p.headshot ? 'hs' : 'flag'}" loading="lazy" /><span class="nm"><b>${esc(p.name)}</b><small>${sub}</small></span>${CHECK}</button>`;
 const pSport = () => (pickSport && S.sports.includes(pickSport) ? pickSport : (pickSport = S.sports[0] || 'cfb'));
 const UTAH = () => ['BYU', 'Utah', 'Utah State'].map((l) => TEAMS_BY.cfb.find((t) => t.location === l)).filter(Boolean);
 async function loadPlayers(sp, root) {
@@ -559,7 +774,7 @@ async function loadPlayers(sp, root) {
   try { PLAYERS_BY[sp] = await api(`/api/players/${sp}`, 36e5); } catch { PLAYERS_BY[sp] = []; }
   loadPlayers[sp] = 0; if (root) refreshParts(root, []);
 }
-const KW_SUGGEST = ['NBA', 'WNBA', 'LeBron', 'Caitlin Clark'];
+const KW_SUGGEST = ['Transfer portal', 'Odds', 'Fantasy', 'Mock draft'];
 const OUTLET_SUGGEST = ['ESPN', 'Bleacher Report', 'Barstool', 'OutKick'];
 const CHECK = '<span class="check" aria-hidden="true"></span>';
 const mascot = (t) => (t.name.startsWith(t.location) ? t.name.slice(t.location.length).trim() : t.name);
@@ -568,18 +783,51 @@ function partHTML(p) {
   const f = (id) => S.follow.includes(id);
   switch (p) {
     case 'sportseg': return S.sports.length > 1 ? `<div class="chips sport-chips">${S.sports.map((k) => `<button class="chip lg ${k === pSport() ? 'on' : ''}" data-psport="${k}">${SPORTS[k].emoji} ${esc(SPORTS[k].short)}<span class="cnt">${followsIn(k).length || ''}</span></button>`).join('')}</div>` : '';
-    case 'sports': return SPORT_IDS.map((k) => { const on = S.sports.includes(k); const v = SPORTS[k]; return `<button class="tile sport ${on ? 'on' : ''}" data-sport="${k}" aria-pressed="${on}"><span class="em">${v.emoji}</span><span><b>${esc(v.name)}</b><small>${esc(v.blurb || '')}</small></span>${CHECK}</button>`; }).join('');
+    case 'sports': return SPORT_GROUPS.map((g) => { const ks = SPORT_IDS.filter((k) => SPORTS[k].group === g); return ks.length ? `<div class="group-lbl tiles-lbl">${esc(g)}</div>${ks.map((k) => { const on = S.sports.includes(k); const v = SPORTS[k]; return `<button class="tile sport ${on ? 'on' : ''}" data-sport="${k}" aria-pressed="${on}" style="--sa:${v.accent}"><span class="em">${v.emoji}</span><span><b>${esc(v.name)}</b><small>${esc(v.blurb || '')}${v.kind === 'news' ? ' · headlines only' : ''}</small></span>${CHECK}</button>`; }).join('')}` : ''; }).join('');
+    case 'pmode': { const sp = pSport(); if (!teamSport(sp)) return '';
+      return `<div class="seg pmode"><button data-pmode="teams" class="${pickMode === 'teams' ? 'on' : ''}" aria-pressed="${pickMode === 'teams'}">Teams</button><button data-pmode="players" class="${pickMode === 'players' ? 'on' : ''}" aria-pressed="${pickMode === 'players'}">Players</button></div>`; }
     case 'quicklbl': return pSport() === 'cfb' && UTAH().length ? 'Popular in Utah' : '';
     case 'quick': if (pSport() !== 'cfb') return ''; return UTAH().map((t) => `<button class="chip lg ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img src="${esc(logo(t))}" alt="" />${esc(t.short)}${f(t.id) ? ' ✓' : ''}</button>`).join('');
     case 'followed': {
       const sp = pSport(); const l = followsIn(sp).map(teamById).filter(Boolean);
-      return l.length ? l.map((t) => `<button class="chip on" data-tfollow="${t.id}"><img src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />${esc(t.short)} <span class="x">✕</span></button>`).join('') : `<span class="faint small">None yet — that’s fine, you’ll see ${sp === 'cfb' ? 'all of FBS' : `all of ${esc(SPORTS[sp].short)}`}.</span>`;
+      return l.length ? l.map((t) => `<button class="chip on" data-tfollow="${t.id}"><img src="${esc(logo(t))}" alt="" class="${t.player ? (teamSport(sp) || eventSport(sp) ? 'hs' : 'flag') : ''}" />${t.player && teamSport(sp) ? '★ ' : ''}${esc(t.short)} <span class="x">✕</span></button>`).join('') : `<span class="faint small">None yet — that’s fine, you’ll see ${sp === 'cfb' ? 'all of FBS' : `all of ${esc(SPORTS[sp].short)}`}.</span>`;
     }
     case 'followcount': { const n = followsIn(pSport()).length; return n ? `· ${n}` : ''; }
-    case 'tsearch': { const sp = pSport(); const n = teamSport(sp) ? TEAMS_BY[sp].length : (PLAYERS_BY[sp] || []).length;
-      return `<input class="search" data-in="tsearch" type="search" placeholder="Search ${n || ''} ${teamSport(sp) ? 'teams' : 'players'}" value="${esc(teamQ)}" autocomplete="off" enterkeyhint="search" />${teamSport(sp) ? confSelect() : ''}`; }
+    case 'tsearch': { const sp = pSport();
+      if (newsSport(sp)) return '';
+      if (teamSport(sp) && !TEAMS_BY[sp]) { ensureTeams(sp).then(() => refreshParts(pickRoot())); }
+      if (teamSport(sp) && pickMode === 'players') {
+        const TL = (TEAMS_BY[sp] || []).filter((t) => !teamConf || t.conferenceId === teamConf);
+        return `<input class="search" data-in="tsearch" type="search" placeholder="Search ${esc(SPORTS[sp].short)} players by name" value="${esc(teamQ)}" autocomplete="off" enterkeyhint="search" /><div class="pick-sel">${confSelect()}<select class="btn" data-in="bteam" aria-label="Team roster"><option value="">Browse a roster…</option>${TL.map((t) => `<option value="${t.id}" ${browseTeam === t.id ? 'selected' : ''}>${esc(t.short)}</option>`).join('')}</select></div>`;
+      }
+      const n = teamSport(sp) ? (TEAMS_BY[sp] || []).length : (PLAYERS_BY[sp] || []).length;
+      return `<input class="search" data-in="tsearch" type="search" placeholder="Search ${n || ''} ${teamSport(sp) ? 'teams' : esc(SPORTS[sp].what)}" value="${esc(teamQ)}" autocomplete="off" enterkeyhint="search" />${teamSport(sp) ? confSelect() : ''}`; }
     case 'grid': {
       const sp = pSport(); const q = teamQ.trim().toLowerCase();
+      if (newsSport(sp)) return `<div class="empty">${esc(SPORTS[sp].name)} is headlines-only, so there’s nobody to follow here. Its news uses every outlet you have on — mute names or keywords in Mute.</div>`;
+      if (teamSport(sp) && pickMode === 'players') {
+        const tname = (id) => (teamById(id) || {}).short || '';
+        if (q.length >= 2) {
+          const r = searchAthletes(sp, teamQ.trim());
+          if (r === 'loading') return '<div class="empty">Searching ESPN…</div>';
+          return r.map((p) => playerRow(p, esc([p.pos, p.team || tname(p.teamId)].filter(Boolean).join(' · ')))).join('') || '<div class="empty">No players match. Try a last name.</div>';
+        }
+        if (browseTeam) {
+          const r = ROSTER.get(browseTeam); if (!r) { loadRoster(browseTeam); return '<div class="empty">Loading roster…</div>'; }
+          if (r === 'loading') return '<div class="empty">Loading roster…</div>';
+          return r.map((p) => playerRow({ ...p, teamId: p.team }, esc([p.jersey ? `#${p.jersey}` : '', p.pos, tname(p.team)].filter(Boolean).join(' · ')))).join('') || '<div class="empty">No roster in ESPN’s feed.</div>';
+        }
+        const mine = followsIn(sp).filter(isAthleteId).map(playerEnt).filter(Boolean);
+        return `<div class="empty small">Search by name, or pick a ${sp === 'cfb' ? 'conference' : 'division'} and team to browse its roster. Followed players are pinned in scores, highlighted in Gamecast and boost the news.</div>${mine.map((p) => playerRow({ id: p.id, name: p.name, headshot: p.logo, teamId: p.team, pos: p.pos }, esc([p.pos, tname(p.team)].filter(Boolean).join(' · ')))).join('')}`;
+      }
+      if (eventSport(sp)) {
+        if (!PLAYERS_BY[sp]) { loadPlayers(sp, pickRoot()); return '<div class="empty">Loading…</div>'; }
+        const list = PLAYERS_BY[sp].filter((p) => !q || `${p.name} ${p.country || ''} ${p.team || ''}`.toLowerCase().includes(q));
+        let extra = '';
+        if (q.length >= 3) { const r = searchAthletes(sp, teamQ.trim()); if (Array.isArray(r)) { const have = new Set(list.map((p) => p.id)); extra = r.filter((p) => !have.has(p.id)).map((p) => playerRow(p, 'ESPN search')).join(''); } else extra = '<div class="empty small">Searching ESPN…</div>'; }
+        const show = list.slice(0, q ? 120 : 60);
+        return (show.map((p) => playerRow(p, esc([p.country, p.team].filter(Boolean).join(' · ') || 'On a current card'))).join('') + extra) || `<div class="empty">${q ? 'No match.' : `No ${esc(SPORTS[sp].what)} on current cards — search by name.`}</div>`;
+      }
       if (!teamSport(sp)) {
         if (!PLAYERS_BY[sp]) { loadPlayers(sp, document.querySelector('#onb') || view); return '<div class="empty">Loading players…</div>'; }
         const list = PLAYERS_BY[sp].filter((p) => !q || `${p.name} ${p.country}`.toLowerCase().includes(q));
@@ -587,9 +835,9 @@ function partHTML(p) {
         return show.map((p) => `<button class="pick-row ${f(p.id) ? 'on' : ''}" data-tfollow="${p.id}" data-pname="${esc(p.name)}" data-pflag="${esc(p.flag || '')}" aria-pressed="${f(p.id)}"><img src="${esc(p.flag || '')}" alt="" class="flag" loading="lazy" /><span class="nm"><b>${esc(p.name)}</b><small>${esc(p.tour || '')}${p.rank ? ` · No. ${p.rank}` : ''}${p.country ? ` · ${esc(p.country)}` : ''}</small></span>${CHECK}</button>`).join('')
           + (list.length > show.length ? `<div class="empty small">Showing ${show.length} of ${list.length} — search to find more.</div>` : '') || '<div class="empty">No players match.</div>';
       }
-      const TL = TEAMS_BY[sp];
+      const TL = TEAMS_BY[sp]; if (!TL) return '<div class="empty">Loading teams…</div>';
       const list = TL.filter((t) => (!teamConf || t.conferenceId === teamConf) && (!q || `${t.name} ${t.abbr} ${t.conference}`.toLowerCase().includes(q)));
-      return list.map((t) => `<button class="pick-row ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img src="${esc(logo(t))}" alt="" loading="lazy" /><span class="nm"><b>${esc(t.short)}</b><small>${sp === 'cfb' ? `${esc(mascot(t))} · ` : ''}${esc(t.conference)}</small></span>${CHECK}</button>`).join('') || '<div class="empty">No teams match.</div>';
+      return list.map((t) => `<button class="pick-row ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img src="${esc(logo(t))}" alt="" loading="lazy" /><span class="nm"><b>${esc(t.short)}</b><small>${sp === 'cfb' ? `${esc(mascot(t))} · ` : ''}${esc(t.conference || '')}</small></span>${CHECK}</button>`).join('') || '<div class="empty">No teams match.</div>';
     }
     case 'confs': return CONFS.map((c) => {
       const n = TEAMS.filter((t) => t.conferenceId === c.id).length; const on = S.conferences.includes(c.id);
@@ -598,12 +846,12 @@ function partHTML(p) {
     case 'leagues': return Object.entries(LEAGUE_MUTES).map(([k, v]) => { const on = S.muteLeagues.includes(k); return `<button class="chip lg mute ${on ? 'on' : ''}" data-league="${k}" aria-pressed="${on}" title="Hides: ${esc(v.words.join(', '))}">${on ? '🔇 ' : ''}${esc(v.label)}</button>`; }).join('');
     case 'kws': return [...S.muteKeywords.map((k) => `<button class="chip lg mute on" data-unkw="${esc(k)}">${esc(k)} <span class="x">✕</span></button>`),
       ...KW_SUGGEST.filter((k) => !S.muteKeywords.some((x) => x.toLowerCase() === k.toLowerCase())).map((k) => `<button class="chip lg ghost" data-addkw="${esc(k)}">+ ${esc(k)}</button>`)].join('');
-    case 'mteams': { const l = S.muteTeams.map(teamById).filter(Boolean); return l.map((t) => `<button class="chip lg mute on" data-unmute="${t.id}"><img src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />${esc(t.short)}<small>${esc(SPORTS[t.sport || 'cfb'].short)}</small> <span class="x">✕</span></button>`).join('') || '<span class="faint small">No teams or players muted.</span>'; }
+    case 'mteams': { const l = S.muteTeams.map(teamById).filter(Boolean); return l.map((t) => `<button class="chip lg mute on" data-unmute="${t.id}"><img src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />${esc(t.short)}<small>${esc((SPORTS[t.sport || 'cfb'] || {}).short || '')}</small> <span class="x">✕</span></button>`).join('') || '<span class="faint small">No teams or players muted.</span>'; }
     case 'mresults': {
       const q = muteQ.trim().toLowerCase(); if (q.length < 2) return '';
-      S.sports.filter((k) => !teamSport(k)).forEach((k) => loadPlayers(k, document.querySelector('#onb') || view));
-      const pool = [...TEAMS.filter((t) => S.sports.includes(t.sport)), ...S.sports.filter((k) => !teamSport(k)).flatMap((k) => (PLAYERS_BY[k] || []).map((p) => ({ ...p, short: p.name, logo: p.flag, logoDark: p.flag, player: true })))];
-      return pool.filter((t) => t.name.toLowerCase().includes(q) && !S.muteTeams.includes(t.id)).slice(0, 10).map((t) => `<button class="chip lg" data-mute="${t.id}" ${t.player ? `data-pname="${esc(t.name)}" data-pflag="${esc(t.flag || '')}"` : ''}><img src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />Mute ${esc(t.short)}<small>${esc(SPORTS[t.sport].short)}</small></button>`).join('') || '<span class="faint small">No match.</span>';
+      S.sports.filter((k) => !teamSport(k) && !newsSport(k)).forEach((k) => loadPlayers(k, document.querySelector('#onb') || view));
+      const pool = [...TEAMS.filter((t) => S.sports.includes(t.sport)), ...S.sports.filter((k) => !teamSport(k) && !newsSport(k)).flatMap((k) => (PLAYERS_BY[k] || []).map((p) => ({ ...p, short: p.name, logo: p.flag, logoDark: p.flag, player: true })))];
+      return pool.filter((t) => t.name.toLowerCase().includes(q) && !S.muteTeams.includes(t.id)).slice(0, 10).map((t) => `<button class="chip lg" data-mute="${t.id}" ${t.player ? `data-pname="${esc(t.name)}" data-pflag="${esc(t.flag || '')}"` : ''}><img src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />Mute ${esc(t.short)}<small>${esc((SPORTS[t.sport] || {}).short || '')}</small></button>`).join('') || '<span class="faint small">No match.</span>';
     }
     case 'outlets': { const b = S.blockOutlets || []; return [...b.map((x) => `<button class="chip lg mute on" data-unblock="${esc(x)}">🚫 ${esc(x)} <span class="x">✕</span></button>`), ...OUTLET_SUGGEST.filter((x) => !b.includes(x)).map((x) => `<button class="chip lg ghost" data-block="${esc(x)}">+ ${esc(x)}</button>`)].join(''); }
     case 'sources': return S.sports.map((k) => `<div class="group-lbl">${SPORTS[k].emoji} ${esc(SPORTS[k].name)}</div><div class="list card">${sportSources(k).map((s) => `<label class="row"><span class="rt"><b>${esc(s.name)}</b><small>${esc(s.kind)}${s.via ? ` · via ${esc(s.via)}` : ''}</small></span><span class="switch"><input type="checkbox" data-src="${s.id}" ${sourceOn(s.id) ? 'checked' : ''} /></span></label>`).join('')}</div>`).join('');
@@ -630,19 +878,21 @@ function refreshParts(root, skip = []) {
   });
 }
 function prefClick(e, root) {
-  const b = e.target.closest('[data-tfollow],[data-sport],[data-psport],[data-conf],[data-league],[data-unkw],[data-addkw],[data-unmute],[data-mute],[data-block],[data-unblock],[data-theme]');
+  const b = e.target.closest('[data-tfollow],[data-sport],[data-psport],[data-pmode],[data-conf],[data-league],[data-unkw],[data-addkw],[data-unmute],[data-mute],[data-block],[data-unblock],[data-theme]');
   if (!b || !root.contains(b)) return false;
   e.preventDefault(); tick();
   const d = b.dataset; let skip = [];
-  if (d.pname && (d.tfollow || d.mute)) rememberPlayer(d.tfollow || d.mute, d.pname, d.pflag);
+  if (d.pname && (d.tfollow || d.mute)) rememberPlayer(d.tfollow || d.mute, d.pname, d.pflag, { team: d.pteam, pos: d.ppos });
   if (d.sport) {
     const on = S.sports.includes(d.sport);
     if (on && S.sports.length === 1) { toast('Keep at least one sport'); return true; }
     S.sports = on ? S.sports.filter((x) => x !== d.sport) : SPORT_IDS.filter((x) => x === d.sport || S.sports.includes(x));
     if (!S.sports.includes(S.sport)) S.sport = S.sports[0];
-    pickSport = on ? null : d.sport; teamQ = ''; teamConf = '';
+    pickSport = on ? null : d.sport; teamQ = ''; teamConf = ''; browseTeam = '';
+    if (!on) ensureTeams(d.sport).then(() => refreshParts(root));
     syncSportUI();
-  } else if (d.psport) { pickSport = d.psport; teamQ = ''; teamConf = ''; }
+  } else if (d.psport) { pickSport = d.psport; teamQ = ''; teamConf = ''; browseTeam = ''; ensureTeams(d.psport).then(() => refreshParts(root)); }
+  else if (d.pmode) { pickMode = d.pmode; teamQ = ''; browseTeam = ''; }
   else if (d.tfollow) {
     S.follow = toggle(S.follow, d.tfollow); S.muteTeams = S.muteTeams.filter((x) => !S.follow.includes(x));
     const on = S.follow.includes(d.tfollow);
@@ -667,7 +917,8 @@ function prefInput(e, root) {
 }
 function prefChange(e, root) {
   const el = e.target;
-  if (el.dataset.in === 'tconf') { teamConf = el.value; const g = $('[data-part="grid"]', root); if (g) g.innerHTML = partHTML('grid'); }
+  if (el.dataset.in === 'tconf') { teamConf = el.value; browseTeam = ''; if (pickMode === 'players' && teamSport(pSport())) { const t = $('[data-part="tsearch"]', root); if (t) t.innerHTML = partHTML('tsearch'); } const g = $('[data-part="grid"]', root); if (g) g.innerHTML = partHTML('grid'); }
+  else if (el.dataset.in === 'bteam') { browseTeam = el.value; teamQ = ''; const i = $('[data-in="tsearch"]', root); if (i) i.value = ''; const g = $('[data-part="grid"]', root); if (g) g.innerHTML = partHTML('grid'); }
   else if (el.dataset.src) { tick(); S.sources[el.dataset.src] = el.checked; save(); }
   else if (el.dataset.flag) { tick(); S[el.dataset.flag] = el.checked; save(); refreshParts(root); }
 }
@@ -684,10 +935,10 @@ function bindPrefs(root) {
   root.onclick = (e) => prefClick(e, root); root.oninput = (e) => prefInput(e, root);
   root.onchange = (e) => prefChange(e, root); root.onsubmit = (e) => prefSubmit(e, root);
 }
-const confSelect = () => `<select class="btn" data-in="tconf" aria-label="${pSport() === 'cfb' ? 'Conference' : 'Division'}"><option value="">All ${pSport() === 'cfb' ? 'conferences' : 'divisions'}</option>${DIVS_BY[pSport()].map((c) => `<option value="${c.id}" ${teamConf === c.id ? 'selected' : ''}>${esc(c.short)}</option>`).join('')}</select>`;
+const confSelect = () => `<select class="btn" data-in="tconf" aria-label="${pSport() === 'cfb' ? 'Conference' : 'Division'}"><option value="">All ${pSport() === 'cfb' ? 'conferences' : 'divisions'}</option>${(DIVS_BY[pSport()] || []).map((c) => `<option value="${c.id}" ${teamConf === c.id ? 'selected' : ''}>${esc(c.short)}</option>`).join('')}</select>`;
 const flagSwitch = (flag, title, sub) => `<label class="row"><span class="rt"><b>${title}</b><small>${sub}</small></span><span class="switch"><input type="checkbox" data-flag="${flag}" ${S[flag] ? 'checked' : ''} /></span></label>`;
 const P = {
-  teams: () => `<div data-part="sportseg"></div><div class="lbl" data-part="quicklbl"></div><div class="chips" data-part="quick"></div>
+  teams: () => `<div data-part="sportseg"></div><div data-part="pmode"></div><div class="lbl" data-part="quicklbl"></div><div class="chips" data-part="quick"></div>
     <div class="lbl">Following <span data-part="followcount"></span></div><div class="chips" data-part="followed"></div>
     <div class="search-wrap" data-part="tsearch"></div>
     <div class="pick-list card" data-part="grid"></div>`,
@@ -724,6 +975,7 @@ function viewSettings(sub) {
   if (sub) return viewSettingsSub(sub);
   setBar('Settings');
   const teamsTxt = S.follow.map(teamById).filter((t) => t && S.sports.includes(t.sport || 'cfb')).map((t) => t.short).join(', ') || 'Nobody yet — showing everything';
+  [...new Set(S.follow.map(sportOfId))].forEach((k) => { if (teamSport(k) && !TEAMS_BY[k]) ensureTeams(k).then(() => { if (location.hash === '#/settings') viewSettings(); }); });
   const confTxt = S.conferences.map((id) => CONFS.find((c) => c.id === id)?.short).filter(Boolean).join(', ') || 'All FBS';
   const mutes = activeMutes(); const mySrc = SOURCES.filter((s) => S.sports.includes(s.sport)); const onCount = mySrc.filter((s) => sourceOn(s.id)).length; const bl = S.blockOutlets || [];
   view.innerHTML = LT('Settings', 'Saved on this device only') + `
@@ -761,8 +1013,8 @@ function viewSettingsSub(sub) {
     about: ['About & install', '', `<div class="card prose">
       <h3>Install it like an app</h3><p><b>iPhone:</b> Safari → Share → “Add to Home Screen”.<br/><b>Android / Chrome / Edge:</b> menu → “Install app”.</p>
       <h3>How “straight news” works</h3><p>Headlines are labeled automatically with keyword and URL rules (e.g. “column”, “hot take”, “predictions”, “odds”, question headlines). It’s a heuristic, not a bias rating — tap any story to see why it was labeled.</p>
-      <h3>Data</h3><p>Scores, schedules, leaderboards, rankings, standings and Gamecast data come from ESPN’s public JSON. Headlines come from RSS feeds (AP, Reuters, CBS, Yahoo, NYT, The Guardian, PGA Tour, LPGA, ATP, WTA, NCAA.com, Deseret News, Salt Lake Tribune, KSL and more) and Google News. NBA and WNBA are never shown. No tracking, no ads; settings stay on this device.</p>
-      <h3>Gamecast limits</h3><p>Football: the field is schematic and win probability is ESPN’s model. Baseball: runners and the count are shown only while a game is live. Golf: hole-by-hole scorecards, no shot tracking or world ranking. Tennis: set scores and server only, no point-by-point or match stats.</p></div>`],
+      <h3>Data</h3><p>Scores, schedules, leaderboards, rankings, standings and Gamecast data come from ESPN’s public JSON. Headlines come from RSS feeds (AP, Reuters, CBS, Yahoo, NYT, The Guardian, PGA Tour, LPGA, ATP, WTA, NCAA.com, Deseret News, Salt Lake Tribune, KSL and more) and Google News. Only the sports you pick are shown — NBA, WNBA and the rest of the catalog stay off unless you turn them on. No tracking, no ads; settings stay on this device.</p>
+      <h3>Gamecast limits</h3><p>Football: the field is schematic and win probability is ESPN’s model. Baseball: runners and the count are shown only while a game is live. Golf: hole-by-hole scorecards, no shot tracking or world ranking. Tennis: set scores and server only, no point-by-point or match stats. Basketball, hockey and soccer: box scores, lineups and play-by-play from ESPN. UFC: full fight cards with results by round. F1, NASCAR and IndyCar: session results and running order, no telemetry. Boxing: headlines only.</p></div>`],
   };
   const s = screens[sub]; if (!s) { location.hash = '#/settings'; return; }
   setBar(s[0], back);
@@ -782,13 +1034,13 @@ function openOnboarding(start = 0) {
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
       <section class="slide s-welcome"><div class="hero-logo"><img src="/icons/icon.svg" alt="" /></div>
-        <h1>Straight<b>Sports</b></h1><p class="pitch">College football, NFL, MLB, golf and tennis: scores and headlines from many outlets, without the hot takes, ads, or NBA news you didn’t ask for.</p>
+        <h1>Straight<b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
           <li><span class="fi">🔇</span><div><b>Mute anything</b><small>Leagues, teams, keywords or whole outlets.</small></div></li></ul>
         <p class="kbd-hint">Tip: use ← → keys to move between steps</p></section>
-      <section class="slide"><div class="step-k">Step 1 of 4</div><h2 class="st">Pick your sports</h2><p class="help">Choose one or more. You can switch between them anytime.</p>${P.sports()}</section>
-      <section class="slide"><div class="step-k">Step 2 of 4</div><h2 class="st">Pick teams & players</h2><p class="help">Their games and news always come first.</p>${P.teams()}</section>
+      <section class="slide"><div class="step-k">Step 1 of 4</div><h2 class="st">Pick your sports</h2><p class="help">Choose one or more. Nothing is on unless you pick it, and you can switch anytime.</p>${P.sports()}</section>
+      <section class="slide"><div class="step-k">Step 2 of 4</div><h2 class="st">Pick teams & players</h2><p class="help">Search by name or browse by league, conference or division. Their games and news come first.</p>${P.teams()}</section>
       <section class="slide"><div class="step-k">CFB · optional</div><h2 class="st">Pick conferences</h2><p class="help">Their scores and news show after your teams. Pick none to see all of FBS.</p>${P.confs()}</section>
       <section class="slide"><div class="step-k">Step 3 of 4</div><h2 class="st">Mute what you don’t want</h2><p class="help">Muted things disappear everywhere, in every sport.</p>${P.mute(false)}${P.outlets()}
         <div class="list card" style="margin-top:16px">${flagSwitch('straightOnly', 'Straight news only', 'Hide opinion, hot takes, picks & betting')}</div></section>
@@ -976,6 +1228,9 @@ function syncSportUI(name) {
   bar.innerHTML = S.sports.map((k) => `<button class="chip ${k === S.sport ? 'on' : ''}" data-switch="${k}" aria-pressed="${k === S.sport}"><span aria-hidden="true">${SPORTS[k].emoji}</span>${esc(SPORTS[k].short)}</button>`).join('');
   const on = bar.querySelector('.on'); if (show && on && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = Math.max(0, on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2);
   const lbl = $('#tab4-label'); if (lbl) lbl.textContent = SPORTS[S.sport].tab4;
+  const de = document.documentElement; // non-core sports get their accent from the catalog
+  if (CORE.includes(S.sport)) { delete de.dataset.xa; de.style.removeProperty('--xa'); } else { de.dataset.xa = ''; de.style.setProperty('--xa', SPORTS[S.sport].accent || '#ff7a1a'); }
+  if (!['team', 'game'].includes(name)) BD.setSport(S.sport);
   document.title = `Straight Sports · ${SPORTS[S.sport].short}`;
 }
 document.addEventListener('click', (e) => {
@@ -992,7 +1247,7 @@ document.addEventListener('click', (e) => {
   if (pf) {
     e.preventDefault(); e.stopPropagation(); tick();
     const id = pf.dataset.pfollow; const on = follows(id);
-    rememberPlayer(id, pf.dataset.pname, pf.dataset.pflag);
+    rememberPlayer(id, pf.dataset.pname, pf.dataset.pflag, { team: pf.dataset.pteam, pos: pf.dataset.ppos });
     S.follow = toggle(S.follow, id); if (!on) S.muteTeams = S.muteTeams.filter((x) => x !== id);
     save(); toast(on ? `Unfollowed ${pf.dataset.pname}` : `Following ${pf.dataset.pname}`);
     if (inCast) viewGame(castState.sport, castState.id, true); else route(true);
@@ -1062,13 +1317,14 @@ async function boot() {
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { applyTheme(); route(true); });
   const splash = $('#splash'); const t0 = performance.now();
   try {
-    const [s, ...ts] = await Promise.all([api('/api/sources', 36e5), ...['cfb', 'nfl', 'mlb'].map((k) => api(`/api/teams?sport=${k}`, 36e5).catch(() => ({ teams: [], conferences: [] })))]);
+    // team lists: enabled team sports + any sport you follow or mute something in (CFB always: rankings/Grok use it)
+    const need = [...new Set(['cfb', ...S.sports, ...[...S.follow, ...S.muteTeams].filter((id) => !isAthleteId(id)).map(sportOfId)])].filter(teamSport);
+    const [s] = await Promise.all([api('/api/sources', 36e5), ...need.map(ensureTeams)]);
     SOURCES = s;
-    ['cfb', 'nfl', 'mlb'].forEach((k, n) => { TEAMS_BY[k] = ts[n].teams.map((t) => ({ ...t, sport: k })); DIVS_BY[k] = ts[n].conferences; });
-    TEAMS = [...TEAMS_BY.cfb, ...TEAMS_BY.nfl, ...TEAMS_BY.mlb]; CONFS = DIVS_BY.cfb;
     if (!TEAMS.length) throw new Error('team lists unavailable');
   } catch (e) { splash.remove(); view.innerHTML = errBox(e); return; }
-  const known = (id) => (teamSport(sportOfId(id)) ? TEAMS.some((t) => t.id === id) : !!S.players[id]);
+  // drop ids that no longer exist; keep anything from a list that failed to load, and all remembered players
+  const known = (id) => (isAthleteId(id) ? !!S.players[id] : !(TEAMS_BY[sportOfId(id)] || []).length || TEAMS.some((t) => t.id === id));
   S.follow = S.follow.filter(known); S.muteTeams = S.muteTeams.filter(known);
   renderSideTeams();
   window.addEventListener('hashchange', () => route());

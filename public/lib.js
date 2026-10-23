@@ -11,20 +11,21 @@ export const LEAGUE_MUTES = {
   portal:{ label: 'Transfer portal', words: ['transfer portal'] },
 };
 
-// Sports the app covers. NBA / WNBA are deliberately absent (and filtered server-side too).
-export const SPORTS = {
-  cfb:    { id: 'cfb', blurb: 'FBS scores, AP poll, conference news', name: 'College Football', short: 'CFB', emoji: '🏈', tab4: 'Rankings', what: 'teams', own: /\b(football|CFB|NCAAF|FBS|bowl|Heisman|playoff)\b/i },
-  nfl:    { id: 'nfl', blurb: 'Scores, standings, team news', name: 'NFL', short: 'NFL', emoji: '🏈', tab4: 'Standings', what: 'teams', own: /\b(NFL|football|Super Bowl|quarterback|touchdown)\b/i },
-  mlb:    { id: 'mlb', blurb: 'Scores, standings, postseason', name: 'MLB', short: 'MLB', emoji: '⚾', tab4: 'Standings', what: 'teams', own: /\b(MLB|baseball|World Series|ALCS|NLCS|pitcher|home run|inning)\b/i },
-  golf:   { id: 'golf', blurb: 'PGA & LPGA leaderboards, scorecards', name: 'Golf', short: 'Golf', emoji: '⛳', tab4: 'Schedule', what: 'players', own: /\b(golf|PGA|LPGA|LIV|Ryder Cup|Masters|birdie|bogey)\b/i },
-  tennis: { id: 'tennis', blurb: 'ATP & WTA draws, results, rankings', name: 'Tennis', short: 'Tennis', emoji: '🎾', tab4: 'Rankings', what: 'players', own: /\b(tennis|ATP|WTA|Grand Slam|Wimbledon|US Open|Roland Garros|Australian Open|Davis Cup)\b/i },
-};
+import { CATALOG, CORE } from './catalog.js';
+// Every sport comes from the shared registry (catalog.js). Only the sports a user picks are ever shown;
+// NBA / WNBA are ordinary opt-in entries that are off by default and never pre-selected.
+export const SPORTS = Object.fromEntries(Object.entries(CATALOG).map(([id, c]) => [id, { id, ...c, own: new RegExp(c.own, 'i') }]));
 export const SPORT_IDS = Object.keys(SPORTS);
-const SPORT_WORDS = /\b(basketball|baseball|softball|volleyball|soccer|hockey|golf|tennis|gymnastics|wrestling|track and field|cross country|swimming|lacrosse|NBA|WNBA|MLB|NHL|NFL|PGA|LPGA|ATP|WTA|football)\b/gi;
-export const sportOfId = (id) => { const m = /^(nfl|mlb|golf|tennis):/.exec(String(id)); return m ? m[1] : 'cfb'; };
+export { CATALOG, CORE };
+// League mute that corresponds to a sport (so turning a sport on can lift its old mute, and its own feed isn't muted).
+export const LEAGUE_OF = { nba: 'nba', wnba: 'wnba', nhl: 'nhl', mcbb: 'cbb', wcbb: 'cbb', mls: 'soccer', nwsl: 'soccer', epl: 'soccer', laliga: 'soccer', bund: 'soccer', seriea: 'soccer', ligue1: 'soccer', ucl: 'soccer', ligamx: 'soccer' };
+const SPORT_WORDS = /\b(basketball|baseball|softball|volleyball|soccer|hockey|golf|tennis|gymnastics|wrestling|track and field|cross country|swimming|lacrosse|NBA|WNBA|MLB|NHL|NFL|PGA|LPGA|ATP|WTA|UFC|MMA|NASCAR|IndyCar|Formula 1|Formula One|football)\b/gi;
+// Ids: "252" = CFB team; "<sport>:<id>" = team in that sport; "<sport>:a<id>" = athlete; golf/tennis players are "<sport>:<id>".
+export const sportOfId = (id) => { const m = /^([a-z0-9]+):/.exec(String(id)); return m && SPORTS[m[1]] ? m[1] : 'cfb'; };
+export const isAthleteId = (id) => /^[a-z0-9]+:a\d+$/.test(String(id)) || /^(golf|tennis):/.test(String(id));
 
 export const DEFAULTS = {
-  v: 2, onboarded: false,
+  v: 3, onboarded: false,
   sports: ['cfb'], sport: 'cfb', players: {},
   conferences: [], follow: [], muteTeams: [], muteLeagues: [], muteKeywords: [],
   sources: {}, straightOnly: true, sportOnly: true, theme: 'system',
@@ -43,6 +44,13 @@ export function migrate(raw) {
     s.muteLeagues = (raw.muteLeagues || []).filter((l) => LEAGUE_MUTES[l]);
     s.v = 2;
   }
+  if (!raw.v || raw.v < 3) {
+    // v3 (open sport catalog): sports, follows and players are kept exactly as saved — nothing is added.
+    // NBA/WNBA used to be hidden by a hard server rule; keep that behaviour for existing installs as ordinary
+    // league mutes (removable in Settings → Mute).
+    if (raw.onboarded) for (const l of ['nba', 'wnba']) if (!s.muteLeagues.includes(l)) s.muteLeagues = [...s.muteLeagues, l];
+    s.v = 3;
+  }
   s.sports = (s.sports || []).filter((x) => SPORTS[x]);
   if (!s.sports.length) s.sports = ['cfb'];
   if (!s.sports.includes(s.sport)) s.sport = s.sports[0];
@@ -53,7 +61,7 @@ export function loadSettings() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || '{}');
     const s = migrate(raw);
-    if (raw.onboarded && (!raw.v || raw.v < 2)) saveSettings(s); // persist the v1 → v2 upgrade once
+    if (raw.onboarded && (!raw.v || raw.v < 3)) saveSettings(s); // persist the v1/v2 → v3 upgrade once
     return s;
   } catch { return structuredClone(DEFAULTS); }
 }
@@ -69,7 +77,8 @@ const SUFFIX = ['State', 'Tech', 'A&M', 'Christian', 'Valley', 'Southern', 'Inte
 // Build a matcher (text -> bool) for a team, careful not to confuse "Utah" with "Utah State"/"Utah Tech"/"Southern Utah".
 export function teamMatcher(team, allTeams = [], feedSport = null) {
   const sp = team.sport || sportOfId(team.id);
-  if (sp !== 'cfb') {
+  const college = ['cfb', 'mcbb', 'wcbb', 'cbase'].includes(sp);
+  if (!college || team.player) {
     // pro teams + players: full name always; nickname / last name only inside that sport's own feed
     const pats = [esc(team.name)];
     const same = !feedSport || feedSport === sp;
@@ -80,7 +89,7 @@ export function teamMatcher(team, allTeams = [], feedSport = null) {
     const re = new RegExp(`(^|[^\\p{L}\\p{N}])(?:${pats.join('|')})(?=$|[^\\p{L}\\p{N}])`, 'u');
     return (text) => re.test(text);
   }
-  allTeams = allTeams.filter((t) => (t.sport || 'cfb') === 'cfb');
+  allTeams = allTeams.filter((t) => (t.sport || 'cfb') === sp);
   const pats = [];
   pats.push(esc(team.name));                                     // "Utah Utes"
   const loc = team.location;
@@ -88,7 +97,8 @@ export function teamMatcher(team, allTeams = [], feedSport = null) {
     .map((t) => esc(t.location.slice(loc.length + 1).split(' ')[0]));
   const ahead = [...new Set([...SUFFIX.map(esc), ...longer])].join('|');
   const behind = PREFIX.join('|');
-  pats.push(`(?<!(?:${behind})\\s)${esc(loc)}(?!\\s+(?:${ahead})\\b)(?!['’]s\\s+(?:basketball|volleyball|soccer|baseball|softball))`);
+  const notSport = sp === 'cfb' ? "(?!['’]s\\s+(?:basketball|volleyball|soccer|baseball|softball))" : '';
+  pats.push(`(?<!(?:${behind})\\s)${esc(loc)}(?!\\s+(?:${ahead})\\b)${notSport}`);
   if (team.abbr && SAFE_ABBR.has(team.abbr.toUpperCase()) && team.abbr.toUpperCase() !== loc.toUpperCase()) pats.push(esc(team.abbr));
   const re = new RegExp(`(^|[^\\p{L}\\p{N}])(?:${pats.join('|')})(?=$|[^\\p{L}\\p{N}])`, 'u');
   return (text) => re.test(text);
@@ -102,7 +112,7 @@ export function itemText(it) {
 // Returns {muted: bool, reason}
 export function buildMuteFilter(settings, teams, feedSport = 'cfb') {
   const words = [...(settings.muteKeywords || [])];
-  for (const l of settings.muteLeagues || []) if (LEAGUE_MUTES[l]) words.push(...LEAGUE_MUTES[l].words);
+  for (const l of settings.muteLeagues || []) if (LEAGUE_MUTES[l] && LEAGUE_OF[feedSport] !== l) words.push(...LEAGUE_MUTES[l].words);
   const kw = words.filter(Boolean).map((w) => ({ w, re: wordRe(w.trim()) }));
   const tm = (settings.muteTeams || []).map((id) => teams.find((t) => t.id === id)).filter(Boolean).map((t) => ({ t, m: teamMatcher(t, teams, feedSport) }));
   const own = (SPORTS[feedSport] || SPORTS.cfb).own;

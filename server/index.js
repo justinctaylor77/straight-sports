@@ -58,12 +58,17 @@ const wrap = (fn) => async (req, res) => {
 };
 const bad = (msg) => Object.assign(new Error(msg), { status: 400 });
 
-app.get('/api/sports', (req, res) => res.json(Object.values(SP.SPORTS).map(({ id, name, short, kind }) => ({ id, name, short, kind }))));
-app.get('/api/teams', wrap((req) => { const s = sportOf(req); if (!s || !['cfb', 'nfl', 'mlb'].includes(s)) throw bad('teams: cfb, nfl or mlb'); return SP.getTeams(s); }));
+app.get('/api/sports', (req, res) => res.json(Object.values(SP.SPORTS).map(({ id, name, short, kind, group }) => ({ id, name, short, kind, group }))));
+const kindOf = (s) => (SP.SPORTS[s] || {}).kind;
+app.get('/api/teams', wrap((req) => { const s = sportOf(req); if (!s || kindOf(s) !== 'team') throw bad('teams: team sports only'); return SP.getTeams(s); }));
+app.get('/api/roster/:team', wrap((req) => { const m = String(req.params.team).match(/^(?:([a-z0-9]+):)?(\d+)$/); const s = m && (m[1] || 'cfb'); if (!m || kindOf(s) !== 'team') throw bad('bad team id'); return SP.roster(s, m[2]); }));
+app.get('/api/athletes', wrap((req) => { const s = sportOf(req); if (!s || kindOf(s) === 'news') throw bad('unknown sport'); return SP.athleteSearch(s, req.query.q); }));
 app.get('/api/scoreboard', wrap((req) => {
   const s = sportOf(req); if (!s) throw bad('unknown sport');
   if (s === 'golf') return SP.golfBoard();
   if (s === 'tennis') return SP.tennisBoard();
+  if (kindOf(s) === 'event') return SP.eventBoard(s);
+  if (kindOf(s) === 'news') return { sport: s, kind: 'news', events: [] };
   return SP.teamScoreboard(s, req.query);
 }));
 app.get('/api/rankings', wrap(async (req) => {
@@ -71,6 +76,13 @@ app.get('/api/rankings', wrap(async (req) => {
   if (s === 'tennis') return SP.tennisRankings();
   if (s === 'nfl' || s === 'mlb') return SP.standings(s);
   if (s === 'golf') { const b = await SP.golfBoard(); return { schedule: b.schedule }; }
+  if (s === 'cfb' || !s) return cfbPolls();
+  if (kindOf(s) === 'event') { const b = await SP.eventBoard(s); return { sport: s, schedule: b.schedule }; }
+  if (kindOf(s) !== 'team') return { sport: s };
+  if (req.query.view === 'polls' || (SP.SPORTS[s].polls && req.query.view !== 'standings')) return SP.polls(s);
+  return SP.standings(s);
+}));
+function cfbPolls() {
   return cached('rankings', 20 * 60e3, async () => {
     const d = await fetchJSON(`${ESPN}/rankings`);
     const polls = d.rankings.filter((r) => ['ap', 'usa', 'cfp'].includes(r.type)).map((r) => ({
@@ -80,8 +92,15 @@ app.get('/api/rankings', wrap(async (req) => {
     }));
     return { polls };
   });
+}
+const GROK = require('./grok')({ getTeams: () => SP.getTeams('cfb'), getPolls: cfbPolls });
+app.get('/api/grok-top25', wrap(async (req) => {
+  const d = await GROK.get(req.query.date ? String(req.query.date) : '');
+  if (!d) { const e = new Error('no Grok Top 25 run for that date'); e.status = 404; throw e; }
+  return d;
 }));
-app.get('/api/players/:sport', wrap((req) => { const s = sportOf(req); if (!['golf', 'tennis'].includes(s)) throw bad('players: golf or tennis'); return SP.players(s); }));
+app.get('/api/grok-top25/history', (req, res) => res.json({ dates: GROK.history() }));
+app.get('/api/players/:sport', wrap((req) => { const s = sportOf(req); if (!['golf', 'tennis'].includes(s) && kindOf(s) !== 'event') throw bad('players: golf, tennis or event sports'); return SP.players(s); }));
 app.get('/api/game/:sport/:id', wrap((req) => { const s = sportOf(req); if (!s) throw bad('unknown sport'); if (!/^[a-z]{0,4}-?\d+$/.test(req.params.id)) throw bad('bad id'); return SP.gamecast(s, req.params.id); }));
 app.get('/api/team/:id', wrap((req) => SP.teamPage(req.params.id)));
 
@@ -129,12 +148,15 @@ async function loadFeed(src) {
   });
 }
 
+const COLLEGE = new Set(['cfb', 'mcbb', 'wcbb', 'cbase']);
+const famWord = (sport) => ({ football: 'football', basketball: 'basketball', hockey: 'hockey', soccer: 'soccer', baseball: 'baseball', mma: 'UFC', racing: 'racing', boxing: 'boxing', golf: 'golf', tennis: 'tennis' }[(SP.SPORTS[sport] || {}).family] || sport);
 function teamQuery(t) {
   // e.g. "BYU Cougars" football  OR  "Utah State" Aggies football; pros: "Chicago Bears"
-  if (t.sport && t.sport !== 'cfb') return `"${t.name}" when:7d`;
-  return `"${t.location}" ${t.mascot} football when:7d`;
+  const sport = t.sport || 'cfb';
+  if (COLLEGE.has(sport)) return `"${t.location}" ${t.mascot} ${sport === 'wcbb' ? "women's basketball" : famWord(sport)} when:7d`;
+  return `"${t.name}" when:7d`;
 }
-// Hard rule for this app: no NBA / WNBA coverage, in any sport's feed.
+// NBA/WNBA stories never leak into other sports' feeds (they only appear in the opt-in NBA/WNBA feeds).
 const NO_NBA = /\b(NBA|WNBA)\b/;
 
 app.get('/api/sources', (req, res) => res.json(SOURCES.map(({ id, name, kind, defaultOn, via, sport }) => ({ id, name, kind, defaultOn, via: via || null, sport }))));
@@ -150,11 +172,11 @@ app.get('/api/news', wrap(async (req) => {
     if (!wanted.includes(s.id)) continue;
     if (s.type === 'team-search') {
       const subs = [];
-      if (['cfb', 'nfl', 'mlb'].includes(sport) && teamIds.length) {
+      if (SP.SPORTS[sport].kind === 'team' && teamIds.length) {
         const { teams } = await SP.getTeams(sport);
         for (const id of teamIds) { const t = teams.find((x) => x.id === id); if (t) subs.push({ id: `gn-${id}`, q: teamQuery(t), hint: id }); }
       }
-      if (['golf', 'tennis'].includes(sport)) for (const n of names) subs.push({ id: `gn-${sport}-${n}`, q: `"${n}" ${sport} when:7d`, hint: n });
+      for (const n of names) subs.push({ id: `gn-${sport}-${n}`, q: `"${n}" ${famWord(sport)} when:7d`, hint: n });
       for (const x of subs) {
         const sub = { id: x.id, name: 'Google News', via: 'Google News', url: SOURCES.gnews(x.q) };
         jobs.push(loadFeed(sub).then((items) => items.map((i) => ({ ...i, sourceId: s.id, teamHint: x.hint }))).then((v) => ({ id: sub.id, ok: true, items: v }), (e) => ({ id: sub.id, ok: false, error: e.message, items: [] })));
@@ -170,7 +192,7 @@ app.get('/api/news', wrap(async (req) => {
   for (const r of results) for (const it of r.items) {
     const k1 = (it.link || '').split('?')[0]; const k2 = `${it.source}|${it.title.toLowerCase()}`;
     if (!it.title || seen.has(k1) || seen.has(k2)) continue;
-    if (NO_NBA.test(`${it.title} ${it.summary || ''}`)) continue;
+    if (SP.SPORTS[sport].family !== 'basketball' && NO_NBA.test(`${it.title} ${it.summary || ''}`)) continue;
     const ts = Date.parse(it.published || ''); if (ts && ts < cutoff) continue;
     seen.add(k1); seen.add(k2); items.push(it);
   }

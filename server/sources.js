@@ -76,6 +76,25 @@ const BY_SPORT = {
     extra: [{ id: 'tennis-atp', name: 'ATP Tour (official)', kind: 'Official tour site', defaultOn: false, url: gnews('site:atptour.com when:7d'), via: 'Google News' },
       { id: 'tennis-wta', name: 'WTA (official)', kind: 'Official tour site', defaultOn: false, url: gnews('site:wtatennis.com when:7d'), via: 'Google News' }] }),
 };
+// Opt-in catalog sports (NBA, NHL, soccer leagues, college hoops, UFC, racing, boxing…), built from public/catalog.js.
+// Shared/fuzzy feeds (wire searches, CBS, Yahoo, NYT) must mention the sport; league-specific feeds don't need to.
+const { CATALOG, CORE } = require('./catalog');
+const catalogSources = (sp, c) => {
+  const n = c.news || {}; const must = n.must;
+  const out = [];
+  if (n.ap) {
+    out.push({ id: `${sp}-ap`, name: 'AP', kind: 'Wire service', defaultOn: true, url: gnews(`site:apnews.com ${n.ap} when:4d`), via: 'Google News', must });
+    out.push({ id: `${sp}-reuters`, name: 'Reuters', kind: 'Wire service', defaultOn: true, url: gnews(`site:reuters.com ${n.ap} when:7d`), via: 'Google News', must });
+  }
+  if (n.cbs) out.push({ id: `${sp}-cbs`, name: 'CBS Sports', kind: 'National', defaultOn: true, url: `https://www.cbssports.com/rss/headlines/${n.cbs}/`, must });
+  if (n.yahoo) out.push({ id: `${sp}-yahoo`, name: 'Yahoo Sports', kind: 'National', defaultOn: true, url: `https://sports.yahoo.com/${n.yahoo}/rss.xml`, must });
+  if (n.nyt) out.push({ id: `${sp}-nyt`, name: 'New York Times', kind: 'National', defaultOn: true, url: `https://rss.nytimes.com/services/xml/rss/nyt/${n.nyt}.xml`, must });
+  if (n.guardian) out.push({ id: `${sp}-guardian`, name: 'The Guardian', kind: 'International', defaultOn: true, url: `https://www.theguardian.com/${n.guardian}/rss` });
+  if (c.path) out.push({ id: `${sp}-espn`, name: 'ESPN', kind: 'National', defaultOn: c.kind !== 'team' || !n.cbs, type: 'espn-json', url: ESPN_NEWS(c.path) });
+  if (c.kind !== 'news') out.push({ id: `${sp}-gnews-teams`, name: `Google News (your ${c.kind === 'team' ? 'teams & players' : 'players'})`, kind: 'Aggregator — every outlet', defaultOn: true, type: 'team-search' });
+  return out;
+};
+for (const [sp, c] of Object.entries(CATALOG)) if (!CORE.includes(sp)) BY_SPORT[sp] = catalogSources(sp, c);
 const ALL = [];
 for (const [sport, list] of Object.entries(BY_SPORT)) for (const s of list) ALL.push({ ...s, sport });
 module.exports = ALL;
