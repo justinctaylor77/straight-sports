@@ -22,6 +22,7 @@ module.exports = function makeTickets({ cached, fetchJSON }) {
   }
   const matchesEvent = (e, g) => norm(e.title).includes(norm(g.name)) || (e.performers || []).some((p) => norm(p.name).includes(norm(g.name)));
   // g = { kind: 'game', home, away, date } | { kind: 'event', name, date, endDate }
+  const diag = { ok: 0, fail: 0, lastStatus: null };
   async function lookup(g) {
     const q = g.kind === 'game' ? `${(g.away && g.away.name) || ''} at ${(g.home && g.home.name) || ''}`.trim() : g.name;
     const fallback = { source: 'seatgeek', priced: false, url: searchUrl(q), label: 'Tickets on SeatGeek' };
@@ -32,6 +33,7 @@ module.exports = function makeTickets({ cached, fetchJSON }) {
     const url = `${API}?client_id=${encodeURIComponent(k)}&q=${encodeURIComponent(term)}&datetime_utc.gte=${d0}&datetime_utc.lte=${d1}&per_page=25`;
     try {
       const r = await cached(`sg:${url}`, 30 * 60e3, () => fetchJSON(url));
+      diag.ok++; diag.lastStatus = 200;
       const ok = (r.events || []).filter((x) => (g.kind === 'game' ? matchesGame(x, g) : matchesEvent(x, g)));
       const e = ok.sort((a, b) => Math.abs(Date.parse(`${a.datetime_utc}Z`) - Date.parse(g.date)) - Math.abs(Date.parse(`${b.datetime_utc}Z`) - Date.parse(g.date)))[0];
       if (!e) return { ...fallback, matched: false };
@@ -39,7 +41,7 @@ module.exports = function makeTickets({ cached, fetchJSON }) {
       const st = e.stats || {}; const low = st.lowest_price ?? st.lowest_sg_base_price ?? null;
       return { source: 'seatgeek', priced: low != null, lowest: low != null ? Math.round(low) : null, url: e.url, eventId: e.id,
         label: low != null ? `Tickets from $${Math.round(low)} on SeatGeek` : 'Tickets on SeatGeek', matched: true };
-    } catch { return fallback; }
+    } catch (err) { diag.fail++; diag.lastStatus = (String((err && err.message) || '').match(/^\d{3}/) || [(err && err.name) || 'error'])[0]; return fallback; } // status only — never the URL (it carries the key)
   }
   // Attach `tickets` to upcoming events (max 25 per page, 4 at a time).
   async function attach(events, toQuery) {
@@ -47,5 +49,6 @@ module.exports = function makeTickets({ cached, fetchJSON }) {
     for (let i = 0; i < up.length; i += 4) await Promise.all(up.slice(i, i + 4).map(async (e) => { e.tickets = await lookup(toQuery(e)); }));
     return events;
   }
-  return { lookup, attach, enabled: () => !!key() };
+  const status = () => ({ enabled: !!key(), keyLength: key().length, ...diag });
+  return { lookup, attach, status, enabled: () => !!key() };
 };

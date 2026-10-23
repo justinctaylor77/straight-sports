@@ -108,6 +108,7 @@ app.get('/api/team/:id', wrap((req) => SP.teamPage(req.params.id).then((d) => { 
 const TICKETS = require('./tickets')({ cached, fetchJSON });
 const PEOPLE = require('./people')({ cached, fetchJSON, SP, TICKETS });
 app.get('/api/schedule/team/:id', wrap((req) => PEOPLE.teamSchedule(req.params.id).then((d) => WATCH.attach(d.sport, d))));
+app.get('/api/tickets/status', wrap(() => TICKETS.status()));
 app.get('/api/player/:id', wrap((req) => PEOPLE.player(req.params.id)));
 app.get('/api/watch', wrap(async (req) => { const s = sportOf(req); if (!s) throw bad('unknown sport'); return { sport: s, games: await WATCH.forSport(s) }; }));
 
