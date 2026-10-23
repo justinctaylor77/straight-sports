@@ -14,7 +14,10 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
   // ids: CFB keeps bare ESPN ids (backwards compatible with v1/v2 saved settings); others are namespaced.
   const tid = (sport, id) => (sport === 'cfb' ? String(id) : `${sport}:${id}`);
   const logoOf = (t, sport) => t.logo || (t.logos && t.logos[0] && t.logos[0].href) || (sport === 'cfb' ? `https://a.espncdn.com/i/teamlogos/ncaa/500/${t.id}.png` : '');
-  const logoDarkOf = (t, sport) => t.logoDark || (t.logos && (t.logos.find((l) => (l.rel || []).includes('dark')) || {}).href) || logoOf(t, sport);
+  // Dark-theme variant: ESPN's own "dark" logo when listed; otherwise ESPN's 500-dark path for the same id (the client
+  // falls back to the regular logo if that file doesn't exist).
+  const darkPath = (u) => (/a\.espncdn\.com\/i\/teamlogos\/[^/]+\/500\/[^/]+\.png$/.test(u || '') ? u.replace('/500/', '/500-dark/') : u);
+  const logoDarkOf = (t, sport) => t.logoDark || (t.logos && (t.logos.find((l) => (l.rel || []).includes('dark')) || {}).href) || darkPath(logoOf(t, sport));
   function normTeam(t, sport = 'cfb') {
     if (!t) return null;
     return {
@@ -24,6 +27,16 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
   }
   const gameLink = (sport, id) => `https://www.espn.com/${SPORTS[sport].espn}/game/_/gameId/${id}`;
   function broadcastsOf(c) { return [...new Set((c.broadcasts || []).flatMap((x) => x.names || (x.media ? [x.media.shortName] : [])))].join(', ') || null; }
+  // Watchable networks (TV + streaming; radio dropped), de-duped, in ESPN's order.
+  function netsOf(c, extra) {
+    const out = []; const add = (n) => { n = n && String(n).trim(); if (n && !out.some((x) => x.toLowerCase() === n.toLowerCase())) out.push(n); };
+    const geo = ((c && c.geoBroadcasts) || []).filter((g) => !/radio/i.test((g.type && g.type.shortName) || ''));
+    const nat = (g) => /national/i.test((g.market && g.market.type) || '');
+    [...geo.filter(nat), ...geo.filter((g) => !nat(g))].forEach((g) => add(g.media && (g.media.shortName || g.media.name)));
+    for (const b of (c && c.broadcasts) || []) { if (b.type && /radio/i.test(b.type.shortName || '')) continue; (b.names || []).forEach(add); if (b.media) add(b.media.shortName || b.media.name); }
+    for (const b of extra || []) { if (b.type && /radio/i.test(b.type.shortName || '')) continue; if (b.media) add(b.media.shortName || b.media.name); }
+    return out;
+  }
   function venueOf(v) { return v ? [v.fullName, v.address && [v.address.city, v.address.state || v.address.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ') : null; }
 
   function normEvent(ev, sport = 'cfb') {
@@ -52,7 +65,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       clock: st.displayClock, period: st.period,
       home: comp('home'), away: comp('away'),
       venue: venueOf(c.venue), neutral: !!c.neutralSite, conferenceGame: sport === 'cfb' && !!c.conferenceCompetition,
-      broadcast: broadcastsOf(c), note,
+      broadcast: broadcastsOf(c), nets: netsOf(c), note,
       series: c.series && c.series.summary ? c.series.summary : null,
       possession: s.possession ? tid(sport, s.possession) : null,
       downDistance: s.shortDownDistanceText || null,
@@ -186,7 +199,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
           purse: e.displayPurse || null, course: course.name || null, par: course.shotsToPar || null,
           holes: (course.holes || []).map((h) => ({ n: h.number, par: h.shotsToPar, yds: h.totalYards })),
           rounds: e.tournament && e.tournament.numberOfRounds, cut: e.tournament && e.tournament.cutScore != null ? { score: e.tournament.cutScore, count: e.tournament.cutCount, round: e.tournament.cutRound } : null,
-          players, link: `https://www.espn.com/golf/leaderboard/_/tournamentId/${e.id}`,
+          players, nets: netsOf(c, e.broadcasts), link: `https://www.espn.com/golf/leaderboard/_/tournamentId/${e.id}`,
         };
       });
       const schedule = cal.map((x) => ({ id: x.id, name: x.label, start: x.startDate, end: x.endDate, league }));
@@ -206,7 +219,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       const lb = await cached(`golfev:${league}:${eventId}`, 5 * 60e3, () => fetchJSON(`${WEB_SITE}/golf/leaderboard?league=${league}&event=${eventId}`));
       const e = lb.events[0]; const c = e.competitions[0]; const course = (e.courses || [])[0] || {};
       t = { id: key, eventId, league, tour: league.toUpperCase(), name: e.name, date: e.date, endDate: e.endDate, state: e.status.type.state, detail: e.status.type.detail, round: e.status.period,
-        course: course.name, par: course.shotsToPar, holes: (course.holes || []).map((h) => ({ n: h.number, par: h.shotsToPar, yds: h.totalYards })), players: c.competitors.map((p) => golfPlayer(p, league)).sort((a, b) => a.sort - b.sort), link: `https://www.espn.com/golf/leaderboard/_/tournamentId/${eventId}` };
+        course: course.name, par: course.shotsToPar, holes: (course.holes || []).map((h) => ({ n: h.number, par: h.shotsToPar, yds: h.totalYards })), players: c.competitors.map((p) => golfPlayer(p, league)).sort((a, b) => a.sort - b.sort), nets: netsOf(c, e.broadcasts), link: `https://www.espn.com/golf/leaderboard/_/tournamentId/${eventId}` };
     }
     // hole-by-hole cards live on the scoreboard feed
     const sb = await cached(`golfsb:${league}:${eventId}`, t.state === 'in' ? 30e3 : 10 * 60e3, () => fetchJSON(`${SITE}/golf/${league}/scoreboard?event=${eventId}`)).catch(() => null);
@@ -239,7 +252,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       sport: 'tennis', id: `${league}-${m.id}`, matchId: m.id, league, tour: league.toUpperCase(), tournament: e.name, tournamentId: `${league}-${e.id}`, draw,
       round: m.round && m.round.displayName, date: m.date, state: st.type && st.type.state, detail: st.type && (st.type.detail || st.type.shortDetail),
       court: m.venue && m.venue.court, venue: m.venue && m.venue.fullName, note: (m.notes || []).map((n) => n.text).filter(Boolean)[0] || null,
-      bestOf: m.format && m.format.regulation && m.format.regulation.periods, players: comps.map(side),
+      bestOf: m.format && m.format.regulation && m.format.regulation.periods, players: comps.map(side), nets: netsOf(m),
       link: e.links && e.links[0] && e.links[0].href || null,
     };
   }
@@ -347,7 +360,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const gi = d.gameInfo || {};
     const out = {
       kind: 'football', sport, id, state, detail: st.type.detail, short: st.type.shortDetail, clock: st.displayClock, period: st.period, date: h.date,
-      venue: venueOf(gi.venue), attendance: gi.attendance || null, broadcast: broadcastsOf(h) || (d.broadcasts || []).map((b) => b.media && b.media.shortName).filter(Boolean).join(', ') || null,
+      venue: venueOf(gi.venue), attendance: gi.attendance || null, broadcast: broadcastsOf(h) || (d.broadcasts || []).map((b) => b.media && b.media.shortName).filter(Boolean).join(', ') || null, nets: netsOf(h, d.broadcasts),
       home, away, note: d.header.gameNote || (h.notes || []).map((n) => n.headline).filter(Boolean)[0] || null, link: gameLink(sport, id),
     };
     // scoring summary
@@ -404,7 +417,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const { h, st, home, away } = headerSides(d, sport);
     const state = st.type.state; const gi = d.gameInfo || {};
     const out = { kind: 'baseball', sport, id, state, detail: st.type.detail, short: st.type.shortDetail, period: st.period, date: h.date,
-      venue: venueOf(gi.venue), attendance: gi.attendance || null, broadcast: broadcastsOf(h) || null, home, away, link: gameLink(sport, id),
+      venue: venueOf(gi.venue), attendance: gi.attendance || null, broadcast: broadcastsOf(h) || null, nets: netsOf(h, d.broadcasts), home, away, link: gameLink(sport, id),
       note: d.header.gameNote || null };
     const ev = await rawScoreboardEvent(sport, id, h.date).catch(() => null);
     const evc = ev && ev.competitions[0];
@@ -574,7 +587,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const { h, st, home, away } = headerSides(d, sport);
     const state = st.type.state; const gi = d.gameInfo || {};
     const out = { kind: 'generic', family: sp.family, sport, id, state, detail: st.type.detail, short: st.type.shortDetail, clock: st.displayClock, period: st.period, date: h.date,
-      venue: venueOf(gi.venue), attendance: gi.attendance || null, broadcast: broadcastsOf(h) || null, home, away, link: gameLink(sport, id),
+      venue: venueOf(gi.venue), attendance: gi.attendance || null, broadcast: broadcastsOf(h) || null, nets: netsOf(h, d.broadcasts), home, away, link: gameLink(sport, id),
       note: (d.header && d.header.gameNote) || (h.notes || []).map((n) => n.headline).filter(Boolean)[0] || null };
     const teamSide = (teamId) => (String(teamId) === home.team.espnId ? 'home' : String(teamId) === away.team.espnId ? 'away' : null);
     const bt = (d.boxscore && d.boxscore.teams) || [];
@@ -615,14 +628,14 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       const s = (c.status && c.status.type) || {};
       return { id: String(c.id), label: (c.type && (c.type.abbreviation || c.type.text)) || '', weight: (c.type && c.type.text) || '', date: c.date || c.startDate, state: s.state || 'pre', detail: s.shortDetail || s.detail || '',
         result: (c.status && c.status.result && (c.status.result.displayName || c.status.result.shortDisplayName)) || null, round: c.status && c.status.period, clock: c.status && c.status.displayClock,
-        venue: venueOf(c.venue), competitors: cs };
+        venue: venueOf(c.venue), nets: netsOf(c), competitors: cs };
     });
     const st = (ev.status && ev.status.type) || {};
     const states = comps.map((c) => c.state);
     const state = states.includes('in') ? 'in' : st.state || (states.length && states.every((x) => x === 'post') ? 'post' : 'pre');
     return { kind: 'event', family: sp.family, sport, id: String(ev.id), name: ev.name, short: ev.shortName || ev.name, date: ev.date, endDate: ev.endDate || null, state, detail: st.detail || '',
       venue: venueOf((ev.venues && ev.venues[0]) || (ev.competitions && ev.competitions[0] && ev.competitions[0].venue)), circuit: (ev.circuit && ev.circuit.fullName) || null,
-      comps: sp.family === 'mma' ? comps.slice().reverse() : comps, link: `https://www.espn.com/${sp.espn}/` };
+      comps: sp.family === 'mma' ? comps.slice().reverse() : comps, nets: [...new Set([...netsOf(ev.competitions && ev.competitions[0], ev.broadcasts), ...comps.flatMap((c) => c.nets)])], link: `https://www.espn.com/${sp.espn}/` };
   }
   async function eventBoard(sport) {
     const sp = SPORTS[sport];

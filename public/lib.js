@@ -25,10 +25,11 @@ export const sportOfId = (id) => { const m = /^([a-z0-9]+):/.exec(String(id)); r
 export const isAthleteId = (id) => /^[a-z0-9]+:a\d+$/.test(String(id)) || /^(golf|tennis):/.test(String(id));
 
 export const DEFAULTS = {
-  v: 3, onboarded: false,
+  v: 4, onboarded: false,
   sports: ['cfb'], sport: 'cfb', players: {},
   conferences: [], follow: [], muteTeams: [], muteLeagues: [], muteKeywords: [],
   sources: {}, straightOnly: true, sportOnly: true, theme: 'system',
+  watch: { providers: [] }, // how you watch: TV / streaming provider ids (see watch.js)
 };
 
 const KEY = 'straightcfb.settings.v1'; // kept on purpose: existing installs keep their settings
@@ -51,6 +52,13 @@ export function migrate(raw) {
     if (raw.onboarded) for (const l of ['nba', 'wnba']) if (!s.muteLeagues.includes(l)) s.muteLeagues = [...s.muteLeagues, l];
     s.v = 3;
   }
+  if (!raw.v || raw.v < 4) {
+    // v4 (watch links): existing installs start with YouTube TV selected; new installs choose during setup.
+    // Sports, follows and everything else stay exactly as saved.
+    if (raw.onboarded && !(raw.watch && Array.isArray(raw.watch.providers))) s.watch = { providers: ['yttv'] };
+    s.v = 4;
+  }
+  s.watch = { providers: [...new Set(((s.watch && s.watch.providers) || []).filter((x) => typeof x === 'string'))] };
   s.sports = (s.sports || []).filter((x) => SPORTS[x]);
   if (!s.sports.length) s.sports = ['cfb'];
   if (!s.sports.includes(s.sport)) s.sport = s.sports[0];
@@ -61,7 +69,7 @@ export function loadSettings() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || '{}');
     const s = migrate(raw);
-    if (raw.onboarded && (!raw.v || raw.v < 3)) saveSettings(s); // persist the v1/v2 → v3 upgrade once
+    if (raw.onboarded && (!raw.v || raw.v < 4)) saveSettings(s); // persist the upgrade once
     return s;
   } catch { return structuredClone(DEFAULTS); }
 }

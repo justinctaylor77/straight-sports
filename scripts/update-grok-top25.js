@@ -5,6 +5,7 @@
 // then writes data/grok-top25/<date>.json and data/grok-top25/latest.json. Schema: see README.
 const fs = require('fs');
 const path = require('path');
+const { makeResolver } = require('../server/teamResolve');
 
 const DIR = path.join(__dirname, '..', 'data', 'grok-top25');
 const die = (m) => { console.error(`update-grok-top25: ${m}`); process.exit(1); };
@@ -53,9 +54,33 @@ if (missing.length) console.warn(`update-grok-top25: warning: notes missing ${mi
 run.justMissed = run.justMissed || [];
 run.updatedAt = new Date().toISOString();
 
+// ---- team → ESPN id + official logos (same resolver the server uses) ----
+// Uses the server's own FBS team list (ESPN standings, normTeam logos), so ids and logos match what the app shows.
+async function espnTeams() {
+  const fetchJSON = async (u) => { const r = await fetch(u, { headers: { 'user-agent': 'straight-sports/1.0' } }); if (!r.ok) throw new Error(`HTTP ${r.status} for ${u}`); return r.json(); };
+  const SP = require('../server/sports')({ cached: (k, t, fn) => fn(), cache: new Map(), fetchJSON });
+  return (await SP.getTeams('cfb')).teams;
+}
+async function resolveTeams() {
+  let teams;
+  try { teams = await espnTeams(); } catch (e) { console.warn(`update-grok-top25: warning: couldn't load ESPN teams (${e.message}); the server will resolve names at runtime`); return; }
+  const resolve = makeResolver(teams); const prevIds = run.teams || {};
+  const names = [...new Set([...run.ranks.map((r) => r.team), ...run.justMissed, ...(run.apTop5 || []).map((x) => x.team)])];
+  run.teams = {}; const unmatched = [];
+  for (const n of names) {
+    const t = resolve(n, prevIds[n] && prevIds[n].espnId);
+    if (t) run.teams[n] = { espnId: t.espnId, name: t.name, logo: t.logo, logoDark: t.logoDark }; else unmatched.push(n);
+  }
+  console.log(`Teams → ESPN: ${names.map((n) => `${n}=${run.teams[n] ? run.teams[n].espnId : '??'}`).join(', ')}`);
+  if (unmatched.length) console.warn(`update-grok-top25: WARNING: no ESPN team for ${unmatched.map((n) => `"${n}"`).join(', ')}. Add the name to IDS in server/teamResolve.js (or set "teams": {"<name>": {"espnId": "<id>"}} in the run) and re-run.`);
+}
+
+(async () => {
+await resolveTeams();
 const out = JSON.stringify(run, null, 2) + '\n';
 fs.writeFileSync(path.join(DIR, `${run.date}.json`), out);
 const newest = [...new Set([...dated, run.date])].sort().pop();
 if (newest === run.date) fs.writeFileSync(path.join(DIR, 'latest.json'), out);
 const moved = run.ranks.filter((r) => typeof r.move === 'number' && r.move !== 0).length;
 console.log(`Wrote ${run.date}.json${newest === run.date ? ' + latest.json' : ' (older than latest; latest.json unchanged)'} — ${run.ranks.length} teams, previous run: ${prevDate || 'none'}, ${moved} moved, ${run.ranks.filter((r) => r.move === 'new').length} new, ${run.droppedOut.length} dropped out.`);
+})();

@@ -14,7 +14,8 @@ assert.deepEqual(s.muteTeams, v2.muteTeams);
 assert.deepEqual(s.muteLeagues, v2.muteLeagues, 'NBA/WNBA mutes intact, nothing duplicated');
 assert.deepEqual(s.conferences, v2.conferences); assert.deepEqual(s.sources, v2.sources); assert.equal(s.theme, 'dark');
 assert.ok(!s.sports.includes('nba') && !s.sports.includes('wnba'));
-assert.equal(s.v, 3);
+assert.equal(s.v, 4);
+assert.deepEqual(s.watch, { providers: ['yttv'] }, 'existing install: YouTube TV pre-selected');
 // v2 user who never muted NBA: hidden-by-default behaviour preserved as a mute, still no sports added
 const s2 = migrate({ ...structuredClone(v2), muteLeagues: [] });
 assert.deepEqual(s2.muteLeagues, ['nba', 'wnba']); assert.deepEqual(s2.sports, v2.sports);
@@ -22,6 +23,23 @@ assert.deepEqual(s2.muteLeagues, ['nba', 'wnba']); assert.deepEqual(s2.sports, v
 const f = migrate({});
 assert.deepEqual(f.sports, ['cfb']); assert.deepEqual(f.muteLeagues, []); assert.equal(f.onboarded, false);
 assert.deepEqual(DEFAULTS.sports, ['cfb']);
+assert.deepEqual(f.watch, { providers: [] }, 'fresh install picks during setup'); assert.deepEqual(DEFAULTS.watch, { providers: [] });
+// v3 user (current) → v4: sports/follows untouched, YouTube TV added; an explicit choice is kept
+const v3 = { ...structuredClone(v2), v: 3 }; const s3 = migrate(structuredClone(v3));
+assert.deepEqual(s3.sports, v3.sports); assert.deepEqual(s3.follow, v3.follow); assert.deepEqual(s3.players, v3.players); assert.deepEqual(s3.muteLeagues, v3.muteLeagues);
+assert.deepEqual(s3.watch.providers, ['yttv']);
+assert.deepEqual(migrate({ ...v3, v: 4, watch: { providers: ['none'] } }).watch.providers, ['none']);
+assert.deepEqual(migrate({ ...v3, v: 4, watch: { providers: [] } }).watch.providers, []);
+// watch buttons
+const W = await import('../public/watch.js');
+const ev = { sport: 'cfb', state: 'pre', date: '2026-10-24T16:00Z', nets: ['ESPN', 'SEC Network', 'Peacock', 'Weird Local TV'], espnWatch: { status: 'upcoming', streams: [{ net: 'ESPN', web: 'https://www.espn.com/watch/player?id=abc', status: 'upcoming' }] } };
+const h = W.watchButtons(ev, ['yttv']);
+assert.ok(h.indexOf('Watch on YouTube TV') > -1 && h.indexOf('Watch on YouTube TV') < h.indexOf('Watch on ESPN'), 'provider first');
+assert.ok(h.includes('https://www.espn.com/watch/player?id=abc'), 'ESPN game deep link'); assert.ok(h.includes('Also on Weird Local TV'), 'unknown = plain label');
+assert.ok(h.includes('peacocktv.com')); assert.ok(h.includes('target="_blank"'));
+const post = W.watchButtons({ ...ev, state: 'post', nets: ['Fox', 'Peacock'], espnWatch: null }, ['yttv']);
+assert.ok(!post.includes('YouTube TV') && !post.includes('Fox') && post.includes('Replay on Peacock'), 'finished: replay-only networks');
+assert.equal(W.netKey('Prime Video (Local)'), 'prime'); assert.equal(W.netKey('SECN'), 'espn');
 // ids
 assert.equal(sportOfId('252'), 'cfb'); assert.equal(sportOfId('cfb:a5141367'), 'cfb'); assert.equal(sportOfId('nba:a5041939'), 'nba'); assert.equal(sportOfId('epl:382'), 'epl'); assert.equal(sportOfId('golf:9478'), 'golf');
 // a muted league doesn't blank that sport's own feed

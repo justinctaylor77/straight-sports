@@ -30,7 +30,7 @@ function header(d, ctx) {
       <div class="gc-mid"><div class="nums"><span class="${d.state === 'post' && !d.away.winner ? 'lo' : ''}">${score(d.away)}</span><span class="dash">${d.state === 'pre' ? 'vs' : '–'}</span><span class="${d.state === 'post' && !d.home.winner ? 'lo' : ''}">${score(d.home)}</span></div>
         <div class="st">${statusLine(d)}</div></div>
       ${side(d.home, d, ctx, 'r')}</div>
-    <div class="gc-meta">${[d.venue, d.broadcast && `TV: ${d.broadcast}`, d.attendance && `Att. ${(+d.attendance).toLocaleString()}`].filter(Boolean).map(esc).join(' · ')}</div></div>`;
+    <div class="gc-meta">${[d.venue, d.broadcast && `TV: ${d.broadcast}`, d.attendance && `Att. ${(+d.attendance).toLocaleString()}`].filter(Boolean).map(esc).join(' · ')}</div>${ctx.watch ? ctx.watch(d) : ''}</div>`;
 }
 function lineScore(d, { min = 4, extra = [] } = {}) {
   const n = Math.max(min, d.home.lines.length, d.away.lines.length);
@@ -46,7 +46,7 @@ function lineScore(d, { min = 4, extra = [] } = {}) {
   return `<div class="card gc-lines"><div class="scroll-x"><table><thead><tr><th></th>${Array.from({ length: n }, (_, i) => `<td>${lbl(i)}</td>`).join('')}<td class="tot">${(d.family || d.kind) === 'baseball' ? 'R' : 'T'}</td>${extra.map((k) => `<td class="tot">${k[0].toUpperCase()}</td>`).join('')}</tr></thead>
     <tbody>${row(d.away)}${row(d.home)}</tbody></table></div></div>`;
 }
-function wpChart(d) {
+function wpChart(d, ctx) {
   if (!d.wp || d.wp.home.length < 2) return '';
   const W = 320; const H = 90; const pts = d.wp.home; const n = pts.length - 1;
   const xy = pts.map((v, i) => [(i / n) * W, H - (v / 100) * H]);
@@ -54,7 +54,7 @@ function wpChart(d) {
   const hc = hex(d.home.team.color, '#1f6f5c'); const ac = hex(d.away.team.color, '#3b6fd8');
   const cur = d.wp.current; const lead = cur >= 50 ? d.home : d.away; const p = cur >= 50 ? cur : 100 - cur;
   return `<h2>Win probability</h2><div class="card gc-wp">
-    <div class="wp-top"><span><img src="${esc(lead.team.logo)}" alt="" width="20" height="20" /><b>${esc(lead.team.abbr)}</b> ${p.toFixed(1)}%</span><span class="faint small">${d.state === 'post' ? 'final' : 'current'} · ESPN model</span></div>
+    <div class="wp-top"><span><img src="${esc(ctx.logo(lead.team))}" alt="" width="20" height="20" /><b>${esc(lead.team.abbr)}</b> ${p.toFixed(1)}%</span><span class="faint small">${d.state === 'post' ? 'final' : 'current'} · ESPN model</span></div>
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="wp-svg" role="img" aria-label="Win probability chart">
       <defs><clipPath id="wpTop"><rect x="0" y="0" width="${W}" height="${H / 2}"/></clipPath><clipPath id="wpBot"><rect x="0" y="${H / 2}" width="${W}" height="${H / 2}"/></clipPath></defs>
       <path d="${line}L${W},${H / 2}L0,${H / 2}Z" fill="${hc}" opacity=".28" clip-path="url(#wpTop)"/>
@@ -63,10 +63,10 @@ function wpChart(d) {
       <path d="${line}" fill="none" class="ln"/></svg>
     <div class="wp-axis"><span>${esc(d.home.team.abbr)} 100%</span><span>50%</span><span>${esc(d.away.team.abbr)} 100%</span></div></div>`;
 }
-function statCompare(d) {
+function statCompare(d, ctx) {
   if (!d.stats || !d.stats.length) return '<div class="card empty">Team stats appear once the game starts.</div>';
   const num = (v) => parseFloat(String(v).replace(/[^\d.-]/g, '')) || 0;
-  return `<div class="card gc-stats"><div class="hd"><span><img src="${esc(d.away.team.logo)}" alt="" />${esc(d.away.team.abbr)}</span><span>${esc(d.home.team.abbr)}<img src="${esc(d.home.team.logo)}" alt="" /></span></div>
+  return `<div class="card gc-stats"><div class="hd"><span><img src="${esc(ctx.logo(d.away.team))}" alt="" />${esc(d.away.team.abbr)}</span><span>${esc(d.home.team.abbr)}<img src="${esc(ctx.logo(d.home.team))}" alt="" /></span></div>
     ${d.stats.map((s) => { const a = num(s.away); const h = num(s.home); const t = a + h || 1; const tm = /time|possession/i.test(s.label);
       return `<div class="sr"><b>${esc(s.away)}</b><span>${esc(s.label)}</span><b>${esc(s.home)}</b>${!tm && /\d/.test(s.away) && !/-/.test(s.away) ? `<div class="bar"><i style="width:${(a / t) * 100}%;background:${hex(d.away.team.color, 'var(--muted)')}"></i><i style="width:${(h / t) * 100}%;background:${hex(d.home.team.color, 'var(--accent)')}"></i></div>` : ''}</div>`; }).join('')}</div>`;
 }
@@ -80,7 +80,7 @@ function preGame(d, inner = '') {
 }
 
 // ---------- football ----------
-function field(d) {
+function field(d, ctx) {
   const s = d.situation; if (!s || s.yardsToEndzone == null || !s.possessionSide) return '';
   // Schematic field: away team attacks to the right, home team to the left.
   const W = 360; const H = 120; const ez = 30; const play = W - ez * 2; const yx = (y) => ez + (y / 100) * play;
@@ -92,7 +92,7 @@ function field(d) {
   const lines = Array.from({ length: 9 }, (_, i) => { const x = yx((i + 1) * 10); const n = (i + 1) * 10; return `<line x1="${x}" x2="${x}" y1="0" y2="${H}" class="yl"/><text x="${x}" y="${H - 6}" class="yn">${n > 50 ? 100 - n : n}</text>`; }).join('');
   const off = right ? d.away.team : d.home.team;
   return `<div class="card gc-field">
-    <div class="sit"><img src="${esc(off.logo)}" alt="" width="22" height="22" /><b>${esc(s.text || '')}</b>${s.spot && !(s.text || '').includes(s.spot) ? `<span class="faint">at ${esc(s.spot)}</span>` : ''}${s.redZone ? '<span class="rz">Red zone</span>' : ''}</div>
+    <div class="sit"><img src="${esc(ctx.logo(off))}" alt="" width="22" height="22" /><b>${esc(s.text || '')}</b>${s.spot && !(s.text || '').includes(s.spot) ? `<span class="faint">at ${esc(s.spot)}</span>` : ''}${s.redZone ? '<span class="rz">Red zone</span>' : ''}</div>
     <svg viewBox="0 0 ${W} ${H}" class="field-svg" role="img" aria-label="Ball on the field: ${esc(s.text || '')}">
       <rect x="0" y="0" width="${W}" height="${H}" class="turf"/>
       <rect x="0" y="0" width="${ez}" height="${H}" fill="${ac}"/><rect x="${W - ez}" y="0" width="${ez}" height="${H}" fill="${hc}"/>
@@ -109,33 +109,33 @@ function field(d) {
     ${s.lastPlay ? `<div class="last"><span class="faint small">Last play</span> ${esc(s.lastPlay)}</div>` : ''}
     ${s.homeTimeouts != null ? `<div class="tos"><span>${esc(d.away.team.abbr)} timeouts ${'●'.repeat(s.awayTimeouts)}${'○'.repeat(Math.max(0, 3 - s.awayTimeouts))}</span><span>${esc(d.home.team.abbr)} timeouts ${'●'.repeat(s.homeTimeouts)}${'○'.repeat(Math.max(0, 3 - s.homeTimeouts))}</span></div>` : ''}</div>`;
 }
-function scoringList(d) {
+function scoringList(d, ctx) {
   if (!d.scoring.length) return '';
   const byQ = {}; for (const p of d.scoring) (byQ[p.period] = byQ[p.period] || []).push(p);
   return `<h2>Scoring summary</h2><div class="card panel gc-scoring">${Object.entries(byQ).map(([q, ps]) => `<div class="qh">${+q <= 4 ? `${ord(+q)} quarter` : 'Overtime'}</div>${ps.map((p) => {
     const t = [d.home, d.away].find((x) => x.team.id === p.teamId);
-    return `<div class="sp"><img src="${esc(t ? t.team.logo : '')}" alt="" width="22" height="22" /><div><b>${esc(p.type || '')}</b> <span class="faint small">${esc(p.clock || '')}</span><div class="small">${esc(p.text)}</div></div><span class="sc">${esc(p.away)}–${esc(p.home)}</span></div>`; }).join('')}`).join('')}</div>`;
+    return `<div class="sp"><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="22" height="22" /><div><b>${esc(p.type || '')}</b> <span class="faint small">${esc(p.clock || '')}</span><div class="small">${esc(p.text)}</div></div><span class="sc">${esc(p.away)}–${esc(p.home)}</span></div>`; }).join('')}`).join('')}</div>`;
 }
-function drives(d) {
+function drives(d, ctx) {
   if (!d.drives || !d.drives.length) return '<div class="card empty">No drives yet.</div>';
   return `<div class="gc-drives">${d.drives.map((x, i) => {
     const t = [d.home, d.away].find((s) => s.team.id === x.teamId);
     return `<details class="card drive ${x.score ? 'scored' : ''}" ${i === 0 && (x.current || d.state === 'in') ? 'open' : ''}>
-      <summary><img src="${esc(t ? t.team.logo : '')}" alt="" width="24" height="24" /><span class="dt"><b>${esc(x.result || '')}</b>${x.current ? ' <span class="live small">· now</span>' : ''}<small>${esc(x.description || '')}${x.start ? ` · from ${esc(x.start)}` : ''}</small></span><span class="faint small">${x.period ? `Q${x.period}` : ''} ${esc(x.clock || '')}</span></summary>
+      <summary><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="24" height="24" /><span class="dt"><b>${esc(x.result || '')}</b>${x.current ? ' <span class="live small">· now</span>' : ''}<small>${esc(x.description || '')}${x.start ? ` · from ${esc(x.start)}` : ''}</small></span><span class="faint small">${x.period ? `Q${x.period}` : ''} ${esc(x.clock || '')}</span></summary>
       <ol class="plays">${x.plays.slice().reverse().map((p) => `<li class="${p.score ? 'scored' : ''}">${p.dd ? `<span class="dd">${esc(p.dd)}</span>` : ''}${esc(p.text)}</li>`).join('')}</ol></details>`;
   }).join('')}</div>`;
 }
-function leaders(d) {
+function leaders(d, ctx) {
   if (!d.leaders || !d.leaders.length || d.state === 'pre') return '';
   return `<h2>Leaders</h2><div class="gc-leaders">${d.leaders.map((tm) => { const t = [d.home, d.away].find((s) => s.team.id === tm.teamId);
-    return `<div class="card"><div class="lh"><img src="${esc(t ? t.team.logo : '')}" alt="" width="20" height="20" /><b>${esc(tm.abbr)}</b></div>${tm.cats.slice(0, 3).map((c) => `<div class="r"><span class="faint small">${esc(c.cat)}</span><b>${esc(c.name)}</b><span class="small">${esc(c.line)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
+    return `<div class="card"><div class="lh"><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="20" height="20" /><b>${esc(tm.abbr)}</b></div>${tm.cats.slice(0, 3).map((c) => `<div class="r"><span class="faint small">${esc(c.cat)}</span><b>${esc(c.name)}</b><span class="small">${esc(c.line)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
 }
 function footballCast(d, ctx) {
   let body = '';
   if (d.state === 'pre') body = preGame(d) + `<p class="muted small">Down & distance, drives, win probability and team stats appear here once the game kicks off.</p>`;
-  else if (castState.tab === 'plays') body = drives(d);
-  else if (castState.tab === 'stats') body = statCompare(d) + leaders(d);
-  else body = (d.state === 'in' ? field(d) : '') + lineScore(d) + wpChart(d) + scoringList(d) + (d.state === 'post' ? leaders(d) : '');
+  else if (castState.tab === 'plays') body = drives(d, ctx);
+  else if (castState.tab === 'stats') body = statCompare(d, ctx) + leaders(d, ctx);
+  else body = (d.state === 'in' ? field(d, ctx) : '') + lineScore(d) + wpChart(d, ctx) + scoringList(d, ctx) + (d.state === 'post' ? leaders(d, ctx) : '');
   return header(d, ctx) + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Drives'], ['stats', 'Team stats']])) + body
     + footer(d, d.state === 'in' ? 'Field graphic is schematic (away team attacks right).' : '');
 }
@@ -156,7 +156,7 @@ function baseballCast(d, ctx) {
   } else if (castState.tab === 'plays') {
     body = d.plays.length ? `<div class="gc-innings">${d.plays.map((h, i) => `<details class="card inning" ${i < 2 ? 'open' : ''}><summary><b>${esc(h.label)}</b><span class="faint small">${h.items.length} plays</span></summary><ol class="plays">${h.items.map((p) => `<li class="${p.score ? 'scored' : ''}">${esc(p.text)}${p.score ? ` <b class="small">${esc(d.away.team.abbr)} ${p.away}, ${esc(d.home.team.abbr)} ${p.home}</b>` : ''}</li>`).join('')}</ol></details>`).join('')}</div>` : '<div class="card empty">No plays yet.</div>';
   } else if (castState.tab === 'stats') {
-    body = statCompare(d) + (d.pitchers || []).map((t) => `<h2>${esc(t.abbr)} pitching</h2><div class="card scroll-x"><table class="tbl"><thead><tr><th>Pitcher</th><td>IP</td><td>H</td><td>R</td><td>ER</td><td>BB</td><td>K</td></tr></thead><tbody>${t.rows.map((r) => `<tr><th>${esc(r.name)}${r.note ? ` <span class="faint small">${esc(r.note)}</span>` : ''}</th><td>${esc(r.ip)}</td><td>${esc(r.h)}</td><td>${esc(r.r)}</td><td>${esc(r.er)}</td><td>${esc(r.bb)}</td><td>${esc(r.k)}</td></tr>`).join('')}</tbody></table></div>`).join('');
+    body = statCompare(d, ctx) + (d.pitchers || []).map((t) => `<h2>${esc(t.abbr)} pitching</h2><div class="card scroll-x"><table class="tbl"><thead><tr><th>Pitcher</th><td>IP</td><td>H</td><td>R</td><td>ER</td><td>BB</td><td>K</td></tr></thead><tbody>${t.rows.map((r) => `<tr><th>${esc(r.name)}${r.note ? ` <span class="faint small">${esc(r.note)}</span>` : ''}</th><td>${esc(r.ip)}</td><td>${esc(r.h)}</td><td>${esc(r.r)}</td><td>${esc(r.er)}</td><td>${esc(r.bb)}</td><td>${esc(r.k)}</td></tr>`).join('')}</tbody></table></div>`).join('');
   } else {
     if (d.state === 'in' && s) {
       body += `<div class="card gc-bases">${diamond(s)}
@@ -165,7 +165,7 @@ function baseballCast(d, ctx) {
         ${s.lastPlay ? `<div class="last"><span class="faint small">Last play</span> ${esc(s.lastPlay)}</div>` : ''}
         ${s.runnersKnown ? '' : '<div class="faint small">Runner positions unavailable right now.</div>'}</div>`;
     }
-    body += lineScore(d, { min: 9, extra: ['hits', 'errors'] }) + wpChart(d);
+    body += lineScore(d, { min: 9, extra: ['hits', 'errors'] }) + wpChart(d, ctx);
     if (d.scoring && d.scoring.length) body += `<h2>Scoring plays</h2><div class="card panel gc-scoring">${d.scoring.slice().reverse().map((p) => `<div class="sp"><span class="faint small inn">${esc(p.inning)}</span><div class="small">${esc(p.text)}</div><span class="sc">${p.away}–${p.home}</span></div>`).join('')}</div>`;
   }
   return header(d, ctx) + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Play-by-play'], ['stats', 'Box']])) + body + footer(d);
@@ -207,7 +207,7 @@ function golfCast(d, ctx) {
   const rows = d.players.filter(mf).map((p) => { let pre = ''; if (p.cut && !cutShown) { cutShown = true; pre = '<div class="cut-line">Projected / official cut</div>'; } return pre + row(p); }).join('');
   return `<div class="card gc-head golf"><div class="gc-note">${esc(d.tour)} Tour</div><h1 class="ev">${esc(d.name)}</h1>
       <div class="st">${d.state === 'in' ? `<span class="live">LIVE · ${esc(d.detail)}</span>` : `<b>${esc(d.detail || '')}</b>`}</div>
-      <div class="gc-meta">${[d.course, d.par && `Par ${d.par}`, d.purse && `Purse ${d.purse}`, d.cut && d.cut.score != null && `Cut ${d.cut.score > 0 ? '+' : ''}${d.cut.score === 0 ? 'E' : d.cut.score}`].filter(Boolean).map(esc).join(' · ')}</div></div>
+      <div class="gc-meta">${[d.course, d.par && `Par ${d.par}`, d.purse && `Purse ${d.purse}`, d.cut && d.cut.score != null && `Cut ${d.cut.score > 0 ? '+' : ''}${d.cut.score === 0 ? 'E' : d.cut.score}`].filter(Boolean).map(esc).join(' · ')}</div></div>${ctx.watch ? ctx.watch(d) : ''}</div>
     ${mine.length ? `<h2>Your players</h2><div class="card lb">${mine.map(row).join('')}</div>` : ''}
     <h2>Leaderboard <span class="count">${d.players.length}</span></h2>
     <div class="card lb"><div class="lb-row hd"><span class="pos">Pos</span><span></span><span class="nm">Player</span><span class="tp">Total</span><span class="td">Today</span><span class="th">Thru</span></div>${rows}</div>
@@ -228,13 +228,13 @@ export function tennisMatch(m, ctx, { big = false } = {}) {
   const st = m.state === 'in' ? `<span class="live">LIVE</span>` : m.state === 'post' ? `<b>${esc(m.detail || 'Final')}</b>` : `<span>${new Date(m.date).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</span>`;
   return `<div class="card tmatch ${big ? 'big' : ''}" ${big ? '' : `data-game="#/game/tennis/${esc(m.id)}"`} role="${big ? '' : 'link'}" tabindex="${big ? -1 : 0}">
     <div class="status">${st}<span>${esc(m.round || '')}</span></div>${m.players.map(row).join('')}
-    ${!big && m.court ? `<div class="meta">${esc(m.court)}</div>` : ''}</div>`;
+    ${!big && m.court ? `<div class="meta">${esc(m.court)}</div>` : ''}${!big && ctx.watch ? ctx.watch({ ...m, sport: 'tennis' }, { compact: true }) : ''}</div>`;
 }
 function tennisCast(d, ctx) {
   const ps = d.players;
   const extra = d.state === 'pre' ? `<div class="card gc-pre"><div class="r"><span>Scheduled</span><b>${esc(fmtWhen(d.date))}</b></div>${d.court ? `<div class="r"><span>Court</span><b>${esc(d.court)}</b></div>` : ''}</div>` : '';
   return `<div class="card gc-head tennis"><div class="gc-note">${esc(d.tour)} · ${esc(d.tournament)}</div>
-      <div class="gc-meta">${[d.draw, d.round, d.court, d.venue].filter(Boolean).map(esc).join(' · ')}</div></div>
+      <div class="gc-meta">${[d.draw, d.round, d.court, d.venue].filter(Boolean).map(esc).join(' · ')}</div>${ctx.watch ? ctx.watch(d) : ''}</div>
     ${tennisMatch(d, ctx, { big: true })}
     ${d.note ? `<div class="card gc-note2">${esc(d.note)}</div>` : ''}
     ${d.state === 'in' ? `<div class="card gc-serve"><i></i>${esc((ps.find((p) => p.serving) || {}).name || 'Server not reported')}${ps.some((p) => p.serving) ? ' is serving' : ''}</div>` : ''}
@@ -296,10 +296,10 @@ function genericCast(d, ctx) {
   const soccer = fam === 'soccer';
   if (d.state === 'pre') body = preGame(d) + (soccer ? lineups(d, ctx) : '') + `<p class="muted small">Live score, ${soccer ? 'key events, lineups' : 'play-by-play, box score'} and team stats appear here once the game starts.</p>`;
   else if (castState.tab === 'plays') body = playList(d, ctx, d.plays, 'No plays yet.');
-  else if (castState.tab === 'stats') body = statCompare(d) + (soccer ? lineups(d, ctx) : boxTables(d, ctx));
+  else if (castState.tab === 'stats') body = statCompare(d, ctx) + (soccer ? lineups(d, ctx) : boxTables(d, ctx));
   else {
     const sc = soccer || fam === 'hockey' ? playList(d, ctx, d.scoring.slice().reverse(), '') : '';
-    body = yourPlayers(d, ctx) + lineScore(d, { min: soccer ? 2 : fam === 'hockey' ? 3 : (d.home.lines.length === 2 ? 2 : 4) }) + wpChart(d)
+    body = yourPlayers(d, ctx) + lineScore(d, { min: soccer ? 2 : fam === 'hockey' ? 3 : (d.home.lines.length === 2 ? 2 : 4) }) + wpChart(d, ctx)
       + (sc && d.scoring.length ? `<h2>${soccer ? 'Goals' : 'Scoring'}</h2>${sc}` : '') + leadersG(d, ctx);
   }
   const tl = soccer ? [['summary', 'Summary'], ['plays', 'Key events'], ['stats', 'Stats & lineups']] : [['summary', 'Summary'], ['plays', 'Play-by-play'], ['stats', 'Box score']];
@@ -337,7 +337,7 @@ export function eventCard(e, ctx, { n = 4 } = {}) {
   const st = e.state === 'in' ? `<span class="live">LIVE</span>` : e.state === 'post' ? '<b>Final</b>' : `<span>${esc(new Date(e.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }))}</span>`;
   return `<div class="card ev-card ${comps.some(mine) ? 'mine' : ''}" data-game="#/game/${esc(e.sport)}/${esc(e.id)}" role="link" tabindex="0">
     <div class="status">${st}<span>${esc(e.circuit || e.venue || '')}</span></div><div class="tc-name">${esc(e.name)}</div>
-    ${body}<div class="meta"><span class="gc-go">${fam === 'mma' ? 'Full card' : 'All sessions & results'} ›</span></div></div>`;
+    ${body}${ctx.watch ? ctx.watch(e, { compact: true }) : ''}<div class="meta"><span class="gc-go">${fam === 'mma' ? 'Full card' : 'All sessions & results'} ›</span></div></div>`;
 }
 function eventCast(d, ctx) {
   const fam = d.family; const comps = d.comps || [];
@@ -352,7 +352,7 @@ function eventCast(d, ctx) {
   }
   return `<div class="card gc-head event"><div class="gc-note">${esc(d.circuit || '')}</div><h1 class="ev">${esc(d.name)}</h1>
     <div class="st">${d.state === 'in' ? '<span class="live">LIVE</span>' : `<b>${esc(d.state === 'post' ? 'Final' : fmtWhen(d.date))}</b>`}</div>
-    <div class="gc-meta">${[d.venue].filter(Boolean).map(esc).join(' · ')}</div></div>${body}
+    <div class="gc-meta">${[d.venue].filter(Boolean).map(esc).join(' · ')}</div>${ctx.watch ? ctx.watch(d) : ''}</div>${body}
     ${footer(d, fam === 'racing' ? 'Racing: running order and results only; lap times and gaps aren’t in the free feed.' : 'MMA: results show round and time; judges’ scores aren’t in the free feed.')}`;
 }
 

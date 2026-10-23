@@ -4,9 +4,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const { makeResolver } = require('./teamResolve');
 const DIR = path.join(__dirname, '..', 'data', 'grok-top25');
-const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-const ALIAS = { miamifl: 'miami', olemississippi: 'olemiss', boisest: 'boisestate', ohiost: 'ohiostate', byucougars: 'byu' };
 
 function history() {
   try { return fs.readdirSync(DIR).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).map((f) => f.slice(0, 10)).sort().reverse(); } catch { return []; }
@@ -17,10 +16,11 @@ function readRun(date) {
   try { return JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')); } catch { return null; }
 }
 
-function matcher(teams) {
-  const by = new Map();
-  for (const t of teams) for (const k of [t.location, t.short, t.name, t.abbr]) { const n = norm(k); if (n && !by.has(n)) by.set(n, t); }
-  return (name) => { const n = norm(name); return by.get(ALIAS[n] || n) || null; };
+// Team name → ESPN team (official logo by ESPN id). Ids stored by the update script (run.teams) win; otherwise the
+// shared resolver maps the name the same way the script does.
+function matcher(teams, run) {
+  const resolve = makeResolver(teams); const ids = (run && run.teams) || {};
+  return (name) => resolve(name, ids[name] && ids[name].espnId);
 }
 
 // Real 12-team CFP format: the five highest-ranked conference champions get automatic bids, the next seven highest-ranked
@@ -48,7 +48,7 @@ function bracket(rows) {
     champions: champs.map((r) => ({ conference: r.conference, team: r.team, rank: r.rank, info: r.info, autoBid: auto.includes(r) })),
     seeds, firstRound: first, quarterfinals: quarters,
     semifinals: [{ id: 'SF-1', from: ['QF-1', 'QF-4'] }, { id: 'SF-2', from: ['QF-2', 'QF-3'] }],
-    note: 'Projected from Grok’s order: each conference’s highest Grok-ranked team is its projected champion. Only teams in Grok’s Top 25 are considered.',
+    note: 'Projected from JT’s order: each conference’s highest JT-ranked team is its projected champion. Only teams in the JT Top 25 are considered.',
   };
 }
 
@@ -57,7 +57,7 @@ module.exports = function makeGrok({ getTeams, getPolls }) {
     const run = readRun(date);
     if (!run) return null;
     const [teams, polls] = await Promise.all([getTeams().then((d) => d.teams).catch(() => []), getPolls().catch(() => null)]);
-    const find = matcher(teams);
+    const find = matcher(teams, run);
     const pollMap = (id) => { const p = polls?.polls?.find((x) => x.id === id); return p ? { p, rank: new Map(p.ranks.map((r) => [String(r.team.id), r.rank])) } : null; };
     const ap = pollMap('ap'); const coaches = pollMap('usa'); const cfp = pollMap('cfp');
     const info = (t) => (t ? { id: t.id, name: t.name, short: t.short, abbr: t.abbr, color: t.color, alt: t.alt, logo: t.logo, logoDark: t.logoDark, conference: t.conference } : null);

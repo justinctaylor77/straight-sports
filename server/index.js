@@ -50,6 +50,7 @@ const fetchJSON = async (url) => JSON.parse(await fetchText(url));
 // ---------- sports data (see sports.js) ----------
 const SP = require('./sports')({ cached, cache, fetchJSON });
 const SPORT_IDS = Object.keys(SP.SPORTS);
+const WATCH = require('./watch')({ cached, fetchJSON });
 const sportOf = (req) => (SPORT_IDS.includes(String(req.query.sport || req.params.sport || 'cfb')) ? String(req.query.sport || req.params.sport || 'cfb') : null);
 
 const wrap = (fn) => async (req, res) => {
@@ -65,11 +66,9 @@ app.get('/api/roster/:team', wrap((req) => { const m = String(req.params.team).m
 app.get('/api/athletes', wrap((req) => { const s = sportOf(req); if (!s || kindOf(s) === 'news') throw bad('unknown sport'); return SP.athleteSearch(s, req.query.q); }));
 app.get('/api/scoreboard', wrap((req) => {
   const s = sportOf(req); if (!s) throw bad('unknown sport');
-  if (s === 'golf') return SP.golfBoard();
-  if (s === 'tennis') return SP.tennisBoard();
-  if (kindOf(s) === 'event') return SP.eventBoard(s);
   if (kindOf(s) === 'news') return { sport: s, kind: 'news', events: [] };
-  return SP.teamScoreboard(s, req.query);
+  const b = s === 'golf' ? SP.golfBoard() : s === 'tennis' ? SP.tennisBoard() : kindOf(s) === 'event' ? SP.eventBoard(s) : SP.teamScoreboard(s, req.query);
+  return b.then((d) => WATCH.attach(s, d));
 }));
 app.get('/api/rankings', wrap(async (req) => {
   const s = sportOf(req);
@@ -94,15 +93,19 @@ function cfbPolls() {
   });
 }
 const GROK = require('./grok')({ getTeams: () => SP.getTeams('cfb'), getPolls: cfbPolls });
-app.get('/api/grok-top25', wrap(async (req) => {
+// /api/jt-top25 is a display-name alias; data/grok-top25 + /api/grok-top25 stay as-is for the Sunday routine.
+const top25 = wrap(async (req) => {
   const d = await GROK.get(req.query.date ? String(req.query.date) : '');
-  if (!d) { const e = new Error('no Grok Top 25 run for that date'); e.status = 404; throw e; }
+  if (!d) { const e = new Error('no JT Top 25 run for that date'); e.status = 404; throw e; }
   return d;
-}));
-app.get('/api/grok-top25/history', (req, res) => res.json({ dates: GROK.history() }));
+});
+const top25Hist = (req, res) => res.json({ dates: GROK.history() });
+app.get(['/api/grok-top25', '/api/jt-top25'], top25);
+app.get(['/api/grok-top25/history', '/api/jt-top25/history'], top25Hist);
 app.get('/api/players/:sport', wrap((req) => { const s = sportOf(req); if (!['golf', 'tennis'].includes(s) && kindOf(s) !== 'event') throw bad('players: golf, tennis or event sports'); return SP.players(s); }));
-app.get('/api/game/:sport/:id', wrap((req) => { const s = sportOf(req); if (!s) throw bad('unknown sport'); if (!/^[a-z]{0,4}-?\d+$/.test(req.params.id)) throw bad('bad id'); return SP.gamecast(s, req.params.id); }));
-app.get('/api/team/:id', wrap((req) => SP.teamPage(req.params.id)));
+app.get('/api/game/:sport/:id', wrap((req) => { const s = sportOf(req); if (!s) throw bad('unknown sport'); if (!/^[a-z]{0,4}-?\d+$/.test(req.params.id)) throw bad('bad id'); return SP.gamecast(s, req.params.id).then((d) => WATCH.attach(s, d)); }));
+app.get('/api/team/:id', wrap((req) => SP.teamPage(req.params.id).then((d) => { const m = String(req.params.id).match(/^([a-z0-9]+):/); return WATCH.attach(m ? m[1] : 'cfb', d); })));
+app.get('/api/watch', wrap(async (req) => { const s = sportOf(req); if (!s) throw bad('unknown sport'); return { sport: s, games: await WATCH.forSport(s) }; }));
 
 // ---------- routes: news ----------
 const parser = new Parser({ timeout: 9000, headers: { 'User-Agent': UA },

@@ -81,6 +81,27 @@ const go = async (p, h, w = 1400) => { await p.goto(`${BASE}/${h}`); await ready
     await p.goto(`${BASE}/#/home`); await ready(p); await p.tap('[data-switch="ufc"] >> visible=true').catch(() => {}); await ready(p); await p.waitForTimeout(1800); await shot(p, 'phone-25-other-home-ufc');
     await c.close();
   }
+  if (on('v7')) { // JT description + methodology, watch buttons, How you watch, onboarding watch step, logos
+    const [c, p] = await ctx();
+    await go(p, '#/rankings/grok', 1800); await shot(p, 'phone-30-jt-top25');
+    await p.tap('.gk-how'); await ready(p); await p.waitForTimeout(900); await shot(p, 'phone-31-jt-how', true);
+    const sb = await (await fetch(`${BASE}/api/scoreboard?sport=cfb`)).json();
+    const g = sb.events.find((e) => e.espnWatch && e.state !== 'post') || sb.events.find((e) => e.espnWatch) || sb.events[0];
+    notes.push(`watch gamecast: ${g.id} ${g.away.team.abbr}@${g.home.team.abbr} nets=${g.nets}`);
+    await go(p, '#/scores', 2200);
+    await p.evaluate(() => { const w = document.querySelector('.card .watch'); if (w) w.closest('.card').scrollIntoView({ block: 'start' }); scrollBy(0, -250); }); await p.waitForTimeout(500);
+    await shot(p, 'phone-32-scores-watch');
+    const logos = await p.evaluate(() => [...document.querySelectorAll('#view img')].filter((i) => /teamlogos/.test(i.src)).map((i) => ({ src: i.src, ok: i.complete && i.naturalWidth > 0 })));
+    notes.push(`scores logos: ${logos.length}, broken ${logos.filter((l) => !l.ok).length}, dark ${logos.filter((l) => /500-dark/.test(l.src)).length}`);
+    await go(p, `#/game/cfb/${g.id}`, 2500); await shot(p, 'phone-33-gamecast-watch');
+    await go(p, '#/settings/watch', 900); await shot(p, 'phone-34-settings-watch', true);
+    await c.close();
+    const fresh = { onboarded: false };
+    const [c2, p2] = await ctx(PHONE, fresh); await p2.goto(`${BASE}/#/home`); await p2.waitForSelector('#onb', { timeout: 30000 }); await p2.waitForTimeout(800);
+    await p2.tap('[data-go="5"]'); await p2.waitForTimeout(700); await shot(p2, 'phone-35-onboarding-watch');
+    await p2.tap('#onb [data-prov="yttv"]').catch((e) => errors.push('prov tap ' + e.message)); await p2.waitForTimeout(400); await shot(p2, 'phone-36-onboarding-watch-picked');
+    await c2.close();
+  }
   if (on('desk')) {
     const [c, p] = await ctx(DESK); await go(p, '#/home', 2500); await shot(p, 'desktop-01-home-cfb');
     await go(p, '#/game/nfl/401873010', 2200); await shot(p, 'desktop-02-gamecast-nfl');

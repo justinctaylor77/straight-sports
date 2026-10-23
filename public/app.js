@@ -2,6 +2,7 @@ import { LEAGUE_MUTES, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
 import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js';
 import * as BD from './backdrop.js';
+import { watchButtons, PROVIDERS } from './watch.js';
 
 // ---------------- state ----------------
 let S = loadSettings();
@@ -40,6 +41,16 @@ const myTeamIds = () => new Set([...S.follow, ...S.follow.map((id) => (S.players
 const myPlayersOn = (teamId) => S.follow.filter((id) => isAthleteId(id) && (S.players[id] || {}).team === teamId).map((id) => S.players[id]);
 const isDark = () => (S.theme === 'dark') || (S.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
 const logo = (t) => (t ? (isDark() ? t.logoDark || t.logo : t.logo) : '');
+// Fallback only when a logo fails to load: dark variant → the team's regular ESPN logo → a neutral badge (never initials
+// or another team's logo). Backdrop logos are simply removed.
+const LOGO_FB = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="M20 3 6 8v11c0 9 6 15 14 18 8-3 14-9 14-18V8z" fill="#8a8f98" fill-opacity=".35" stroke="#8a8f98" stroke-width="2"/></svg>')}`;
+addEventListener('error', (e) => {
+  const img = e.target; if (!(img instanceof HTMLImageElement) || img.dataset.lf) return;
+  const u = img.getAttribute('src') || '';
+  if (u.includes('/500-dark/')) { img.src = u.replace('/500-dark/', '/500/'); return; }
+  if (img.classList.contains('bd-logo')) { img.remove(); return; }
+  if (!u || /teamlogos/.test(u)) { img.dataset.lf = '1'; img.classList.add('logo-fb'); img.src = LOGO_FB; }
+}, true);
 const toggle = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const tick = () => { try { navigator.vibrate && navigator.vibrate(8); } catch { /* unsupported */ } };
@@ -148,6 +159,7 @@ function gameCard(ev) {
     ${ev.note ? `<div class="gnote">${esc(ev.note)}${ev.series && !/starts/i.test(ev.series) ? ` · ${esc(ev.series)}` : ''}</div>` : ''}
     <div class="status">${status}<span>${esc(ev.broadcast || '')}</span></div>
     ${teamRow(ev.away, ev)}${teamRow(ev.home, ev)}
+    ${watchHTML({ ...ev, sport: sp }, { compact: true })}
     <div class="meta">${live}${extra}${mp.length ? `<span class="yp-tag">★ ${esc(mp.slice(0, 2).map((p) => p.short || p.name.split(' ').slice(-1)[0]).join(', '))}</span>` : ''}<span>${esc(ev.venue || '')}</span>${ev.conferenceGame ? '<span>· Conf</span>' : ''}${ev.neutral ? '<span>· Neutral</span>' : ''}<span class="gc-go">Gamecast ›</span></div></div>`;
 }
 const miniBases = (b) => `<svg class="mini-bases" viewBox="0 0 30 20" aria-label="Runners"><rect x="20" y="8" width="6" height="6" transform="rotate(45 23 11)" class="${b.on1 ? 'on' : ''}"/><rect x="12" y="1" width="6" height="6" transform="rotate(45 15 4)" class="${b.on2 ? 'on' : ''}"/><rect x="4" y="8" width="6" height="6" transform="rotate(45 7 11)" class="${b.on3 ? 'on' : ''}"/></svg>`;
@@ -318,6 +330,7 @@ function golfTourCard(t, n = 10) {
     <div class="tc-name">${esc(t.name)}</div><div class="faint small">${[t.course, t.purse && `Purse ${t.purse}`].filter(Boolean).map(esc).join(' · ')}</div>
     ${mine.length ? `<div class="lbl">Your players</div><div class="lb mini">${mine.map((p) => golfRow(p, ctx)).join('')}</div>` : ''}
     <div class="lbl">Leaders</div><div class="lb mini">${top.map((p) => golfRow(p, ctx)).join('')}</div>
+    ${watchHTML({ ...t, sport: 'golf' }, { compact: true })}
     <div class="meta"><span class="gc-go">Full leaderboard & scorecards ›</span></div></div>`;
 }
 async function homeGolf(today) {
@@ -536,6 +549,7 @@ function genStandTable(g, cols, withDiv) {
 }
 async function viewRankings(quick) {
   const sp = S.sport; const lbl = SPI().tab4;
+  if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/grok/how')) return viewGrokHow(quick);
   if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/grok')) return viewGrok(quick);
   setBar(lbl);
   if (newsSport(sp)) { view.innerHTML = LT(lbl) + `<div class="card empty">ESPN’s free feeds have no ${esc(SPI().name)} rankings. <a href="#/news">Read the news ›</a></div>`; return; }
@@ -583,7 +597,7 @@ async function viewRankings(quick) {
   const poll = d.polls.find((p) => p.id === pollId) || d.polls[0];
   const ranks = poll.ranks.filter((r) => !mf.teamId(r.team.id)); const hiddenN = poll.ranks.length - ranks.length;
   view.innerHTML = LT('Rankings', `${esc(poll.headline || poll.name)}${poll.date ? ` · ${new Date(poll.date).toLocaleDateString()}` : ''}`) + `
-    <div class="toolbar sticky"><div class="seg">${d.polls.map((p) => `<button data-poll="${p.id}" class="${p.id === poll.id ? 'on' : ''}">${p.id === 'ap' ? 'AP Top 25' : p.id === 'usa' ? 'Coaches Poll' : esc(p.name)}</button>`).join('')}${sp === 'cfb' ? '<a class="seg-a grok-tab" href="#/rankings/grok">Grok Top 25</a>' : ''}</div></div>
+    <div class="toolbar sticky"><div class="seg">${d.polls.map((p) => `<button data-poll="${p.id}" class="${p.id === poll.id ? 'on' : ''}">${p.id === 'ap' ? 'AP Top 25' : p.id === 'usa' ? 'Coaches Poll' : esc(p.name)}</button>`).join('')}${sp === 'cfb' ? '<a class="seg-a grok-tab" href="#/rankings/grok">JT Top 25</a>' : ''}</div></div>
     ${hiddenN ? `<div class="notice">${hiddenN} muted team(s) hidden</div>` : ''}
     <div class="card panel">${ranks.map(rankRow).join('')}</div>
     ${poll.others.length ? `<h2>Others receiving votes</h2><p class="muted small">${poll.others.filter((o) => !mf.teamId(o.team.id)).map((o) => `<a href="#/team/${o.team.id}">${esc(o.team.location)}</a> ${o.points}`).join(' · ')}</p>` : ''}
@@ -598,7 +612,7 @@ const gName = (x) => (x && x.info ? x.info.short : x && x.team) || 'TBD';
 async function grokPromo() {
   try {
     const g = await api('/api/grok-top25', 10 * 60e3);
-    return `<a class="card gk-promo" href="#/rankings/grok"><div><div class="gk-kicker">Week ${esc(g.week)} · independent hybrid</div><div class="gk-title">Grok Top 25</div><div class="faint small">${g.ranks.slice(0, 4).map((r) => `${r.rank}. ${esc(gName(r))}`).join(' · ')}</div></div><span class="go">View ›</span></a>`;
+    return `<a class="card gk-promo" href="#/rankings/grok"><div><div class="gk-kicker">Week ${esc(g.week)} · independent hybrid</div><div class="gk-title">JT Top 25</div><div class="faint small">${g.ranks.slice(0, 4).map((r) => `${r.rank}. ${esc(gName(r))}`).join(' · ')}</div></div><span class="go">View ›</span></a>`;
   } catch { return ''; }
 }
 function grokChart(g, lp) {
@@ -608,15 +622,15 @@ function grokChart(g, lp) {
     const lo = Math.min(r.rank, ap || 26); const hi = Math.max(r.rank, ap || 26);
     const d = ap ? ap - r.rank : null;
     return `<div class="gk-crow" style="--tc:#${esc(r.info?.color || '888')}"><span class="tn"><img src="${esc(gLogo(r.info))}" alt="" loading="lazy" /><span>${r.rank}. ${esc(gName(r))}</span></span>
-      <span class="gk-track" role="img" aria-label="${esc(gName(r))}: Grok ${r.rank}, AP ${ap || 'unranked'}, Coaches ${co || 'unranked'}">
+      <span class="gk-track" role="img" aria-label="${esc(gName(r))}: JT ${r.rank}, AP ${ap || 'unranked'}, Coaches ${co || 'unranked'}">
         <span class="gk-bar" style="left:${pos(lo)};width:calc(${pos(Math.min(hi, 25))} - ${pos(lo)})"></span>
         ${prev ? `<span class="gk-dot last" style="left:${pos(prev)}"></span>` : ''}
         <span class="gk-dot co ${co ? '' : 'off'}" style="left:${pos(co || 25)}"></span><span class="gk-dot ap ${ap ? '' : 'off'}" style="left:${pos(ap || 25)}"></span><span class="gk-dot grok" style="left:${pos(r.rank)}"></span></span>
       <span class="gk-diff ${d > 0 ? 'mv up' : d < 0 ? 'mv dn' : ''}">${d == null ? 'AP NR' : d === 0 ? '=' : d > 0 ? `+${d}` : d}</span></div>`;
   }).join('');
-  return `<div class="card gk-chart"><div class="gk-legend"><span><i class="dot-grok"></i>Grok</span><span><i class="dot-ap"></i>AP</span><span><i class="dot-co"></i>Coaches</span>${g.ranks.some((r) => r.prev) ? '<span><i class="gk-dot last" style="position:static;display:inline-block;margin:0 5px 0 0"></i>Grok last week</span>' : ''}<span>CFP: ${lp.cfpReleased ? 'shown in Top 25 tab' : 'not released'}</span></div>
+  return `<div class="card gk-chart"><div class="gk-legend"><span><i class="dot-grok"></i>JT</span><span><i class="dot-ap"></i>AP</span><span><i class="dot-co"></i>Coaches</span>${g.ranks.some((r) => r.prev) ? '<span><i class="gk-dot last" style="position:static;display:inline-block;margin:0 5px 0 0"></i>JT last week</span>' : ''}<span>CFP: ${lp.cfpReleased ? 'shown in Top 25 tab' : 'not released'}</span></div>
     <div class="gk-axis"><span></span><span class="ticks"><span>1</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25</span></span><span>vs AP</span></div>${rows}
-    <p class="gk-note">“+n” means Grok ranks the team n spots higher than the AP voters. Dots at the right edge are unranked in that poll.</p></div>`;
+    <p class="gk-note">“+n” means JT ranks the team n spots higher than the AP voters. Dots at the right edge are unranked in that poll.</p></div>`;
 }
 function grokBracket(b) {
   const my = myTeamIds();
@@ -625,14 +639,42 @@ function grokBracket(b) {
   const fr = b.quarterfinals.map((q) => r1[q.from]).map((m) => `<div class="card br-game"><div class="host">${esc(m.site)}</div>${T(m.home, '<span class="tg">Home</span>')}${T(m.away)}</div>`).join('');
   const qf = b.quarterfinals.map((q) => { const m = r1[q.from]; return `<div class="card br-game"><div class="host">Quarterfinal · bowl site</div>${T(q.top, '<span class="tg bye">Bye</span>')}<div class="br-t tbd"><span class="sd"></span><span></span><span class="n">Winner ${m.home.seed}/${m.away.seed}</span></div></div>`; }).join('');
   const sf = (b.semifinals || []).map((s, i) => `<div class="card br-game"><div class="host">Semifinal ${i + 1}</div>${s.from.map((f) => { const q = b.quarterfinals.find((x) => x.id === f); const m = q && r1[q.from]; return `<div class="br-t tbd"><span class="sd"></span><span></span><span class="n">${q ? `${esc(gName(q.top))} or ${m.home.seed}/${m.away.seed} winner` : 'TBD'}</span></div>`; }).join('')}</div>`).join('') + '<div class="card br-game"><div class="host">National championship</div><div class="br-t tbd"><span class="sd"></span><span></span><span class="n">Semifinal winners</span></div></div>';
-  return `<h2>Projected conference champions</h2><div class="gk-champs">${b.champions.map((c) => `<div class="card gk-champ" style="--tc:#${esc(c.info?.color || '888')}"><img src="${esc(gLogo(c.info))}" alt="" loading="lazy" /><div><div class="cf">${esc(c.conference)}</div><b>${esc(gName(c))}</b><span class="pj">Projected · Grok No. ${c.rank}</span></div></div>`).join('')}</div>
+  return `<h2>Projected conference champions</h2><div class="gk-champs">${b.champions.map((c) => `<div class="card gk-champ" style="--tc:#${esc(c.info?.color || '888')}"><img src="${esc(gLogo(c.info))}" alt="" loading="lazy" /><div><div class="cf">${esc(c.conference)}</div><b>${esc(gName(c))}</b><span class="pj">Projected · JT No. ${c.rank}</span></div></div>`).join('')}</div>
     <h2>12-team bracket</h2><div class="br"><div class="br-col"><h3>First round</h3>${fr}</div><div class="br-col"><h3>Quarterfinals</h3>${qf}</div><div class="br-col"><h3>Semis & final</h3>${sf}</div></div>
     <p class="gk-note">${esc(b.note || '')} Format: the top 5 conference champions get in; the 4 highest-ranked champions get byes and seeds 1–4; seeds 5–12 play first-round games at the higher seed’s campus.</p>`;
 }
+// Short description + methodology. Only what is actually known about the automation: the 60/40 hybrid weights, the
+// predictive definition and "no manual overrides" come from the weekly run's own method field; schedule, comparisons and
+// bracket rules come from the app. Résumé sub-factors are not published by the automation, so they're left general.
+const JT_ABOUT = 'Justin’s weekly college football ranking, rebuilt every Sunday morning from a hybrid score: 60% résumé and 40% predictive, with no manual overrides and no brand bias. Each team is shown next to its AP, Coaches and CFP ranking.';
+async function viewGrokHow(quick) {
+  setBar('How it’s calculated', { back: '#/rankings/grok' });
+  if (!quick) paint(LT('How it’s calculated', SK.sub()) + SK.rows(6));
+  let g = null; try { g = await api('/api/grok-top25', 10 * 60e3); } catch {}
+  const m = g?.method || {};
+  const pct = (w, d) => `${Math.round((typeof w === 'number' ? w : d) * 100)}%`;
+  const R = pct(m.resumeWeight, 0.6); const Pd = pct(m.predictiveWeight, 0.4);
+  const sec = (h, body) => `<div class="card gk-how-card"><h3>${h}</h3>${body}</div>`;
+  view.innerHTML = `<div class="card gk-hero"><div class="gk-kicker">JT Top 25 · methodology</div><h1 class="gk-title">How it’s calculated</h1><p class="gk-about">${JT_ABOUT}</p></div>
+    <div class="gk-split" role="img" aria-label="${R} résumé, ${Pd} predictive"><span class="r" style="flex:${parseInt(R)}">${R} résumé</span><span class="p" style="flex:${parseInt(Pd)}">${Pd} predictive</span></div>
+    ${sec('The hybrid score', `<ul class="gk-how-list">
+      <li><b>${R} résumé.</b> Résumé points for what a team has actually done on the field this season.</li>
+      <li><b>${Pd} predictive.</b> The average of the team’s SP+ and FPI ranks, a measure of how strong the team is going forward.</li>
+      <li><b>No manual overrides.</b> The order is the score, with no brand bias.</li></ul>`)}
+    ${sec('When it updates', '<p>A new ranking is built every Sunday morning (8:00 AM Mountain), after the weekend’s results. Earlier weeks stay available from the week picker.</p>')}
+    ${sec('How it’s compared', '<p>Every JT spot is shown next to the AP poll, the Coaches poll and the College Football Playoff rankings. Those numbers are pulled live from ESPN and never estimated. CFP numbers appear once the committee releases its rankings.</p>')}
+    ${sec('The projected bracket', `<p>The Bracket tab is computed in the app from the JT order using the 12-team 5+7 format:</p><ul class="gk-how-list">
+      <li>The 5 highest-ranked conference champions get automatic bids, and the next 7 highest-ranked teams are at-large.</li>
+      <li>The top 4 conference champions get seeds 1–4 and first-round byes.</li>
+      <li>Seeds 5–12 play in the first round at the higher seed’s campus.</li>
+      <li>Each conference’s projected champion is its highest JT-ranked team.</li></ul>`)}
+    ${m.note ? sec('This week’s method note', `<p class="muted">${esc(m.note)}</p>`) : ''}
+    <a class="btn" href="#/rankings/grok">Back to JT Top 25</a>`;
+}
 async function viewGrok(quick) {
-  setBar('Grok Top 25', { back: '#/rankings' });
-  if (!quick) paint(LT('Grok Top 25', SK.sub()) + SK.rows(12));
-  let g; try { g = await api(`/api/grok-top25${grokDate ? `?date=${grokDate}` : ''}`, 10 * 60e3); } catch (e) { view.innerHTML = LT('Grok Top 25') + errBox(e); return; }
+  setBar('JT Top 25', { back: '#/rankings' });
+  if (!quick) paint(LT('JT Top 25', SK.sub()) + SK.rows(12));
+  let g; try { g = await api(`/api/grok-top25${grokDate ? `?date=${grokDate}` : ''}`, 10 * 60e3); } catch (e) { view.innerHTML = LT('JT Top 25') + errBox(e); return; }
   const lp = g.livePolls || {}; const my = myTeamIds();
   const P = (n, v, cfp) => `<span>${n} <b>${v || (cfp && !lp.cfpReleased ? '—' : 'NR')}</b></span>`;
   const mv = (r) => r.move === 'new' ? '<span class="mv new">New</span>' : r.move == null ? '' : `<span class="mv ${r.move > 0 ? 'up' : r.move < 0 ? 'dn' : 'eq'}">${r.move ? (r.move > 0 ? '▲' + r.move : '▼' + -r.move) : '–'}</span>`;
@@ -647,25 +689,28 @@ async function viewGrok(quick) {
   else if (grokTab === 'bracket') body = g.bracket ? grokBracket(g.bracket) : '<div class="card empty">No bracket for this week.</div>';
   else {
     const n = g.notes || {};
-    const box = (t, v) => `<div class="card nt"><h3>${t}</h3><p class="${v ? '' : 'na'}">${v ? esc(v) : 'Not included in this week’s Grok output.'}</p></div>`;
+    const box = (t, v) => `<div class="card nt"><h3>${t}</h3><p class="${v ? '' : 'na'}">${v ? esc(v) : 'Not included in this week’s JT output.'}</p></div>`;
     const same = n.risersFallers && n.apVsGrok && n.risersFallers.trim() === n.apVsGrok.trim();
-    body = `<div class="gk-notes">${same ? box('Risers & fallers · AP vs Grok', n.risersFallers) : box('Risers & fallers', n.risersFallers) + box('AP vs Grok', n.apVsGrok)}${box('What to watch next week', n.nextWeek)}${box('Grok’s CFP outlook', n.cfpOutlook)}${n.cfpOutlook ? '<p class="gk-note">This is Grok’s own outlook text. The Bracket tab is computed separately from the Grok order using the 5+7 format.</p>' : ''}</div>
+    body = `<div class="gk-notes">${same ? box('Risers & fallers · AP vs JT', n.risersFallers) : box('Risers & fallers', n.risersFallers) + box('AP vs JT', n.apVsGrok)}${box('What to watch next week', n.nextWeek)}${box('JT’s CFP outlook', n.cfpOutlook)}${n.cfpOutlook ? '<p class="gk-note">This is JT’s own outlook text. The Bracket tab is computed separately from the JT order using the 5+7 format.</p>' : ''}</div>
       ${(g.apTop5 || []).length ? `<h2>AP top 5 this week</h2><div class="card panel">${g.apTop5.map((a) => `<div class="rank-row"><span class="n">${a.rank}</span><img src="${esc(gLogo(a.info))}" alt="" loading="lazy" /><span><b>${esc(gName(a))}</b></span></div>`).join('')}</div>` : ''}`;
   }
   const hist = (g.history || []).slice().reverse();
-  view.innerHTML = `<div class="card gk-hero"><div class="gk-kicker">Week ${esc(g.week)} · ${new Date(g.date + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</div><h1 class="gk-title">Grok Top 25</h1>
-      <div class="gk-method">${esc(g.method?.note || '')}</div>
-      <div class="gk-src"><span class="gk-tag grok">Grok order</span><span class="gk-tag live">Live AP · Coaches${lp.cfpReleased ? ' · CFP' : ''} from ESPN</span>${lp.cfpReleased ? '' : '<span class="gk-tag">CFP rankings: not released</span>'}</div></div>
+  view.innerHTML = `<div class="card gk-hero"><div class="gk-kicker">Week ${esc(g.week)} · ${new Date(g.date + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</div><h1 class="gk-title">JT Top 25</h1>
+      <p class="gk-about">${JT_ABOUT}</p>
+      <a class="gk-how" href="#/rankings/grok/how">How it’s calculated <span aria-hidden="true">→</span></a>
+      <div class="gk-src"><span class="gk-tag grok">JT order</span><span class="gk-tag live">Live AP · Coaches${lp.cfpReleased ? ' · CFP' : ''} from ESPN</span>${lp.cfpReleased ? '' : '<span class="gk-tag">CFP rankings: not released</span>'}</div></div>
     <div class="gk-sub"><div class="seg">${[['top', 'Top 25'], ['chart', 'Compare'], ['bracket', 'Bracket'], ['notes', 'Notes']].map(([k, n]) => `<button data-gt="${k}" class="${k === grokTab ? 'on' : ''}">${n}</button>`).join('')}</div>
       ${hist.length > 1 ? `<select id="gdate" class="btn" aria-label="Week">${hist.map((d) => `<option value="${d}" ${d === g.date ? 'selected' : ''}>${d}</option>`).join('')}</select>` : ''}</div>
     ${body}
-    <p class="faint small">Grok order from your weekly automation (data/grok-top25). AP, Coaches and CFP numbers are pulled live from ESPN and never estimated.</p>`;
+    <p class="faint small">JT order from your weekly automation (data/grok-top25). AP, Coaches and CFP numbers are pulled live from ESPN and never estimated.</p>`;
   view.querySelectorAll('[data-gt]').forEach((b) => (b.onclick = () => { tick(); grokTab = b.dataset.gt; viewGrok(true); }));
   const sel = $('#gdate'); if (sel) sel.onchange = () => { grokDate = sel.value === hist[0] ? '' : sel.value; viewGrok(true); };
 }
 
 // ---------------- Gamecast ----------------
-const castCtx = () => { const mf = muteFilter(); return { logo, follows, muted: (id) => mf.teamId(id) }; };
+const myProviders = () => (S.watch && S.watch.providers) || [];
+const watchHTML = (ev, opts) => watchButtons(ev, myProviders(), opts);
+const castCtx = () => { const mf = muteFilter(); return { logo, follows, muted: (id) => mf.teamId(id), watch: watchHTML }; };
 let castLive = false;
 async function viewGame(sp, id, quick) {
   if (castState.sport !== sp || castState.id !== id) { const keep = castState.player; Object.assign(castState, { tab: 'summary', player: sp === 'golf' ? keep : null, sport: sp, id }); }
@@ -866,8 +911,15 @@ function partHTML(p) {
         ${S.sports.includes('cfb') ? `<div class="row"><span class="rt"><b>CFB conferences</b><small>${confs.length ? confs.map((c) => esc(c.short)).join(', ') : 'All FBS'}</small></span></div>` : ''}
         <div class="row"><span class="rt"><b>Muted</b><small>${mutes.length ? mutes.map(esc).join(', ') : 'Nothing'}</small></span></div>
         <div class="row"><span class="rt"><b>Blocked outlets</b><small>${bl.length ? bl.map(esc).join(', ') : 'None'}</small></span></div>
+        <div class="row"><span class="rt"><b>How you watch</b><small>${esc(myProviders().map((id) => (PROVIDERS.find((p) => p.id === id) || {}).name).filter(Boolean).join(', ') || 'Not set')}</small></span></div>
         <div class="row"><span class="rt"><b>Straight news only</b><small>${S.straightOnly ? 'On — opinion, picks & betting hidden' : 'Off'}</small></span></div></div>`;
     }
+    case 'providers': {
+      const mine = myProviders();
+      const grp = (g, lbl) => `<div class="group-lbl tiles-lbl">${lbl}</div><div class="prov-grid">${PROVIDERS.filter((p) => p.group === g).map((p) => { const on = mine.includes(p.id); return `<button class="prov-tile ${on ? 'on' : ''}" data-prov="${p.id}" aria-pressed="${on}"><b>${esc(p.name)}</b>${p.sub ? `<small>${esc(p.sub)}</small>` : ''}</button>`; }).join('')}</div>`;
+      return grp('live', 'Live TV') + grp('stream', 'Streaming services') + grp('other', 'Other');
+    }
+    case 'provsummary': { const ps = myProviders().map((id) => (PROVIDERS.find((p) => p.id === id) || {}).name).filter(Boolean); return ps.length ? `Watch buttons for ${esc(ps.join(', '))} show first on every game.` : 'Nothing picked — every game still shows each network’s own watch link.'; }
     default: return '';
   }
 }
@@ -879,12 +931,17 @@ function refreshParts(root, skip = []) {
   });
 }
 function prefClick(e, root) {
-  const b = e.target.closest('[data-tfollow],[data-sport],[data-psport],[data-pmode],[data-conf],[data-league],[data-unkw],[data-addkw],[data-unmute],[data-mute],[data-block],[data-unblock],[data-theme]');
+  const b = e.target.closest('[data-prov],[data-tfollow],[data-sport],[data-psport],[data-pmode],[data-conf],[data-league],[data-unkw],[data-addkw],[data-unmute],[data-mute],[data-block],[data-unblock],[data-theme]');
   if (!b || !root.contains(b)) return false;
   e.preventDefault(); tick();
   const d = b.dataset; let skip = [];
   if (d.pname && (d.tfollow || d.mute)) rememberPlayer(d.tfollow || d.mute, d.pname, d.pflag, { team: d.pteam, pos: d.ppos });
-  if (d.sport) {
+  if (d.prov) {
+    const cur = myProviders(); let next;
+    if (d.prov === 'none') next = cur.includes('none') ? [] : ['none'];
+    else next = cur.includes(d.prov) ? cur.filter((x) => x !== d.prov) : [...cur.filter((x) => x !== 'none'), d.prov];
+    S.watch = { ...(S.watch || {}), providers: next };
+  } else if (d.sport) {
     const on = S.sports.includes(d.sport);
     if (on && S.sports.length === 1) { toast('Keep at least one sport'); return true; }
     S.sports = on ? S.sports.filter((x) => x !== d.sport) : SPORT_IDS.filter((x) => x === d.sport || S.sports.includes(x));
@@ -950,6 +1007,7 @@ const P = {
     <form class="kw-form" data-form="kw"><input placeholder="Add a keyword, e.g. Deion" autocomplete="off" enterkeyhint="done" /><button class="btn">Mute</button></form>
     ${full ? `<div class="lbl">Teams & players</div><div class="chips" data-part="mteams"></div><div class="kw-form"><input data-in="mutesearch" placeholder="Type a team or player to mute…" autocomplete="off" /></div><div class="chips" data-part="mresults" style="margin-top:8px"></div>
     <div class="list card" style="margin-top:18px">${flagSwitch('sportOnly', 'This sport only', 'Hide other sports from school, team & local feeds')}</div>` : ''}`,
+  watch: () => '<div data-part="providers"></div><p class="faint small" data-part="provsummary" style="margin-top:12px"></p>',
   outlets: () => `<div class="lbl">Block outlets <span class="faint">· also removes them from Google News results</span></div><div class="chips" data-part="outlets"></div>
     <form class="kw-form" data-form="block"><input placeholder="Outlet name, e.g. TMZ" autocomplete="off" enterkeyhint="done" /><button class="btn">Block</button></form>`,
 };
@@ -967,6 +1025,7 @@ const IC = {
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   block: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
+  tv: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M10.5 9v4.5l3.5-2.25z"/>',
 };
 const icon = (k, c) => `<span class="ic" style="--c:${c}"><svg viewBox="0 0 24 24">${IC[k]}</svg></span>`;
 const linkRow = (href, k, c, title, sub) => `<a class="row" href="${href}">${icon(k, c)}<span class="rt"><b>${title}</b><small>${esc(sub)}</small></span><span class="chev">›</span></a>`;
@@ -983,7 +1042,8 @@ function viewSettings(sub) {
     <div class="group-lbl">Your feed</div><div class="list card">
       ${linkRow('#/settings/sports', 'sports', '#d26a1b', 'Sports', S.sports.map((k) => SPORTS[k].short).join(', '))}
       ${linkRow('#/settings/teams', 'team', '#1f6f5c', 'Teams & players', teamsTxt)}
-      ${S.sports.includes('cfb') ? linkRow('#/settings/conferences', 'conf', '#3b6fd8', 'CFB conferences', confTxt) : ''}</div>
+      ${S.sports.includes('cfb') ? linkRow('#/settings/conferences', 'conf', '#3b6fd8', 'CFB conferences', confTxt) : ''}
+      ${linkRow('#/settings/watch', 'tv', '#d0342c', 'How you watch', myProviders().map((id) => (PROVIDERS.find((p) => p.id === id) || {}).name).filter(Boolean).join(', ') || 'Pick your TV & streaming services')}</div>
     <div class="group-lbl">Filters</div><div class="list card">
       ${linkRow('#/settings/mute', 'mute', '#c2332b', 'Mute', mutes.length ? mutes.join(', ') : 'Nothing muted')}
       ${linkRow('#/settings/sources', 'src', '#b26a00', 'News sources', `${onCount} of ${mySrc.length} on${bl.length ? ` · ${bl.length} blocked` : ''}`)}
@@ -1007,6 +1067,7 @@ function viewSettingsSub(sub) {
   const screens = {
     sports: ['Sports', 'Pick the sports you want. Switch between them with the chips at the top of each tab.', P.sports()],
     teams: ['Teams & players', 'Their games and news always come first.', P.teams()],
+    watch: ['How you watch', 'Pick your live-TV and streaming services. Every game gets a “Watch on …” button — yours come first and highlighted. Saved on this device only.', P.watch()],
     conferences: ['CFB conferences', 'Shown after your teams in Scores and News. Pick none to see all of FBS.', P.confs()],
     mute: ['Mute', 'Muted things are removed everywhere, in every sport: scores, leaderboards, rankings, news and story groups.', P.mute(true)],
     sources: ['News sources', 'Mix wire services, national, local and official team outlets.', `<div class="list card">${flagSwitch('straightOnly', 'Straight news only', 'Hide opinion, picks, betting & podcasts')}</div><div class="group-lbl">Outlets</div><div class="list card" data-part="sources"></div>${P.outlets()}`],
@@ -1024,7 +1085,7 @@ function viewSettingsSub(sub) {
 }
 
 // ---------------- onboarding (paged, swipeable) ----------------
-const STEPS = 6; const CONF_STEP = 3;
+const STEPS = 7; const CONF_STEP = 3; const WATCH_STEP = 5;
 function openOnboarding(start = 0) {
   if ($('#onb')) return;
   teamQ = ''; teamConf = '';
@@ -1040,12 +1101,13 @@ function openOnboarding(start = 0) {
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
           <li><span class="fi">🔇</span><div><b>Mute anything</b><small>Leagues, teams, keywords or whole outlets.</small></div></li></ul>
         <p class="kbd-hint">Tip: use ← → keys to move between steps</p></section>
-      <section class="slide"><div class="step-k">Step 1 of 4</div><h2 class="st">Pick your sports</h2><p class="help">Choose one or more. Nothing is on unless you pick it, and you can switch anytime.</p>${P.sports()}</section>
-      <section class="slide"><div class="step-k">Step 2 of 4</div><h2 class="st">Pick teams & players</h2><p class="help">Search by name or browse by league, conference or division. Their games and news come first.</p>${P.teams()}</section>
+      <section class="slide"><div class="step-k">Step 1 of 5</div><h2 class="st">Pick your sports</h2><p class="help">Choose one or more. Nothing is on unless you pick it, and you can switch anytime.</p>${P.sports()}</section>
+      <section class="slide"><div class="step-k">Step 2 of 5</div><h2 class="st">Pick teams & players</h2><p class="help">Search by name or browse by league, conference or division. Their games and news come first.</p>${P.teams()}</section>
       <section class="slide"><div class="step-k">CFB · optional</div><h2 class="st">Pick conferences</h2><p class="help">Their scores and news show after your teams. Pick none to see all of FBS.</p>${P.confs()}</section>
-      <section class="slide"><div class="step-k">Step 3 of 4</div><h2 class="st">Mute what you don’t want</h2><p class="help">Muted things disappear everywhere, in every sport.</p>${P.mute(false)}${P.outlets()}
+      <section class="slide"><div class="step-k">Step 3 of 5</div><h2 class="st">Mute what you don’t want</h2><p class="help">Muted things disappear everywhere, in every sport.</p>${P.mute(false)}${P.outlets()}
         <div class="list card" style="margin-top:16px">${flagSwitch('straightOnly', 'Straight news only', 'Hide opinion, hot takes, picks & betting')}</div></section>
-      <section class="slide s-done"><div class="step-k">Step 4 of 4</div><div class="done-mark"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h2 class="st">You’re all set</h2><p class="help">Here’s your feed. Change any of it later in Settings.</p><div data-part="summary"></div></section>
+      <section class="slide"><div class="step-k">Step 4 of 5</div><h2 class="st">How do you watch?</h2><p class="help">Pick any that you have. Games on channels they carry get a “Watch on …” button first. Optional — skip it and change it anytime in Settings.</p>${P.watch()}</section>
+      <section class="slide s-done"><div class="step-k">Step 5 of 5</div><div class="done-mark"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h2 class="st">You’re all set</h2><p class="help">Here’s your feed. Change any of it later in Settings.</p><div data-part="summary"></div></section>
     </div></div>
     <div class="onb-bottom"><button class="btn primary xl" data-nav="next">Get started</button></div></div>`;
   document.body.appendChild(el); document.body.classList.add('onb-open');
@@ -1056,7 +1118,7 @@ function openOnboarding(start = 0) {
     el.querySelectorAll('.dot').forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('done', k < i); if (k === i) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current'); });
     $('[data-nav="back"]', el).style.visibility = i ? 'visible' : 'hidden';
     $('[data-nav="skip"]', el).style.visibility = i < STEPS - 1 ? 'visible' : 'hidden';
-    next.textContent = i === 0 ? 'Get started' : i === STEPS - 1 ? 'Show my feed' : (i === 2 && !S.follow.length) || (i === CONF_STEP && !S.conferences.length) ? 'Skip this step' : 'Next';
+    next.textContent = i === 0 ? 'Get started' : i === STEPS - 1 ? 'Show my feed' : (i === 2 && !S.follow.length) || (i === CONF_STEP && !S.conferences.length) || (i === WATCH_STEP && !myProviders().length) ? 'Skip this step' : 'Next';
     el.querySelectorAll('.dot')[CONF_STEP].hidden = !S.sports.includes('cfb');
   };
   const go = (n) => {
