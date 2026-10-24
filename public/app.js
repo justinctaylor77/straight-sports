@@ -69,7 +69,7 @@ function applyTheme() {
   if (S.theme === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = S.theme;
   // one theme-color that matches the app background, so the status bar blends in when installed
   const metas = document.querySelectorAll('meta[name="theme-color"]');
-  metas.forEach((m, i) => { if (i) m.remove(); else { m.removeAttribute('media'); m.content = isDark() ? '#0B0B0B' : '#F2EFE8'; } });
+  metas.forEach((m, i) => { if (i) m.remove(); else { m.removeAttribute('media'); m.content = isDark() ? '#030303' : '#F2EFE8'; } });
 }
 
 // ---------------- app bar (sticky compact header) ----------------

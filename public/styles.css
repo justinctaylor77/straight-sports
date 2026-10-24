@@ -921,7 +921,7 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
    Black is the base; basecamp orange = primary actions + live; olive = secondary, tabs, follows.
    Change the palette here — everything below reads these variables. (:not(#_) out-ranks the per-sport accents above.) */
 :root:not(#_) {
-  --ridge-black: #0B0B0B; --ridge-s1: #141414; --ridge-s2: #1C1C1C;
+  --ridge-black: #030303; --ridge-s1: #0E0E0E; --ridge-s2: #171717;
   --ridge-olive: #5A6B3A; --ridge-olive-l: #7A8B4F;
   --ridge-orange: #F56600; --ridge-orange-h: #FF8533;
   --ridge-text: #F2EFE8;
@@ -933,7 +933,7 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
   --accent: var(--ridge-orange); --accent-h: var(--ridge-orange-h); --accent-ink: var(--ridge-black); --accent-soft: rgba(245,102,0,.16);
   --olive: var(--ridge-olive); --olive-t: var(--ridge-olive-l); --olive-ink: var(--ridge-text); --olive-soft: rgba(122,139,79,.20);
   --live: var(--ridge-orange); --warn: #e9b44c;
-  --glass: rgba(20,20,20,.82); --glass-2: rgba(28,28,28,.70); --hl: rgba(242,239,232,.06); --scrim: rgba(11,11,11,.64);
+  --glass: rgba(14,14,14,.82); --glass-2: rgba(23,23,23,.70); --hl: rgba(242,239,232,.06); --scrim: rgba(3,3,3,.64);
   --shadow: 0 6px 24px rgba(0,0,0,.45);
 }
 /* light (opt-in): off-white paper, black ink; darker tints of the same orange/olive so text stays readable */
