@@ -923,14 +923,14 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
 :root:not(#_) {
   --ridge-black: #0B0B0B; --ridge-s1: #141414; --ridge-s2: #1C1C1C;
   --ridge-olive: #5A6B3A; --ridge-olive-l: #7A8B4F;
-  --ridge-orange: #E8702A; --ridge-orange-h: #F08A47;
+  --ridge-orange: #F56600; --ridge-orange-h: #FF8533;
   --ridge-text: #F2EFE8;
 }
 /* dark (default) */
 :root:not(#_):not([data-theme="light"]) {
   --bg: var(--ridge-black); --surface: var(--ridge-s1); --surface-2: var(--ridge-s2); --outer: #070707;
   --text: var(--ridge-text); --muted: #c2bdb3; --faint: #948f86; --border: rgba(242,239,232,.10); --chip: rgba(242,239,232,.07);
-  --accent: var(--ridge-orange); --accent-h: var(--ridge-orange-h); --accent-ink: var(--ridge-black); --accent-soft: rgba(232,112,42,.16);
+  --accent: var(--ridge-orange); --accent-h: var(--ridge-orange-h); --accent-ink: var(--ridge-black); --accent-soft: rgba(245,102,0,.16);
   --olive: var(--ridge-olive); --olive-t: var(--ridge-olive-l); --olive-ink: var(--ridge-text); --olive-soft: rgba(122,139,79,.20);
   --live: var(--ridge-orange); --warn: #e9b44c;
   --glass: rgba(20,20,20,.82); --glass-2: rgba(28,28,28,.70); --hl: rgba(242,239,232,.06); --scrim: rgba(11,11,11,.64);
@@ -940,23 +940,23 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
 :root:not(#_)[data-theme="light"] {
   --bg: var(--ridge-text); --surface: #ffffff; --surface-2: #f7f5f0; --outer: #e9e5dc;
   --text: var(--ridge-black); --muted: #46443f; --faint: #6b6860; --border: #ddd8cd; --chip: #ebe7de;
-  --accent: #B9541A; --accent-h: var(--ridge-orange); --accent-ink: #ffffff; --accent-soft: rgba(232,112,42,.14);
+  --accent: #C24F00; --accent-h: var(--ridge-orange); --accent-ink: #ffffff; --accent-soft: rgba(245,102,0,.14);
   --olive: var(--ridge-olive); --olive-t: #4a5830; --olive-ink: #ffffff; --olive-soft: rgba(90,107,58,.14);
-  --live: #B9541A; --glass: rgba(255,255,255,.88); --glass-2: rgba(255,255,255,.72); --scrim: rgba(242,239,232,.8);
+  --live: #C24F00; --glass: rgba(255,255,255,.88); --glass-2: rgba(255,255,255,.72); --scrim: rgba(242,239,232,.8);
 }
 @media (prefers-color-scheme: light) {
   :root:not(#_):not([data-theme]) , :root:not(#_)[data-theme="system"] {
     --bg: var(--ridge-text); --surface: #ffffff; --surface-2: #f7f5f0; --outer: #e9e5dc;
     --text: var(--ridge-black); --muted: #46443f; --faint: #6b6860; --border: #ddd8cd; --chip: #ebe7de;
-    --accent: #B9541A; --accent-ink: #ffffff; --accent-soft: rgba(232,112,42,.14);
+    --accent: #C24F00; --accent-ink: #ffffff; --accent-soft: rgba(245,102,0,.14);
     --olive-t: #4a5830; --olive-ink: #ffffff; --olive-soft: rgba(90,107,58,.14);
-    --live: #B9541A; --glass: rgba(255,255,255,.88); --glass-2: rgba(255,255,255,.72); --scrim: rgba(242,239,232,.8);
+    --live: #C24F00; --glass: rgba(255,255,255,.88); --glass-2: rgba(255,255,255,.72); --scrim: rgba(242,239,232,.8);
   }
 }
 /* primary actions: orange (+ hover tint) */
 .btn.primary:hover, .wbtn.prov.mine:hover { background: var(--accent-h); border-color: var(--accent-h); }
 .wbtn, .btn.primary, .watch { --accent: var(--ridge-orange); }
-:root[data-theme="light"] .wbtn, :root[data-theme="light"] .btn.primary { --accent: #B9541A; }
+:root[data-theme="light"] .wbtn, :root[data-theme="light"] .btn.primary { --accent: #C24F00; }
 /* tabs: olive */
 .seg button.on, .sportbar .chip.on { --accent: var(--olive); --accent-ink: var(--olive-ink); }
 .nav a.active, .seg-a.grok-tab, .chip.on, .dot.on, .dot.done { --accent: var(--olive-t); --accent-soft: var(--olive-soft); }
@@ -969,7 +969,7 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
 .pf.on, #fol.primary, .btn.primary[data-pfollow], .btn.primary[data-sfollow] { background: var(--olive); border-color: var(--olive); color: var(--olive-ink); }
 .switch input:checked { background: var(--olive); }
 /* the card stripe for your games stays olive; the watch buttons inside stay orange */
-.game.mine .watch, .game.mine .wbtn { --accent: var(--ridge-orange); --accent-soft: rgba(232,112,42,.16); --accent-ink: var(--ridge-black); }
+.game.mine .watch, .game.mine .wbtn { --accent: var(--ridge-orange); --accent-soft: rgba(245,102,0,.16); --accent-ink: var(--ridge-black); }
 /* results + charts */
 .sched-row .res.W { color: var(--olive-t); } .sched-row .res.L { color: var(--accent); }
 .gk-split .p { background: var(--olive); color: var(--olive-ink); }
@@ -977,8 +977,8 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
 .dot-co, .gk-dot.co { border-color: var(--olive-t); }
 .mv.up { color: var(--olive-t); background: var(--olive-soft); }
 /* non-core sports used to get a catalog accent — Ridge keeps one palette everywhere */
-:root:not(#_)[data-xa] { --accent: var(--ridge-orange); --accent-soft: rgba(232,112,42,.16); }
-:root:not(#_)[data-xa][data-theme="light"] { --accent: #B9541A; }
+:root:not(#_)[data-xa] { --accent: var(--ridge-orange); --accent-soft: rgba(245,102,0,.16); }
+:root:not(#_)[data-xa][data-theme="light"] { --accent: #C24F00; }
 
 /* ---------- v8: schedule + player pages, box scores, golf rounds ---------- */
 .more-link { float: right; font-size: 13px; font-weight: 600; color: var(--accent); text-transform: none; letter-spacing: 0; }
