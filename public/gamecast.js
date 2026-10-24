@@ -4,7 +4,7 @@
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ord = (n) => (n == null ? '' : `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)]}`);
 const fmtWhen = (iso) => { const d = new Date(iso); return `${d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`; };
-import { footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js';
+import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js';
 const hex = (c, fb) => (c && /^[0-9a-f]{6}$/i.test(c) ? `#${c}` : fb);
 
 export const castState = { tab: 'summary', player: null, sport: null, id: null, fp: null, fd: null, ab: null, sf: 'all' };
@@ -72,43 +72,57 @@ function statCompare(d, ctx) {
       return `<div class="sr"><b>${esc(s.away)}</b><span>${esc(s.label)}</span><b>${esc(s.home)}</b>${!tm && /\d/.test(s.away) && !/-/.test(s.away) ? `<div class="bar"><i style="width:${(a / t) * 100}%;background:${hex(d.away.team.color, 'var(--muted)')}"></i><i style="width:${(h / t) * 100}%;background:${hex(d.home.team.color, 'var(--accent)')}"></i></div>` : ''}</div>`; }).join('')}</div>`;
 }
 const tabs = (list) => `<div class="toolbar sticky gc-tabs"><div class="seg" role="tablist">${list.map(([k, l]) => `<button data-gctab="${k}" class="${castState.tab === k ? 'on' : ''}" role="tab" aria-selected="${castState.tab === k}">${l}</button>`).join('')}</div></div>`;
-const footer = (d, extra = '') => `<p class="faint small gc-foot">${d.state === 'in' ? 'Updates automatically about every 20 seconds while this screen is open. ' : ''}Data: ESPN public feeds.${extra ? ` ${extra}` : ''} ${d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener noreferrer">Open on ESPN ↗</a>` : ''}</p>`;
+const footer = (d, extra = '') => `${d.state !== 'pre' && castState.tab === 'summary' ? venueCard(d) : ''}<p class="faint small gc-foot">${d.state === 'in' ? 'Updates automatically about every 20 seconds while this screen is open. ' : ''}Data: ESPN public feeds.${extra ? ` ${extra}` : ''} ${d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener noreferrer">Open on ESPN ↗</a>` : ''}</p>`;
+const nf = (n) => Number(n).toLocaleString('en-US');
+// Venue facts: name/city/surface/attendance come from ESPN; capacity and year built from Wikipedia/Wikidata (server-verified).
+// Unknown capacity / year show N/A; attendance and sellout % are only shown once ESPN reports attendance (live or final).
+function venueCard(d) {
+  const v = d.venueInfo; if (!v || !v.name) return '';
+  const loc = [v.city, v.state].filter(Boolean).join(', ');
+  const row = (k, val) => `<div class="r"><span>${k}</span><b>${val}</b></div>`;
+  const na = '<span class="faint">N/A</span>';
+  const att = d.state !== 'pre' && v.attendance > 0;
+  return `<div class="card gc-venue"><div class="vh"><b>${esc(v.name)}</b>${loc ? `<span>${esc(loc)}</span>` : ''}</div>
+    ${row('Year built', v.built ? esc(v.built) : na)}${row('Capacity', v.capacity ? nf(v.capacity) : na)}
+    ${att ? row(d.state === 'in' ? 'Attendance (so far)' : 'Attendance', nf(v.attendance)) : ''}
+    ${att && v.sellout != null ? `${row('Sellout', `${v.sellout.toFixed(1)}%`)}<div class="bar" aria-hidden="true"><i style="width:${Math.min(100, v.sellout)}%"></i></div>${v.sellout > 100 ? '<div class="vsrc">Attendance above listed capacity (standing room / expanded seating).</div>' : ''}` : ''}
+    ${v.source ? `<div class="vsrc">Capacity &amp; year: <a href="${esc(v.source)}" target="_blank" rel="noopener noreferrer">Wikipedia</a>${v.attendance && d.state !== 'pre' ? ' · attendance: ESPN' : ''}</div>` : ''}</div>`;
+}
 function preGame(d, inner = '') {
   return `<div class="card gc-pre"><div class="r"><span>Start</span><b>${esc(fmtWhen(d.date))}</b></div>
-    ${d.venue ? `<div class="r"><span>Venue</span><b>${esc(d.venue)}</b></div>` : ''}
+    ${d.venue && !d.venueInfo ? `<div class="r"><span>Venue</span><b>${esc(d.venue)}</b></div>` : ''}
     <div class="r"><span>TV</span><b>${esc(d.broadcast || 'Not listed')}</b></div>
-    <div class="r"><span>Records</span><b>${esc(d.away.team.abbr)} ${esc(d.away.record || '–')} · ${esc(d.home.team.abbr)} ${esc(d.home.record || '–')}</b></div>${inner}</div>`;
+    <div class="r"><span>Records</span><b>${esc(d.away.team.abbr)} ${esc(d.away.record || '–')} · ${esc(d.home.team.abbr)} ${esc(d.home.record || '–')}</b></div>${inner}</div>${venueCard(d)}`;
 }
 
 // ---------- football ----------
 function field(d, ctx) {
   const s = d.situation; if (!s || s.yardsToEndzone == null || !s.possessionSide) return '';
-  // Schematic field: away team attacks to the right, home team to the left.
-  const W = 360; const H = 120; const ez = 30; const play = W - ez * 2; const yx = (y) => ez + (y / 100) * play;
+  // Away team attacks to the right, home team to the left (home logo on the 50, red zones tinted).
+  const { W, H, EZ: ez, PL: play, MID } = FIELD; const yx = (y) => ez + (y / 100) * play;
   const right = s.possessionSide === 'away';
   const ball = right ? 100 - s.yardsToEndzone : s.yardsToEndzone;
   const dist = Math.min(s.distance || 0, s.yardsToEndzone);
   const gain = right ? ball + dist : ball - dist;
-  const hc = hex(d.home.team.color, '#1f6f5c'); const ac = hex(d.away.team.color, '#3b6fd8');
-  const lines = Array.from({ length: 9 }, (_, i) => { const x = yx((i + 1) * 10); const n = (i + 1) * 10; return `<line x1="${x}" x2="${x}" y1="0" y2="${H}" class="yl"/><text x="${x}" y="${H - 6}" class="yn">${n > 50 ? 100 - n : n}</text>`; }).join('');
   const off = right ? d.away.team : d.home.team;
   return `<div class="card gc-field">
     <div class="sit"><img src="${esc(ctx.logo(off))}" alt="" width="22" height="22" /><b>${esc(s.text || '')}</b>${s.spot && !(s.text || '').includes(s.spot) ? `<span class="faint">at ${esc(s.spot)}</span>` : ''}${s.redZone ? '<span class="rz">Red zone</span>' : ''}</div>
     <svg viewBox="0 0 ${W} ${H}" class="field-svg" role="img" aria-label="Ball on the field: ${esc(s.text || '')}">
-      <rect x="0" y="0" width="${W}" height="${H}" class="turf"/>
-      <rect x="0" y="0" width="${ez}" height="${H}" fill="${ac}"/><rect x="${W - ez}" y="0" width="${ez}" height="${H}" fill="${hc}"/>
-      <text x="${ez / 2}" y="${H / 2}" class="ezt" transform="rotate(-90 ${ez / 2} ${H / 2})">${esc(d.away.team.abbr)}</text>
-      <text x="${W - ez / 2}" y="${H / 2}" class="ezt" transform="rotate(90 ${W - ez / 2} ${H / 2})">${esc(d.home.team.abbr)}</text>
-      ${lines}
-      ${dist ? `<rect x="${Math.min(yx(ball), yx(gain))}" y="18" width="${Math.abs(yx(gain) - yx(ball))}" height="${H - 46}" class="togo"/>` : ''}
-      <line x1="${yx(ball)}" x2="${yx(ball)}" y1="10" y2="${H - 22}" class="los"/>
-      ${dist ? `<line x1="${yx(gain)}" x2="${yx(gain)}" y1="10" y2="${H - 22}" class="ltg"/>` : ''}
-      <g transform="translate(${yx(ball)} ${H / 2 - 4})"><ellipse rx="9" ry="5.5" class="ball"/><path d="M-3 0h6" class="lace"/></g>
-      <path d="M${yx(ball) + (right ? 14 : -14)} ${H / 2 - 4} l${right ? -6 : 6} -5 v10z" class="dir"/>
+      ${fieldInner(d, ctx)}
+      ${dist ? `<rect x="${Math.min(yx(ball), yx(gain))}" y="14" width="${Math.abs(yx(gain) - yx(ball))}" height="${H - 36}" class="togo"/>` : ''}
+      <line x1="${yx(ball)}" x2="${yx(ball)}" y1="8" y2="${H - 20}" class="los"/>
+      ${dist ? `<line x1="${yx(gain)}" x2="${yx(gain)}" y1="8" y2="${H - 20}" class="ltg"/>` : ''}
+      <g transform="translate(${yx(ball)} ${MID})"><ellipse rx="9" ry="5.5" class="ball"/><path d="M-3 0h6" class="lace"/></g>
+      <path d="M${yx(ball) + (right ? 14 : -14)} ${MID} l${right ? -6 : 6} -5 v10z" class="dir"/>
     </svg>
-    <div class="legend"><span><i class="k los"></i>Line of scrimmage</span>${dist ? '<span><i class="k ltg"></i>Line to gain</span>' : ''}<span class="faint">${esc(d.away.team.abbr)} → · ← ${esc(d.home.team.abbr)}</span></div>
+    <div class="legend"><span><i class="k los"></i>Line of scrimmage</span>${dist ? '<span><i class="k ltg"></i>Line to gain</span>' : ''}<span><i class="k rzk"></i>Red zone</span><span class="faint">${esc(d.away.team.abbr)} → · ← ${esc(d.home.team.abbr)}</span></div>
     ${s.lastPlay ? `<div class="last"><span class="faint small">Last play</span> ${esc(s.lastPlay)}</div>` : ''}
     ${s.homeTimeouts != null ? `<div class="tos"><span>${esc(d.away.team.abbr)} timeouts ${'●'.repeat(s.awayTimeouts)}${'○'.repeat(Math.max(0, 3 - s.awayTimeouts))}</span><span>${esc(d.home.team.abbr)} timeouts ${'●'.repeat(s.homeTimeouts)}${'○'.repeat(Math.max(0, 3 - s.homeTimeouts))}</span></div>` : ''}</div>`;
+}
+function fieldCard(d, ctx) {
+  const { W, H } = FIELD;
+  return `<div class="card gc-field"><svg viewBox="0 0 ${W} ${H}" class="field-svg" role="img" aria-label="Football field, ${esc(d.home.team.name || d.home.team.abbr)} home">${fieldInner(d, ctx)}</svg>
+    <div class="legend"><span class="faint">${esc(d.away.team.abbr)} → · ← ${esc(d.home.team.abbr)} (home)</span><span><i class="k rzk"></i>Red zones (20 yd)</span></div></div>`;
 }
 function scoringList(d, ctx) {
   if (!d.scoring.length) return '';
@@ -133,11 +147,11 @@ function leaders(d, ctx) {
 }
 function footballCast(d, ctx) {
   let body = '';
-  if (d.state === 'pre') body = preGame(d) + `<p class="muted small">Down & distance, drives, win probability and team stats appear here once the game kicks off.</p>`;
+  if (d.state === 'pre') body = fieldCard(d, ctx) + preGame(d) + `<p class="muted small">Down & distance, drives, win probability and team stats appear here once the game kicks off.</p>`;
   else if (castState.tab === 'plays') body = drives(d, ctx);
   else if (castState.tab === 'stats') body = statCompare(d, ctx) + leaders(d, ctx);
   else if (castState.tab === 'box') body = boxTables(d, ctx);
-  else body = (d.state === 'in' ? field(d, ctx) : '') + footballPlays(d, castState) + lineScore(d) + wpChart(d, ctx) + scoringList(d, ctx) + (d.state === 'post' ? leaders(d, ctx) : '');
+  else body = (d.state === 'in' ? field(d, ctx) : '') + footballPlays(d, castState, ctx) + lineScore(d) + wpChart(d, ctx) + scoringList(d, ctx) + (d.state === 'post' ? leaders(d, ctx) : '');
   return header(d, ctx) + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Drives'], ['stats', 'Team stats'], ['box', 'Box score']])) + body
     + footer(d, d.state === 'in' ? 'Field graphic is schematic (away team attacks right).' : '');
 }

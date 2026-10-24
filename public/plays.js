@@ -23,6 +23,30 @@ const gxHead = (title, sub = '') => `<div class="gx-hd"><b>${esc(title)}</b>${su
 // =====================================================================================================================
 const FW = 360; const FH = 150; const EZ = 28; const PL = FW - EZ * 2; const MID = FH / 2;
 const fx = (yl) => EZ + ((100 - yl) / 100) * PL;
+// Realistic field shared by the Gamecast field card and the play tracker: striped turf, yard lines every 5 with hash marks,
+// numbers on both sidelines, team-coloured end zones with team names, the HOME team's logo on the 50, and a muted red-zone tint
+// over the 20 yards in front of each end zone. The away team's end zone is on the left (it attacks right).
+export function fieldInner(d, ctx) {
+  const col = teamColors(d); const ax = (y) => EZ + (y / 100) * PL; // y = yards from the away team's goal line
+  const stripes = Array.from({ length: 10 }, (_, i) => `<rect x="${f1(ax(i * 10))}" y="0" width="${f1(PL / 10)}" height="${FH}" class="${i % 2 ? 'st1' : 'st0'}"/>`).join('');
+  const lines = Array.from({ length: 19 }, (_, i) => { const n = (i + 1) * 5; return `<line x1="${f1(ax(n))}" x2="${f1(ax(n))}" y1="0" y2="${FH}" class="yl ${n % 10 ? 'minor' : ''}"/>`; }).join('');
+  let ticks = ''; for (let y = 1; y < 100; y++) { if (y % 5 === 0) continue; const x = f1(ax(y)); ticks += `M${x} 1v3M${x} ${FH - 4}v3M${x} ${MID - 17}v3.2M${x} ${MID + 14}v3.2`; }
+  const nums = Array.from({ length: 9 }, (_, i) => { const n = (i + 1) * 10; const v = n > 50 ? 100 - n : n; const x = f1(ax(n));
+    return `<text x="${x}" y="${FH - 11}" class="yn">${v}</text><text x="${x}" y="${FH - 11}" class="yn" transform="rotate(180 ${x} ${MID})">${v}</text>`; }).join('');
+  const nm = (t) => String(t.short || t.name || t.abbr || '').toUpperCase();
+  const ezt = (t, x, rot) => { const label = nm(t); const fs = Math.max(7, Math.min(15, 128 / (label.length * 0.78))); return `<text x="${x}" y="${MID}" class="ezt" font-size="${f1(fs)}" transform="rotate(${rot} ${x} ${MID})">${esc(label)}</text>`; };
+  const hx = ax(50);
+  const logo = ctx && ctx.logo ? ctx.logo(d.home.team) : '';
+  return `<rect width="${FW}" height="${FH}" class="turf"/>${stripes}
+    <rect x="${f1(ax(0))}" width="${f1(PL / 5)}" height="${FH}" class="rz"/><rect x="${f1(ax(80))}" width="${f1(PL / 5)}" height="${FH}" class="rz"/>
+    <rect width="${EZ}" height="${FH}" fill="${col.away}"/><rect x="${FW - EZ}" width="${EZ}" height="${FH}" fill="${col.home}"/>
+    <rect width="${EZ}" height="${FH}" class="ezsh"/><rect x="${FW - EZ}" width="${EZ}" height="${FH}" class="ezsh"/>
+    ${ezt(d.away.team, EZ / 2, -90)}${ezt(d.home.team, FW - EZ / 2, 90)}
+    ${lines}<path d="${ticks}" class="hm"/>${nums}
+    <rect x="0.75" y="0.75" width="${FW - 1.5}" height="${FH - 1.5}" class="bd"/>
+    ${logo ? `<circle cx="${f1(hx)}" cy="${MID}" r="21" class="disc"/><image href="${esc(logo)}" x="${f1(hx - 15)}" y="${MID - 15}" width="30" height="30" preserveAspectRatio="xMidYMid meet"/>` : ''}`;
+}
+export const FIELD = { W: FW, H: FH, EZ, PL, MID };
 export function fbCat(p) {
   const ty = `${p.type || ''}`; const tx = p.text || '';
   if (/timeout|end (of|period|game)|two-minute|coin toss|official|delay|\bTV\b|review/i.test(ty)) return null;
@@ -104,7 +128,7 @@ function fbDraw(p, d, dir, sel) {
   }
   return { svg, label };
 }
-export function footballPlays(d, st) {
+export function footballPlays(d, st, ctx) {
   if (d.state === 'pre') return '';
   const list = fbList(d);
   if (!list.length) return empty('Play graphics appear once ESPN posts yard-line data for the first plays.');
@@ -116,8 +140,6 @@ export function footballPlays(d, st) {
   const col = teamColors(d);
   const drawn = plays.map((q, i) => (i === pi ? null : fbDraw(q, d, (q.tm || dr.teamId) === d.away.team.id ? 1 : -1, false))).map((x) => (x ? x.svg : '')).join('');
   const main = fbDraw(p, d, dir, true);
-  const yl = Array.from({ length: 9 }, (_, i) => { const n = (i + 1) * 10; const x = fx(n); return `<line x1="${x}" x2="${x}" y1="0" y2="${FH}" class="yl"/><text x="${x}" y="${FH - 6}" class="yn">${n > 50 ? 100 - n : n}</text>`; }).join('');
-  const hash = Array.from({ length: 19 }, (_, i) => { const x = fx((i + 1) * 5); return i % 2 ? '' : `<path d="M${x} ${MID - 20}v4M${x} ${MID + 16}v4" class="hm"/>`; }).join('');
   const ltg = p.ds && ['pass', 'run', 'sack'].includes(p.cat) ? fx(p.s + (offAway ? -1 : 1) * p.ds) : null;
   const t = [d.home, d.away].find((s) => s.team.id === (p.tm || dr.teamId)) || d.away;
   const chips = plays.map((q, i) => set('fp', q.id, i === pi, `${i + 1}`, `c-${q.cat === 'pass' && (/incomplete|intercept/i.test(`${q.type} ${q.text}`)) ? 'bad' : q.cat === 'sack' ? 'bad' : q.cat}`)).join('');
@@ -127,10 +149,7 @@ export function footballPlays(d, st) {
     ${gxHead('Play tracker', `${dr.period ? `Q${dr.period} ` : ''}${esc(dr.clock || '')}`)}
     <div class="gx-drive">${nav('fd', (list[di + 1] || {}).dr ? list[di + 1].dr.id : '', '‹', di >= list.length - 1)}<span>${drLabel}${di === 0 && d.state === 'in' ? ' <i class="live-dot"></i>' : ''}</span>${nav('fd', di > 0 ? list[di - 1].dr.id : '', '›', di <= 0)}</div>
     <svg viewBox="0 0 ${FW} ${FH}" class="pg-svg" role="img" aria-label="${esc(`${main.label}. ${p.text}`)}">
-      <rect width="${FW}" height="${FH}" class="turf"/>
-      <rect width="${EZ}" height="${FH}" fill="${col.away}"/><rect x="${FW - EZ}" width="${EZ}" height="${FH}" fill="${col.home}"/>
-      <text x="${EZ / 2}" y="${MID}" class="ezt" transform="rotate(-90 ${EZ / 2} ${MID})">${esc(d.away.team.abbr)}</text><text x="${FW - EZ / 2}" y="${MID}" class="ezt" transform="rotate(90 ${FW - EZ / 2} ${MID})">${esc(d.home.team.abbr)}</text>
-      ${yl}${hash}
+      ${fieldInner(d, ctx)}
       ${ltg != null ? `<line x1="${f1(ltg)}" x2="${f1(ltg)}" y1="8" y2="${FH - 20}" class="ltg"/>` : ''}
       <line x1="${f1(fx(p.s))}" x2="${f1(fx(p.s))}" y1="8" y2="${FH - 20}" class="los"/>
       ${drawn}${main.svg}

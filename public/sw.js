@@ -1,5 +1,5 @@
 // Service worker: app shell cache-first, API network-first (offline fallback), logos stale-while-revalidate.
-const VERSION = 'ss-v16';
+const VERSION = 'ss-v17';
 const SHELL = ['/', '/index.html', '/styles.css', '/app.js', '/lib.js', '/gamecast.js', '/plays.js', '/teamtheme.js', '/backdrop.js', '/catalog.js', '/watch.js', '/people.js', '/fonts/barlow-condensed-600.woff2', '/fonts/barlow-condensed-700.woff2', '/fonts/barlow-condensed-800.woff2', '/manifest.webmanifest', '/icons/mark-96.png?v=16', '/icons/mark-192.png?v=16', '/icons/logo-full-640.png?v=16', '/icons/apple-touch-icon.png?v=16', '/icons/favicon-32.png?v=16', '/icons/favicon-16.png?v=16', '/icons/icon-maskable-512.png?v=16', '/favicon.ico?v=16', '/icons/icon-192.png?v=16', '/icons/icon-512.png?v=16'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== VERSION && k !== 'scfb-img').map((k) => caches.delete(k)))).then(() => self.clients.claim())); });

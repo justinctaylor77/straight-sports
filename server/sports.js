@@ -11,6 +11,8 @@ for (const [id, c] of Object.entries(CATALOG)) SPORTS[id] = { id, ...c, leagues:
 const CORE_TEAM = ['cfb', 'nfl', 'mlb'];
 
 module.exports = function makeSports({ cached, cache, fetchJSON }) {
+  const VENUES = require('./venues')({ cached });
+  const venueInfo = (gi, h) => VENUES.info(gi && gi.venue, (gi && gi.attendance) || (h && h.attendance) || 0).catch(() => null);
   // ids: CFB keeps bare ESPN ids (backwards compatible with v1/v2 saved settings); others are namespaced.
   const tid = (sport, id) => (sport === 'cfb' ? String(id) : `${sport}:${id}`);
   const logoOf = (t, sport) => t.logo || (t.logos && t.logos[0] && t.logos[0].href) || (sport === 'cfb' ? `https://a.espncdn.com/i/teamlogos/ncaa/500/${t.id}.png` : '');
@@ -374,7 +376,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const gi = d.gameInfo || {};
     const out = {
       kind: 'football', sport, id, state, detail: st.type.detail, short: st.type.shortDetail, clock: st.displayClock, period: st.period, date: h.date,
-      venue: venueOf(gi.venue), attendance: gi.attendance || null, broadcast: broadcastsOf(h) || (d.broadcasts || []).map((b) => b.media && b.media.shortName).filter(Boolean).join(', ') || null, nets: netsOf(h, d.broadcasts),
+      venue: venueOf(gi.venue), attendance: gi.attendance || (h && h.attendance) || null, venueInfo: await venueInfo(gi, h), broadcast: broadcastsOf(h) || (d.broadcasts || []).map((b) => b.media && b.media.shortName).filter(Boolean).join(', ') || null, nets: netsOf(h, d.broadcasts),
       home, away, note: d.header.gameNote || (h.notes || []).map((n) => n.headline).filter(Boolean)[0] || null, link: gameLink(sport, id),
     };
     // scoring summary
@@ -457,7 +459,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const { h, st, home, away } = headerSides(d, sport);
     const state = st.type.state; const gi = d.gameInfo || {};
     const out = { kind: 'baseball', sport, id, state, detail: st.type.detail, short: st.type.shortDetail, period: st.period, date: h.date,
-      venue: venueOf(gi.venue), attendance: gi.attendance || null, broadcast: broadcastsOf(h) || null, nets: netsOf(h, d.broadcasts), home, away, link: gameLink(sport, id),
+      venue: venueOf(gi.venue), attendance: gi.attendance || (h && h.attendance) || null, venueInfo: await venueInfo(gi, h), broadcast: broadcastsOf(h) || null, nets: netsOf(h, d.broadcasts), home, away, link: gameLink(sport, id),
       note: d.header.gameNote || null };
     const ev = await rawScoreboardEvent(sport, id, h.date).catch(() => null);
     const evc = ev && ev.competitions[0];
@@ -668,7 +670,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const { h, st, home, away } = headerSides(d, sport);
     const state = st.type.state; const gi = d.gameInfo || {};
     const out = { kind: 'generic', family: sp.family, sport, id, state, detail: st.type.detail, short: st.type.shortDetail, clock: st.displayClock, period: st.period, date: h.date,
-      venue: venueOf(gi.venue), attendance: gi.attendance || null, broadcast: broadcastsOf(h) || null, nets: netsOf(h, d.broadcasts), home, away, link: gameLink(sport, id),
+      venue: venueOf(gi.venue), attendance: gi.attendance || (h && h.attendance) || null, venueInfo: await venueInfo(gi, h), broadcast: broadcastsOf(h) || null, nets: netsOf(h, d.broadcasts), home, away, link: gameLink(sport, id),
       note: (d.header && d.header.gameNote) || (h.notes || []).map((n) => n.headline).filter(Boolean)[0] || null };
     const teamSide = (teamId) => (String(teamId) === home.team.espnId ? 'home' : String(teamId) === away.team.espnId ? 'away' : null);
     const bt = (d.boxscore && d.boxscore.teams) || [];
