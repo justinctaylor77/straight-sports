@@ -5,10 +5,10 @@ Owner: Justin Taylor (user). He approved the app as final on Oct 24, 2026 and as
 ## Where everything is
 - Code: /workspace/sports-app (shared box). Repo: github.com/justinctaylor77/straight-sports (main). `gh` and git push are authenticated on the box.
 - Hosting: Render web service "straight-sports", id srv-dbdsipnb9u1s73bct53g, free plan (cold starts). Live: https://straight-sports.onrender.com
-- Deploys: auto-deploy is OFF. After pushing, trigger a deploy with the Render connector (namespace `user-Render`, trigger_deploy), wait for live, then verify by curling /sw.js for the service-worker cache version (currently ss-v14). Bump the SW version on every client-visible change.
+- Deploys: auto-deploy is OFF. After pushing, trigger a deploy with the Render connector (namespace `user-Render`, trigger_deploy), wait for live, then verify by curling /sw.js for the service-worker cache version (currently ss-v16). Bump the SW version on every client-visible change.
 - Run locally: `npm install && npm start` (http://localhost:8787). Node 20+.
 - Screenshots of the live app: screenshots/live/ and screenshots/v4/live/.
-- Logo sources: /workspace/logos/logo4-olive.png (final, approved), logo4-final.png (pre-recolor). App assets live in public/icons with ?v=14 cache-busting.
+- Logo: the approved ball-S recolored to USA red/white/blue (red football #B22234, blue baseball loop #3B5FAB with white stitches, navy #061225 background). Source: /workspace/logos/logo4-usa.png (+ logo4-usa-transparent.png for the header mark; made by /workspace/logos/recolor_usa.py, also copied to scripts/). Earlier versions kept: logo4-olive.png (Ridge final), logo4-final.png (pre-recolor). Regenerate all app assets in public/icons + favicon.ico with `python3 scripts/make-icons-usa.py`; icon URLs use ?v=16 cache-busting (bump with the SW version). Previews: screenshots/v10/.
 
 ## Data sources
 - ESPN public JSON feeds for scores, schedules, box scores, rosters, player season + career stats, team logos (by ESPN team id), AP/Coaches/CFP ranks (always live, never stored).
@@ -16,6 +16,7 @@ Owner: Justin Taylor (user). He approved the app as final on Oct 24, 2026 and as
 - SeatGeek: secret env var SEATGEEK_CLIENT_ID on Render (Justin pasted it in the dashboard himself; /api/tickets/status shows keyLength 35, lastStatus 200). NEVER print, echo, log, or commit the key. The free key returns no prices, so ticket links read "Tickets on SeatGeek" and go to the exact event page. Real prices need SeatGeek partner access.
 
 ## Commit history (newest first)
+- (ss-v16) logo recolored to USA red/white/blue (ball S, same shape); icons regenerated, ?v=16
 - e0b388e logo green recolored to olive drab #6B8E23; cache-busted icon URLs (ss-v14)
 - (ss-v15, this commit) USA red/white/blue theme (dark+light); team pages/players re-skin in the team's ESPN colors via public/teamtheme.js (inline CSS vars on <html>, cleared on other routes, solid readable hero); Scores = Favorites → Live → Upcoming → Finished; Schedule tab on every team page + tappable team names in score cards (schedule data/API always worked; it just had no visible entry point); stricter sports-only news (server/classify.js sportsCheck, /api/news?debug); Gamecast graphics in public/plays.js: football pass/run/kick field plays, MLB strike-zone pitch tracker + spray chart, NHL rink shots, NBA/CBB shot chart, soccer shot map, golf leaderboard bars + hole strip, tennis court + set bars, F1/NASCAR/Indy podium. Screenshots: scripts/shots-v9.js, scripts/shots-gamecast.js → screenshots/v9/.
 - 9430ac8 new S logo: header mark, PNG icons/favicons, splash (ss-v13)
@@ -33,7 +34,7 @@ Owner: Justin Taylor (user). He approved the app as final on Oct 24, 2026 and as
 - His own setup: college football, NFL, MLB, golf, tennis. Other users can turn on any sport (NBA, WNBA, etc.), off by default. Users can follow any teams and players.
 - Sleek, sporty design, dynamic backgrounds per sport/team.
 - Ridge color scheme: royal black #030303 (main), basecamp orange #F56600 and olive drab #6B8E23 (supplemental). CSS vars --ridge-black/-s1/-s2/-orange/-olive in public/styles.css.
-- Logo: the approved "ball S" (orange football top, olive baseball loop bottom, stitches only on the green band). Never anything resembling the Nazi SS (no sharp angular/lightning S's).
+- Logo: the approved "ball S" (originally orange football top / olive baseball loop; now red football top / blue baseball loop with white stitches, stitches only on the lower loop). Never anything resembling the Nazi SS (no sharp angular/lightning S's).
 - Ranking is named "JT Top 25" (not Top 30, not Grok Top 25) with a short description and a "How it's calculated" page: 40% predictive (avg of SP+ and FPI rank) + 60% résumé points, no manual overrides.
 - Correct official team logos everywhere.
 - "Watch" link on every game to the network's live broadcast, subscribed providers first. Justin has YouTube TV (pre-selected). Settings list the most-used providers; first-time setup has a "How do you watch?" step.
