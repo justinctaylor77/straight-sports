@@ -3,7 +3,7 @@
 A customizable, low-bias sports app (installable PWA). Out of the box it covers **college football, NFL, MLB, golf (PGA/LPGA) and tennis (ATP/WTA)**; anyone who installs it can switch on more sports from the catalog (all optional and off by default).
 
 - Scores, standings/rankings and schedules for the sports you pick
-- **Gamecast** for every game or event: down & distance and field graphic (football), count/outs/bases (MLB), leaderboard and hole-by-hole scorecards (golf), set scores and server (tennis); auto-refreshes while live
+- **Gamecast** for every game or event: down & distance and field graphic (football), count/outs/bases (MLB), leaderboard and hole-by-hole scorecards (golf), set scores and server (tennis); animated (ball flight, pitch and shot plots, leaderboard bars, replay button; reduced-motion safe); auto-refreshes while live, animating only new plays
 - Straight news only: opinion, betting and hot-take pieces filtered out; mute teams, players, keywords and outlets
 - Follow teams **and players in every sport** (search by name or browse league → division/conference → roster). Followed teams/players are pinned first in scores, highlighted in Gamecast and boosted in news; settings stay on your device (localStorage), no account
 - Dynamic backdrop: sport artwork tinted with the sport's accent, team colors + logo on team pages, the two teams split diagonally in Gamecast, player flags/headshots for golf, tennis and event sports. Respects `prefers-reduced-motion`.

@@ -1,6 +1,7 @@
 import { LEAGUE_MUTES, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=18';
+import * as GA from './anim.js?v=18';
 import * as BD from './backdrop.js';
 import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
@@ -737,7 +738,10 @@ async function viewGame(sp, id, quick) {
   setBar(castTitle(d), { back: `#/${lastTab}` });
   const y = window.scrollY;
   gameBackdrop(sp, d);
-  view.innerHTML = `<div class="gc gc-${d.kind}">${renderGamecast(d, castCtx())}</div>`;
+  // Animation mode: 'load' (first open / tab change: everything plays), 'select' (user picked a play/drive/filter: that card plays),
+  // 'refresh' (10s live poll: only cards that changed are patched and only brand-new plays/pitches/shots animate).
+  const mode = castState.mode || (quick ? 'refresh' : 'load'); castState.mode = null;
+  GA.mountCast(view, `gc gc-${d.kind}`, renderGamecast(d, castCtx()), `${sp}:${id}`, mode);
   if (quick) window.scrollTo(0, y);
   castLive = d.state === 'in';
   scheduleRefresh(castLive, 10e3);
@@ -1396,6 +1400,27 @@ function syncSportUI(name) {
   if (!['team', 'game', 'schedule', 'player'].includes(name)) BD.setSport(S.sport);
   document.title = `Straight Sports · ${SPORTS[S.sport].short}`;
 }
+// "Play drive": steps the football play tracker through the drive, one play at a time, animating each; any manual tap stops it.
+let autoTimer = null;
+function stopAuto() {
+  if (autoTimer) clearInterval(autoTimer); autoTimer = null; castState.auto = false;
+  document.querySelectorAll('[data-autoplay]').forEach((b) => { b.classList.remove('on'); b.textContent = '▶ Play drive'; b.setAttribute('aria-pressed', 'false'); });
+}
+function startAuto(card) {
+  const ids = ((card && card.dataset.plays) || '').split(',').filter(Boolean); if (ids.length < 2) return;
+  let i = ids.indexOf(card.dataset.cur); if (i < 0 || i >= ids.length - 1) i = -1;
+  const sp = castState.sport; const id = castState.id;
+  castState.auto = true;
+  document.querySelectorAll('[data-autoplay]').forEach((b) => { b.classList.add('on'); b.textContent = '❚❚ Pause'; b.setAttribute('aria-pressed', 'true'); });
+  const step = () => {
+    if (!castState.auto || castState.sport !== sp || castState.id !== id || !(location.hash || '').startsWith('#/game/')) { stopAuto(); return; }
+    if (document.hidden) return;
+    i += 1; if (i >= ids.length) { stopAuto(); return; }
+    castState.fp = ids[i]; castState.mode = 'select';
+    viewGame(sp, id, true).then(() => { if (i >= ids.length - 1) setTimeout(() => { if (castState.auto) stopAuto(); }, 1500); });
+  };
+  step(); autoTimer = setInterval(step, 2600);
+}
 document.addEventListener('click', (e) => {
   const sw = e.target.closest('[data-switch]');
   if (sw) {
@@ -1405,9 +1430,13 @@ document.addEventListener('click', (e) => {
   }
   const inCast = (location.hash || '').startsWith('#/game/');
   const tab = e.target.closest('[data-gctab]');
-  if (tab && inCast) { tick(); castState.tab = tab.dataset.gctab; viewGame(castState.sport, castState.id, true); return; }
+  const rp = e.target.closest('[data-replay]');
+  if (rp && inCast) { tick(); stopAuto(); GA.replay(rp.closest('.gx')); return; }
+  const ap = e.target.closest('[data-autoplay]');
+  if (ap && inCast) { tick(); if (castState.auto) stopAuto(); else startAuto(ap.closest('.gx')); return; }
+  if (tab && inCast) { tick(); stopAuto(); castState.tab = tab.dataset.gctab; castState.mode = 'load'; viewGame(castState.sport, castState.id, true); return; }
   const gs = e.target.closest('[data-gcset]');
-  if (gs && inCast) { tick(); const [k, ...v] = gs.dataset.gcset.split('='); if (['fp', 'fd', 'ab', 'sf'].includes(k)) { castState[k] = v.join('=') || null; if (k === 'fd') castState.fp = null; viewGame(castState.sport, castState.id, true); } return; }
+  if (gs && inCast) { tick(); const [k, ...v] = gs.dataset.gcset.split('='); if (['fp', 'fd', 'ab', 'sf'].includes(k)) { stopAuto(); castState[k] = v.join('=') || null; if (k === 'fd') castState.fp = null; castState.mode = 'select'; viewGame(castState.sport, castState.id, true); } return; }
   const pf = e.target.closest('[data-pfollow]');
   if (pf) {
     e.preventDefault(); e.stopPropagation(); tick();

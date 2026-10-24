@@ -4,7 +4,7 @@
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ord = (n) => (n == null ? '' : `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)]}`);
 const fmtWhen = (iso) => { const d = new Date(iso); return `${d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`; };
-import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js';
+import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=18';
 const hex = (c, fb) => (c && /^[0-9a-f]{6}$/i.test(c) ? `#${c}` : fb);
 
 export const castState = { tab: 'summary', player: null, sport: null, id: null, fp: null, fd: null, ab: null, sf: 'all' };
@@ -28,7 +28,7 @@ function header(d, ctx) {
   return `<div class="card gc-head">
     ${d.note ? `<div class="gc-note">${esc(d.note)}</div>` : ''}
     <div class="gc-score">${side(d.away, d, ctx, 'l')}
-      <div class="gc-mid"><div class="nums"><span class="${d.state === 'post' && !d.away.winner ? 'lo' : ''}">${score(d.away)}</span><span class="dash">${d.state === 'pre' ? 'vs' : '–'}</span><span class="${d.state === 'post' && !d.home.winner ? 'lo' : ''}">${score(d.home)}</span></div>
+      <div class="gc-mid"><div class="nums"><span data-s="away" class="${d.state === 'post' && !d.away.winner ? 'lo' : ''}">${score(d.away)}</span><span class="dash">${d.state === 'pre' ? 'vs' : '–'}</span><span data-s="home" class="${d.state === 'post' && !d.home.winner ? 'lo' : ''}">${score(d.home)}</span></div>
         <div class="st">${statusLine(d)}</div></div>
       ${side(d.home, d, ctx, 'r')}</div>
     <div class="gc-meta">${[d.venue, d.broadcast && `TV: ${d.broadcast}`, d.attendance && `Att. ${(+d.attendance).toLocaleString()}`].filter(Boolean).map(esc).join(' · ')}</div>${ctx.watch ? ctx.watch(d) : ''}</div>`;
@@ -72,7 +72,7 @@ function statCompare(d, ctx) {
       return `<div class="sr"><b>${esc(s.away)}</b><span>${esc(s.label)}</span><b>${esc(s.home)}</b>${!tm && /\d/.test(s.away) && !/-/.test(s.away) ? `<div class="bar"><i style="width:${(a / t) * 100}%;background:${hex(d.away.team.color, 'var(--muted)')}"></i><i style="width:${(h / t) * 100}%;background:${hex(d.home.team.color, 'var(--accent)')}"></i></div>` : ''}</div>`; }).join('')}</div>`;
 }
 const tabs = (list) => `<div class="toolbar sticky gc-tabs"><div class="seg" role="tablist">${list.map(([k, l]) => `<button data-gctab="${k}" class="${castState.tab === k ? 'on' : ''}" role="tab" aria-selected="${castState.tab === k}">${l}</button>`).join('')}</div></div>`;
-const footer = (d, extra = '') => `${d.state !== 'pre' && castState.tab === 'summary' ? venueCard(d) : ''}<p class="faint small gc-foot">${d.state === 'in' ? 'Updates automatically about every 20 seconds while this screen is open. ' : ''}Data: ESPN public feeds.${extra ? ` ${extra}` : ''} ${d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener noreferrer">Open on ESPN ↗</a>` : ''}</p>`;
+const footer = (d, extra = '') => `${d.state !== 'pre' && castState.tab === 'summary' ? venueCard(d) : ''}<p class="faint small gc-foot">${d.state === 'in' ? 'Updates automatically about every 10 seconds while this screen is open. ' : ''}Data: ESPN public feeds.${extra ? ` ${extra}` : ''} ${d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener noreferrer">Open on ESPN ↗</a>` : ''}</p>`;
 const nf = (n) => Number(n).toLocaleString('en-US');
 // Venue facts: name/city/surface/attendance come from ESPN; capacity and year built from Wikipedia/Wikidata (server-verified).
 // Unknown capacity / year show N/A; attendance and sellout % are only shown once ESPN reports attendance (live or final).
@@ -82,9 +82,13 @@ function venueCard(d) {
   const row = (k, val) => `<div class="r"><span>${k}</span><b>${val}</b></div>`;
   const na = '<span class="faint">N/A</span>';
   const att = d.state !== 'pre' && v.attendance > 0;
+  // Live game, ESPN hasn't published attendance yet: say so (never estimate); sellout shows Pending once capacity is known.
+  const wait = d.state === 'in' && !att;
+  const pend = '<span class="faint">Pending</span>';
   return `<div class="card gc-venue"><div class="vh"><b>${esc(v.name)}</b>${loc ? `<span>${esc(loc)}</span>` : ''}</div>
     ${row('Year built', v.built ? esc(v.built) : na)}${row('Capacity', v.capacity ? nf(v.capacity) : na)}
     ${att ? row(d.state === 'in' ? 'Attendance (so far)' : 'Attendance', nf(v.attendance)) : ''}
+    ${wait ? `${row('Attendance', '<span class="faint">Not reported yet</span>')}${row('Sellout', pend)}<div class="vsrc">ESPN usually posts attendance late in the game or at the final. This card picks it up on the next refresh once it does; no estimate is shown.</div>` : ''}
     ${att && v.sellout != null ? `${row('Sellout', `${v.sellout.toFixed(1)}%`)}<div class="bar" aria-hidden="true"><i style="width:${Math.min(100, v.sellout)}%"></i></div>${v.sellout > 100 ? '<div class="vsrc">Attendance above listed capacity (standing room / expanded seating).</div>' : ''}` : ''}
     ${v.source ? `<div class="vsrc">Capacity &amp; year: <a href="${esc(v.source)}" target="_blank" rel="noopener noreferrer">Wikipedia</a>${v.attendance && d.state !== 'pre' ? ' · attendance: ESPN' : ''}</div>` : ''}</div>`;
 }
@@ -109,11 +113,11 @@ function field(d, ctx) {
     <div class="sit"><img src="${esc(ctx.logo(off))}" alt="" width="22" height="22" /><b>${esc(s.text || '')}</b>${s.spot && !(s.text || '').includes(s.spot) ? `<span class="faint">at ${esc(s.spot)}</span>` : ''}${s.redZone ? '<span class="rz">Red zone</span>' : ''}</div>
     <svg viewBox="0 0 ${W} ${H}" class="field-svg" role="img" aria-label="Ball on the field: ${esc(s.text || '')}">
       ${fieldInner(d, ctx)}
-      ${dist ? `<rect x="${Math.min(yx(ball), yx(gain))}" y="14" width="${Math.abs(yx(gain) - yx(ball))}" height="${H - 36}" class="togo"/>` : ''}
-      <line x1="${yx(ball)}" x2="${yx(ball)}" y1="8" y2="${H - 20}" class="los"/>
-      ${dist ? `<line x1="${yx(gain)}" x2="${yx(gain)}" y1="8" y2="${H - 20}" class="ltg"/>` : ''}
-      <g transform="translate(${yx(ball)} ${MID})"><ellipse rx="9" ry="5.5" class="ball"/><path d="M-3 0h6" class="lace"/></g>
-      <path d="M${yx(ball) + (right ? 14 : -14)} ${MID} l${right ? -6 : 6} -5 v10z" class="dir"/>
+      ${dist ? `<rect x="${Math.min(yx(ball), yx(gain))}" y="14" width="${Math.abs(yx(gain) - yx(ball))}" height="${H - 36}" class="togo" data-slide="f-togo" data-x="${Math.min(yx(ball), yx(gain))}" data-w="${Math.abs(yx(gain) - yx(ball))}"/>` : ''}
+      <line x1="${yx(ball)}" x2="${yx(ball)}" y1="8" y2="${H - 20}" class="los" data-slide="f-los" data-x="${yx(ball)}"/>
+      ${dist ? `<line x1="${yx(gain)}" x2="${yx(gain)}" y1="8" y2="${H - 20}" class="ltg" data-slide="f-ltg" data-x="${yx(gain)}"/>` : ''}
+      <g transform="translate(${yx(ball)} ${MID})" data-slide="f-ball" data-x="${yx(ball)}" data-y="${MID}"><ellipse rx="9" ry="5.5" class="ball"/><path d="M-3 0h6" class="lace"/></g>
+      <g transform="translate(${yx(ball)} ${MID})" data-slide="f-dir" data-x="${yx(ball)}" data-y="${MID}"><path d="M${right ? 14 : -14} 0 l${right ? -6 : 6} -5 v10z" class="dir"/></g>
     </svg>
     <div class="legend"><span><i class="k los"></i>Line of scrimmage</span>${dist ? '<span><i class="k ltg"></i>Line to gain</span>' : ''}<span><i class="k rzk"></i>Red zone</span><span class="faint">${esc(d.away.team.abbr)} → · ← ${esc(d.home.team.abbr)}</span></div>
     ${s.lastPlay ? `<div class="last"><span class="faint small">Last play</span> ${esc(s.lastPlay)}</div>` : ''}
@@ -224,7 +228,7 @@ function golfCast(d, ctx) {
   const rows = d.players.filter(mf).map((p) => { let pre = ''; if (p.cut && !cutShown) { cutShown = true; pre = '<div class="cut-line">Projected / official cut</div>'; } return pre + row(p); }).join('');
   return `<div class="card gc-head golf"><div class="gc-note">${esc(d.tour)} Tour</div><h1 class="ev">${esc(d.name)}</h1>
       <div class="st">${d.state === 'in' ? `<span class="live">LIVE · ${esc(d.detail)}</span>` : `<b>${esc(d.detail || '')}</b>`}</div>
-      <div class="gc-meta">${[d.course, d.par && `Par ${d.par}`, d.purse && `Purse ${d.purse}`, d.cut && d.cut.score != null && `Cut ${d.cut.score > 0 ? '+' : ''}${d.cut.score === 0 ? 'E' : d.cut.score}`].filter(Boolean).map(esc).join(' · ')}</div></div>${ctx.watch ? ctx.watch(d) : ''}</div>
+      <div class="gc-meta">${[d.course, d.par && `Par ${d.par}`, d.purse && `Purse ${d.purse}`, d.cut && d.cut.score != null && `Cut ${d.cut.score > 0 ? '+' : ''}${d.cut.score === 0 ? 'E' : d.cut.score}`].filter(Boolean).map(esc).join(' · ')}</div>${ctx.watch ? ctx.watch(d) : ''}</div>
     ${golfLeaders(d, ctx)}
     ${mine.length ? `<h2>Your players</h2><div class="card lb">${mine.map(row).join('')}</div>` : ''}
     <h2>Leaderboard <span class="count">${d.players.length}</span></h2>
