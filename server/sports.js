@@ -131,7 +131,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       // ESPN's MLB feed rejects date ranges, so fetch one day at a time (past days cache longer).
       const now = Date.now(); const today = ymd(new Date(now));
       const days = q.dates && /^\d{8}$/.test(q.dates) ? [q.dates] : Array.from({ length: 10 }, (_, i) => ymd(new Date(now + (i - 6) * 864e5)));
-      const per = await Promise.all(days.map((dt) => cached(`mlbday:${dt}`, dt < today ? 30 * 60e3 : 20e3, () => fetchJSON(`${SITE}/${sp.path}/scoreboard?dates=${dt}`)).catch(() => ({ events: [] }))));
+      const per = await Promise.all(days.map((dt) => cached(`mlbday:${dt}`, dt < today ? 30 * 60e3 : 8e3, () => fetchJSON(`${SITE}/${sp.path}/scoreboard?dates=${dt}`)).catch(() => ({ events: [] }))));
       const seen = new Set(); const events = [];
       for (const d of per) for (const e of d.events || []) if (!seen.has(e.id)) { seen.add(e.id); events.push(normEvent(e, sport)); }
       const s0 = per.find((d) => d.season) || {};
@@ -140,7 +140,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const key = `sb:${sport}:${qs}`;
     const prev = cache.get(key);
     const live = prev && prev.value && prev.value.events.some((e) => e.state === 'in');
-    return cached(key, live ? 15e3 : 60e3, async () => {
+    return cached(key, live ? 8e3 : 60e3, async () => {
       const d = await fetchJSON(`${SITE}/${sp.path}/scoreboard?${qs}`);
       const lg = d.leagues && d.leagues[0] || {};
       const cal = lg.calendarType === 'list' || sport !== 'mlb'
@@ -155,16 +155,16 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const sp = SPORTS[sport];
     if (!CORE_TEAM.includes(sport)) {
       const dt = ymd(new Date(date || Date.now())); const today = ymd(new Date());
-      const d = await cached(`day:${sport}:${dt}`, dt < today ? 30 * 60e3 : 12e3, () => fetchJSON(`${SITE}/${sp.path}/scoreboard?dates=${dt}${dayExtra(sp)}`)).catch(() => null);
+      const d = await cached(`day:${sport}:${dt}`, dt < today ? 30 * 60e3 : 8e3, () => fetchJSON(`${SITE}/${sp.path}/scoreboard?dates=${dt}${dayExtra(sp)}`)).catch(() => null);
       return d && (d.events || []).find((e) => e.id === String(id));
     }
     if (sport === 'mlb') {
       const dt = ymd(new Date(date || Date.now())); const today = ymd(new Date());
-      const d = await cached(`mlbday:${dt}`, dt < today ? 30 * 60e3 : 12e3, () => fetchJSON(`${SITE}/${sp.path}/scoreboard?dates=${dt}`)).catch(() => null);
+      const d = await cached(`mlbday:${dt}`, dt < today ? 30 * 60e3 : 8e3, () => fetchJSON(`${SITE}/${sp.path}/scoreboard?dates=${dt}`)).catch(() => null);
       return d && (d.events || []).find((e) => e.id === String(id));
     }
     const qs = sport === 'cfb' ? 'groups=80&limit=400' : sport === 'mlb' ? `dates=${ymd(new Date())}` : 'limit=100';
-    const d = await cached(`rawsb:${sport}`, 12e3, () => fetchJSON(`${SITE}/${sp.path}/scoreboard?${qs}`)).catch(() => null);
+    const d = await cached(`rawsb:${sport}`, 8e3, () => fetchJSON(`${SITE}/${sp.path}/scoreboard?${qs}`)).catch(() => null);
     return d && (d.events || []).find((e) => e.id === String(id));
   }
 
@@ -222,7 +222,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
         course: course.name, par: course.shotsToPar, holes: (course.holes || []).map((h) => ({ n: h.number, par: h.shotsToPar, yds: h.totalYards })), players: c.competitors.map((p) => golfPlayer(p, league)).sort((a, b) => a.sort - b.sort), nets: netsOf(c, e.broadcasts), link: `https://www.espn.com/golf/leaderboard/_/tournamentId/${eventId}` };
     }
     // hole-by-hole cards live on the scoreboard feed
-    const sb = await cached(`golfsb:${league}:${eventId}`, t.state === 'in' ? 30e3 : 10 * 60e3, () => fetchJSON(`${SITE}/golf/${league}/scoreboard?event=${eventId}`)).catch(() => null);
+    const sb = await cached(`golfsb:${league}:${eventId}`, t.state === 'in' ? 15e3 : 10 * 60e3, () => fetchJSON(`${SITE}/golf/${league}/scoreboard?event=${eventId}`)).catch(() => null);
     const cards = {};
     const ev = sb && (sb.events || []).find((e) => e.id === eventId);
     if (ev) for (const p of ev.competitions[0].competitors) {
@@ -259,7 +259,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
   async function tennisLeague(league) {
     const prev = cache.get(`tennis:${league}`);
     const live = prev && prev.value && prev.value.some((t) => t.matches.some((m) => m.state === 'in'));
-    return cached(`tennis:${league}`, live ? 20e3 : 90e3, async () => {
+    return cached(`tennis:${league}`, live ? 10e3 : 90e3, async () => {
       const d = await fetchJSON(`${SITE}/tennis/${league}/scoreboard`);
       return (d.events || []).map((e) => {
         const matches = (e.groupings || []).flatMap((g) => g.competitions.map((m) => tennisMatch(m, e, league, g.grouping && g.grouping.displayName)));
@@ -489,7 +489,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const key = `cast:${sport}:${id}`;
     const prev = cache.get(key);
     const live = prev && prev.value && prev.value.state === 'in';
-    return cached(key, live ? 12e3 : (prev && prev.value && prev.value.state === 'post' ? 5 * 60e3 : 60e3), async () => {
+    return cached(key, live ? 6e3 : (prev && prev.value && prev.value.state === 'post' ? 5 * 60e3 : 60e3), async () => {
       if (sport === 'cfb' || sport === 'nfl') return footballCast(sport, String(id).replace(/\D/g, ''));
       if (sport === 'mlb') return baseballCast(String(id).replace(/\D/g, ''));
       const sp = SPORTS[sport];
@@ -584,7 +584,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const fam = sp.family; const back = fam === 'soccer' ? 4 : 3; const fwd = fam === 'soccer' ? 7 : 4;
     const now = Date.now(); const today = ymd(new Date(now));
     const days = q.dates && /^\d{8}$/.test(q.dates) ? [q.dates] : Array.from({ length: back + fwd + 1 }, (_, i) => ymd(new Date(now + (i - back) * 864e5)));
-    const per = await Promise.all(days.map((dt) => cached(`day:${sport}:${dt}`, dt < today ? 30 * 60e3 : 20e3, () => fetchJSON(`${SITE}/${sp.path}/scoreboard?dates=${dt}${dayExtra(sp)}`)).catch(() => ({ events: [] }))));
+    const per = await Promise.all(days.map((dt) => cached(`day:${sport}:${dt}`, dt < today ? 30 * 60e3 : 8e3, () => fetchJSON(`${SITE}/${sp.path}/scoreboard?dates=${dt}${dayExtra(sp)}`)).catch(() => ({ events: [] }))));
     const seen = new Set(); const events = [];
     for (const d of per) for (const e of d.events || []) if (!seen.has(e.id)) { seen.add(e.id); events.push(normEvent(e, sport)); }
     let s0 = per.find((d) => d.season) || {};

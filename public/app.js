@@ -243,7 +243,7 @@ async function viewHome() {
   if (eventSport(sp)) return homeEvents(today);
   if (newsSport(sp)) return homeNewsOnly(today);
   await ensureTeams(sp);
-  const [sb, news] = await Promise.allSettled([api(sbPath(sp), 30e3), api(newsPath(), 5 * 60e3)]);
+  const [sb, news] = await Promise.allSettled([api(sbPath(sp), 10e3), api(newsPath(), 5 * 60e3)]);
   const mf = muteFilter();
   let html = '';
   if (sb.status === 'fulfilled') {
@@ -291,7 +291,7 @@ async function viewHome() {
 // event sports (UFC, F1, NASCAR, IndyCar): your fighters/drivers first, then live, upcoming, latest
 async function homeEvents(today) {
   const sp = S.sport;
-  const [eb, news] = await Promise.allSettled([api(sbPath(sp), 30e3), api(newsPath(), 5 * 60e3)]);
+  const [eb, news] = await Promise.allSettled([api(sbPath(sp), 10e3), api(newsPath(), 5 * 60e3)]);
   let html = LT(SPORTS[sp].name, today) + '<div class="cols"><section>';
   const ctx = castCtx(); let anyLive = false;
   if (eb.status === 'fulfilled') {
@@ -335,7 +335,7 @@ function golfTourCard(t, n = 10) {
     <div class="meta"><span class="gc-go">Full leaderboard & scorecards ›</span></div></div>`;
 }
 async function homeGolf(today) {
-  const [gb, news] = await Promise.allSettled([api(sbPath('golf'), 30e3), api(newsPath(), 5 * 60e3)]);
+  const [gb, news] = await Promise.allSettled([api(sbPath('golf'), 10e3), api(newsPath(), 5 * 60e3)]);
   let html = LT('Golf', today) + '<div class="cols"><section>';
   if (gb.status === 'fulfilled') {
     const ts = gb.value.tournaments;
@@ -350,7 +350,7 @@ async function homeGolf(today) {
 }
 // tennis: your players' matches, live matches, latest results
 async function homeTennis(today) {
-  const [tb, news] = await Promise.allSettled([api(sbPath('tennis'), 30e3), api(newsPath(), 5 * 60e3)]);
+  const [tb, news] = await Promise.allSettled([api(sbPath('tennis'), 10e3), api(newsPath(), 5 * 60e3)]);
   let html = LT('Tennis', today) + '<div class="cols"><section>';
   const ctx = castCtx(); const mf = muteFilter();
   let anyLive = false;
@@ -439,7 +439,7 @@ async function viewScores(quick) {
 async function scoresEvents(quick) {
   const sp = S.sport;
   if (!quick) paint(LT('Events', SK.sub()) + SK.games(4));
-  let eb; try { eb = await api(sbPath(sp), 30e3); } catch (e) { view.innerHTML = LT('Events') + errBox(e); return; }
+  let eb; try { eb = await api(sbPath(sp), 10e3); } catch (e) { view.innerHTML = LT('Events') + errBox(e); return; }
   const ctx = castCtx(); const evs = (eb.events || []).slice();
   const mine = evs.filter(isMineEv); const rest = evs.filter((e) => !mine.includes(e));
   const o = { in: 0, pre: 1, post: 2 };
@@ -451,7 +451,7 @@ async function scoresEvents(quick) {
 }
 async function scoresGolf(quick) {
   if (!quick) paint(LT('Leaderboard', SK.sub()) + `<div class="toolbar sticky"><span class="sk w40 btnlike"></span></div>${SK.rows(14)}`);
-  let gb; try { gb = await api(sbPath('golf'), 30e3); } catch (e) { view.innerHTML = LT('Leaderboard') + errBox(e); return; }
+  let gb; try { gb = await api(sbPath('golf'), 10e3); } catch (e) { view.innerHTML = LT('Leaderboard') + errBox(e); return; }
   const ts = gb.tournaments; if (!ts.find((t) => t.league === golfLeague) && ts[0]) golfLeague = ts[0].league;
   const t = ts.find((x) => x.league === golfLeague);
   if (!t) { view.innerHTML = LT('Leaderboard') + '<div class="card empty">No tournament this week.</div>'; return; }
@@ -470,7 +470,7 @@ async function scoresGolf(quick) {
 }
 async function scoresTennis(quick) {
   if (!quick) paint(LT('Draws', SK.sub()) + `<div class="toolbar sticky"><span class="sk w40 btnlike"></span></div>${SK.games(6)}`);
-  let tb; try { tb = await api(sbPath('tennis'), 30e3); } catch (e) { view.innerHTML = LT('Draws') + errBox(e); return; }
+  let tb; try { tb = await api(sbPath('tennis'), 10e3); } catch (e) { view.innerHTML = LT('Draws') + errBox(e); return; }
   const ts = tb.tournaments; if (!ts.length) { view.innerHTML = LT('Draws') + '<div class="card empty">No tournaments this week.</div>'; return; }
   let t = ts.find((x) => x.id === tennisT) || ts[0]; tennisT = t.id;
   if (!t.draws.includes(tennisDraw)) tennisDraw = t.draws.find((d) => /Singles/.test(d)) || t.draws[0];
@@ -725,7 +725,7 @@ async function viewGame(sp, id, quick) {
   view.innerHTML = `<div class="gc gc-${d.kind}">${renderGamecast(d, castCtx())}</div>`;
   if (quick) window.scrollTo(0, y);
   castLive = d.state === 'in';
-  scheduleRefresh(castLive, 20e3);
+  scheduleRefresh(castLive, 10e3);
 }
 
 function gameBackdrop(sp, d) {
@@ -1386,14 +1386,14 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------------- router + screen transitions ----------------
-// Live auto-refresh: 30s on lists, ~20s in Gamecast; paused while the tab is hidden, caught up when it returns.
+// Live auto-refresh: 15s on lists, 10s in Gamecast; paused while the tab is hidden, caught up when it returns.
 let refreshLive = false;
 function liveTick() {
   if (document.hidden || $('#sheet') || $('#onb')) return;
   for (const k of mem.keys()) if (k.startsWith('/api/scoreboard') || k.startsWith('/api/game')) mem.delete(k);
   route(true);
 }
-function scheduleRefresh(live, ms = 30e3) {
+function scheduleRefresh(live, ms = 15e3) {
   clearInterval(refreshTimer); refreshLive = !!live;
   if (live) refreshTimer = setInterval(liveTick, ms);
   const ind = $('#live-ind'); if (ind) ind.hidden = !live;
