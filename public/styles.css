@@ -1033,3 +1033,15 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
   .sx-list, .ps-cats { grid-template-columns: 1fr; }
 }
 .tbl.golf th, .tbl.golf td.l { white-space: normal; } .tbl.golf td.l { min-width: 120px; max-width: 170px; } .tbl.golf thead th:nth-child(2) { text-align: left; }
+
+/* ---------- brand logo (S mark) ---------- */
+.brand img, .ab-logo img { image-rendering: auto; object-fit: contain; border-radius: 0 !important; box-shadow: none !important; }
+.ab-logo { grid-column: 1; grid-row: 1; justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px; color: var(--text); text-decoration: none; min-height: 44px; }
+.ab-logo span { font-family: var(--display); font-size: 19px; font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: .01em; transition: opacity .2s; }
+.ab-logo span b { color: var(--olive-t, var(--accent)); }
+.ab-back:not([hidden]) ~ .ab-logo { display: none; }
+body.scrolled .ab-logo span { opacity: 0; }
+@media (min-width: 900px) { .ab-logo { display: none; } }
+.splash-logo.full img, .hero-logo.full img { width: 220px; height: 220px; border-radius: 28px; box-shadow: none; }
+.hero-logo.full img { width: 180px; height: 180px; }
+.hero-logo.mark img { width: 112px; height: 112px; border-radius: 0; box-shadow: none; filter: drop-shadow(0 10px 24px rgba(0,0,0,.5)); }

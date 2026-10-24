@@ -1152,7 +1152,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo"><img src="/icons/icon.svg" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png" alt="" /></div>
         <h1>Straight<b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
