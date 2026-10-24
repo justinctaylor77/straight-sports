@@ -1,9 +1,9 @@
 import { LEAGUE_MUTES, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=18';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=19';
 import * as GA from './anim.js?v=18';
 import * as BD from './backdrop.js';
-import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js';
+import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=19';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
 
@@ -169,7 +169,6 @@ function gameCard(ev) {
     ${ev.note ? `<div class="gnote">${esc(ev.note)}${ev.series && !/starts/i.test(ev.series) ? ` · ${esc(ev.series)}` : ''}</div>` : ''}
     <div class="status">${status}<span>${esc(ev.broadcast || '')}</span></div>
     ${teamRow(ev.away, ev)}${teamRow(ev.home, ev)}
-    ${watchHTML({ ...ev, sport: sp }, { compact: true })}
     <div class="meta">${live}${extra}${mp.length ? `<span class="yp-tag">★ ${esc(mp.slice(0, 2).map((p) => p.short || p.name.split(' ').slice(-1)[0]).join(', '))}</span>` : ''}<span>${esc(ev.venue || '')}</span>${ev.conferenceGame ? '<span>· Conf</span>' : ''}${ev.neutral ? '<span>· Neutral</span>' : ''}<span class="gc-go">Gamecast ›</span></div></div>`;
 }
 const miniBases = (b) => `<svg class="mini-bases" viewBox="0 0 30 20" aria-label="Runners"><rect x="20" y="8" width="6" height="6" transform="rotate(45 23 11)" class="${b.on1 ? 'on' : ''}"/><rect x="12" y="1" width="6" height="6" transform="rotate(45 15 4)" class="${b.on2 ? 'on' : ''}"/><rect x="4" y="8" width="6" height="6" transform="rotate(45 7 11)" class="${b.on3 ? 'on' : ''}"/></svg>`;
@@ -340,7 +339,6 @@ function golfTourCard(t, n = 10) {
     <div class="tc-name">${esc(t.name)}</div><div class="faint small">${[t.course, t.purse && `Purse ${t.purse}`].filter(Boolean).map(esc).join(' · ')}</div>
     ${mine.length ? `<div class="lbl">Your players</div><div class="lb mini">${mine.map((p) => golfRow(p, ctx)).join('')}</div>` : ''}
     <div class="lbl">Leaders</div><div class="lb mini">${top.map((p) => golfRow(p, ctx)).join('')}</div>
-    ${watchHTML({ ...t, sport: 'golf' }, { compact: true })}
     <div class="meta"><span class="gc-go">Full leaderboard & scorecards ›</span></div></div>`;
 }
 async function homeGolf(today) {
@@ -1023,7 +1021,7 @@ function partHTML(p) {
       const grp = (g, lbl) => `<div class="group-lbl tiles-lbl">${lbl}</div><div class="prov-grid">${PROVIDERS.filter((p) => p.group === g).map((p) => { const on = mine.includes(p.id); return `<button class="prov-tile ${on ? 'on' : ''}" data-prov="${p.id}" aria-pressed="${on}"><b>${esc(p.name)}</b>${p.sub ? `<small>${esc(p.sub)}</small>` : ''}</button>`; }).join('')}</div>`;
       return grp('live', 'Live TV') + grp('stream', 'Streaming services') + grp('other', 'Other');
     }
-    case 'provsummary': { const ps = myProviders().map((id) => (PROVIDERS.find((p) => p.id === id) || {}).name).filter(Boolean); return ps.length ? `Watch buttons for ${esc(ps.join(', '))} show first on every game.` : 'Nothing picked — every game still shows each network’s own watch link.'; }
+    case 'provsummary': { const ps = myProviders().map((id) => (PROVIDERS.find((p) => p.id === id) || {}).name).filter(Boolean); return ps.length ? `Watch buttons for ${esc(ps.join(', '))} show first inside an open game.` : 'Nothing picked — an open game still shows each network’s own watch link.'; }
     default: return '';
   }
 }
@@ -1171,7 +1169,7 @@ function viewSettingsSub(sub) {
   const screens = {
     sports: ['Sports', 'Pick the sports you want. Switch between them with the chips at the top of each tab.', P.sports()],
     teams: ['Teams & players', 'Their games and news always come first.', P.teams()],
-    watch: ['How you watch', 'Pick your live-TV and streaming services. Every game gets a “Watch on …” button — yours come first and highlighted. Saved on this device only.', P.watch()],
+    watch: ['How you watch', 'Pick your live-TV and streaming services. Open any game to see its “Watch on …” buttons — yours come first and highlighted. Saved on this device only.', P.watch()],
     conferences: ['CFB conferences', 'Shown after your teams in Scores and News. Pick none to see all of FBS.', P.confs()],
     mute: ['Mute', 'Muted things are removed everywhere, in every sport: scores, leaderboards, rankings, news and story groups.', P.mute(true)],
     sources: ['News sources', 'Mix wire services, national, local and official team outlets.', `<div class="list card">${flagSwitch('straightOnly', 'Straight news only', 'Hide opinion, picks, betting & podcasts')}</div><div class="group-lbl">Outlets</div><div class="list card" data-part="sources"></div>${P.outlets()}`],
@@ -1210,7 +1208,7 @@ function openOnboarding(start = 0) {
       <section class="slide"><div class="step-k">CFB · optional</div><h2 class="st">Pick conferences</h2><p class="help">Their scores and news show after your teams. Pick none to see all of FBS.</p>${P.confs()}</section>
       <section class="slide"><div class="step-k">Step 3 of 5</div><h2 class="st">Mute what you don’t want</h2><p class="help">Muted things disappear everywhere, in every sport.</p>${P.mute(false)}${P.outlets()}
         <div class="list card" style="margin-top:16px">${flagSwitch('straightOnly', 'Straight news only', 'Hide opinion, hot takes, picks & betting')}</div></section>
-      <section class="slide"><div class="step-k">Step 4 of 5</div><h2 class="st">How do you watch?</h2><p class="help">Pick any that you have. Games on channels they carry get a “Watch on …” button first. Optional — skip it and change it anytime in Settings.</p>${P.watch()}</section>
+      <section class="slide"><div class="step-k">Step 4 of 5</div><h2 class="st">How do you watch?</h2><p class="help">Pick any that you have. Open a game to see “Watch on …” buttons, yours first. Optional — skip it and change it anytime in Settings.</p>${P.watch()}</section>
       <section class="slide s-done"><div class="step-k">Step 5 of 5</div><div class="done-mark"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h2 class="st">You’re all set</h2><p class="help">Here’s your feed. Change any of it later in Settings.</p><div data-part="summary"></div></section>
     </div></div>
     <div class="onb-bottom"><button class="btn primary xl" data-nav="next">Get started</button></div></div>`;

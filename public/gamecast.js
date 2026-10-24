@@ -250,7 +250,7 @@ export function tennisMatch(m, ctx, { big = false } = {}) {
   const st = m.state === 'in' ? `<span class="live">LIVE</span>` : m.state === 'post' ? `<b>${esc(m.detail || 'Final')}</b>` : `<span>${new Date(m.date).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</span>`;
   return `<div class="card tmatch ${big ? 'big' : ''}" ${big ? '' : `data-game="#/game/tennis/${esc(m.id)}"`} role="${big ? '' : 'link'}" tabindex="${big ? -1 : 0}">
     <div class="status">${st}<span>${esc(m.round || '')}</span></div>${m.players.map(row).join('')}
-    ${!big && m.court ? `<div class="meta">${esc(m.court)}</div>` : ''}${!big && ctx.watch ? ctx.watch({ ...m, sport: 'tennis' }, { compact: true }) : ''}</div>`;
+    ${!big && m.court ? `<div class="meta">${esc(m.court)}</div>` : ''}</div>`;
 }
 function tennisCast(d, ctx) {
   const ps = d.players;
@@ -364,7 +364,7 @@ export function eventCard(e, ctx, { n = 4 } = {}) {
   const st = e.state === 'in' ? `<span class="live">LIVE</span>` : e.state === 'post' ? '<b>Final</b>' : `<span>${esc(new Date(e.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }))}</span>`;
   return `<div class="card ev-card ${comps.some(mine) ? 'mine' : ''}" data-game="#/game/${esc(e.sport)}/${esc(e.id)}" role="link" tabindex="0">
     <div class="status">${st}<span>${esc(e.circuit || e.venue || '')}</span></div><div class="tc-name">${esc(e.name)}</div>
-    ${body}${ctx.watch ? ctx.watch(e, { compact: true }) : ''}<div class="meta"><span class="gc-go">${fam === 'mma' ? 'Full card' : 'All sessions & results'} ›</span></div></div>`;
+    ${body}<div class="meta"><span class="gc-go">${fam === 'mma' ? 'Full card' : 'All sessions & results'} ›</span></div></div>`;
 }
 function eventCast(d, ctx) {
   const fam = d.family; const comps = d.comps || [];

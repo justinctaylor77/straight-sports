@@ -23,11 +23,10 @@ export function schedItem(ev, teamId, sport, ctx) {
       <span class="res ${res}">${res} ${esc(me.score)}–${esc(opp.score)}</span></a>`;
   }
   const live = ev.state === 'in';
-  return `<div class="sx-item card ${live ? 'live' : ''}">
+  return `<div class="sx-item card ${live ? 'live' : ''}" data-game="#/game/${sport}/${esc(ev.id)}" role="link" tabindex="0">
     <div class="sx-top"><span class="small ${live ? 'livet' : 'muted'}">${live ? `LIVE · ${esc(ev.short || ev.detail || '')}` : esc(when)}</span>${live ? `<b class="sx-sc">${esc(me.score)}–${esc(opp.score)}</b>` : `<span class="faint small">${home ? 'Home' : 'Away'}</span>`}</div>
     <div class="sx-mid">${oppHTML}<a class="btn small ghost" href="#/game/${sport}/${esc(ev.id)}">${live ? 'Gamecast' : 'Preview'} ›</a></div>
     ${ev.venue ? `<div class="faint small sx-ven">${esc(ev.venue)}</div>` : ''}
-    ${ctx.watch(ev, { compact: true })}
     ${ticketLine(ev.tickets)}</div>`;
 }
 
