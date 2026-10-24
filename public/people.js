@@ -31,17 +31,25 @@ export function schedItem(ev, teamId, sport, ctx) {
     ${ticketLine(ev.tickets)}</div>`;
 }
 
-export function scheduleSections(events, teamId, sport, ctx, { limitPast = 0 } = {}) {
-  const live = events.filter((e) => e.state === 'in');
-  const up = events.filter((e) => e.state === 'pre');
-  let past = events.filter((e) => e.state === 'post').reverse();
-  const nPast = past.length; if (limitPast) past = past.slice(0, limitPast);
+const dayKey = (iso) => { const d = new Date(iso); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
+// Today / live first, then what's next, then past results (newest first). limitUp/limitPast cap the long lists (the page offers "show all").
+export function scheduleSections(events, teamId, sport, ctx, { limitUp = 0, limitPast = 0 } = {}) {
+  const tk = dayKey(Date.now());
+  const isToday = (e) => e.state === 'in' || dayKey(e.date) === tk;
+  const today = events.filter(isToday);
+  let up = events.filter((e) => e.state === 'pre' && !isToday(e));
+  let past = events.filter((e) => e.state === 'post' && !isToday(e)).reverse();
+  const nUp = up.length; const nPast = past.length;
+  if (limitUp) up = up.slice(0, limitUp);
+  if (limitPast) past = past.slice(0, limitPast);
   const rec = (() => { const r = { W: 0, L: 0, T: 0 }; for (const e of events.filter((x) => x.state === 'post')) { const me = e.home.team.id === teamId ? e.home : e.away; const op = me === e.home ? e.away : e.home; r[me.winner ? 'W' : op.winner ? 'L' : 'T']++; } return r; })();
-  return `${live.length ? `<h2><span class="livet">●</span> Live now</h2><div class="sx-list">${live.map((e) => schedItem(e, teamId, sport, ctx)).join('')}</div>` : ''}
-    <h2>Upcoming <span class="count">${up.length} · times in ${esc(tz())}</span></h2>
-    <div class="sx-list">${up.map((e) => schedItem(e, teamId, sport, ctx)).join('') || '<div class="card empty">No more games on ESPN’s schedule this season.</div>'}</div>
-    <h2>Results <span class="count">${nPast ? `${rec.W}–${rec.L}${rec.T ? `–${rec.T}` : ''}` : ''}</span></h2>
-    <div class="card panel">${past.map((e) => schedItem(e, teamId, sport, ctx)).join('') || '<div class="empty">No games played yet.</div>'}${limitPast && nPast > limitPast ? `<a class="more" href="#/schedule/${esc(teamId)}">All ${nPast} results ›</a>` : ''}</div>`;
+  const hasLive = today.some((e) => e.state === 'in');
+  const more = (k, shown, n) => (n > shown ? `<button class="btn small ghost more" data-more="${k}">Show all ${n} ›</button>` : '');
+  return `${today.length ? `<h2>${hasLive ? '<span class="livet">●</span> Live & today' : 'Today'}</h2><div class="sx-list">${today.map((e) => schedItem(e, teamId, sport, ctx)).join('')}</div>` : ''}
+    <h2>Upcoming <span class="count">${nUp} · times in ${esc(tz())}</span></h2>
+    <div class="sx-list">${up.map((e) => schedItem(e, teamId, sport, ctx)).join('') || '<div class="card empty">No more games on ESPN’s schedule this season.</div>'}</div>${more('up', up.length, nUp)}
+    <h2>Results <span class="count">${nPast || rec.W + rec.L + rec.T ? `${rec.W}–${rec.L}${rec.T ? `–${rec.T}` : ''}` : ''}</span></h2>
+    <div class="card panel">${past.map((e) => schedItem(e, teamId, sport, ctx)).join('') || '<div class="empty">No games played yet.</div>'}</div>${more('past', past.length, nPast)}`;
 }
 
 export function scheduleView(d, ctx) {

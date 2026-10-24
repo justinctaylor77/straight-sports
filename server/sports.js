@@ -384,7 +384,9 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const drv = (x, current) => ({
       id: x.id, current, teamId: x.team && tid(sport, x.team.id), abbr: x.team && x.team.abbreviation, description: x.description, result: x.displayResult || x.result || (current ? 'In progress' : ''),
       score: !!x.isScore, start: x.start && x.start.text, period: x.start && x.start.period && x.start.period.number, clock: x.start && x.start.clock && x.start.clock.displayValue,
-      plays: (x.plays || []).map((p) => ({ text: p.text, clock: p.clock && p.clock.displayValue, period: p.period && p.period.number, dd: p.start && p.start.downDistanceText, score: !!p.scoringPlay, type: p.type && p.type.text })),
+      plays: (x.plays || []).map((p) => ({ id: p.id, text: p.text, clock: p.clock && p.clock.displayValue, period: p.period && p.period.number, dd: p.start && p.start.downDistanceText, score: !!p.scoringPlay, type: p.type && p.type.text,
+        // field graphic data: yardLine runs 0-100 from the HOME team's own goal line (ESPN convention)
+        tm: p.start && p.start.team && p.start.team.id ? tid(sport, p.start.team.id) : null, s: p.start && p.start.yardLine, e: p.end && p.end.yardLine, yds: p.statYardage, pen: !!p.isPenalty, to: !!p.isTurnover, dn: p.start && p.start.down, ds: p.start && p.start.distance })),
     });
     const drives = [...((d.drives && d.drives.previous) || []).map((x) => drv(x, false))];
     if (d.drives && d.drives.current) { const cur = drv(d.drives.current, state === 'in'); if (!drives.some((x) => x.id === cur.id)) drives.push(cur); else if (state === 'in') drives[drives.findIndex((x) => x.id === cur.id)] = cur; }
@@ -427,6 +429,29 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     return out;
   }
 
+
+  // ---------- play-location graphics data (ESPN coordinates; all optional) ----------
+  const okXY = (c) => c && Number.isFinite(c.x) && Number.isFinite(c.y) && Math.abs(c.x) < 1000 && Math.abs(c.y) < 1000;
+  // Baseball: every at-bat with each pitch's plate location (pitchCoordinate), type, speed, call, and where the ball was hit.
+  function pitchTracker(plays) {
+    const byAb = new Map(); const order = [];
+    for (const p of plays) {
+      if (!p.atBatId) continue;
+      let ab = byAb.get(p.atBatId);
+      if (!ab) { ab = { id: p.atBatId, inn: p.period && `${p.period.type === 'Top' ? 'Top' : 'Bot'} ${p.period.number}`, bat: null, pit: null, bats: p.bats && p.bats.abbreviation || null, res: null, score: false, pitches: [], hit: null, ht: null }; byAb.set(p.atBatId, ab); order.push(ab); }
+      const t = p.type && p.type.type || '';
+      if (t === 'start-batterpitcher') { const m = (p.text || '').match(/^(.+?) pitches to (.+)$/); if (m) { ab.pit = m[1]; ab.bat = m[2]; } continue; }
+      if (t === 'play-result' && p.text) { ab.res = p.text; ab.score = !!p.scoringPlay; continue; }
+      if (okXY(p.hitCoordinate) && !ab.hit) { ab.hit = { x: p.hitCoordinate.x, y: p.hitCoordinate.y }; ab.ht = p.trajectory || null; }
+      if (/^Pitch \d+/.test(p.text || '')) {
+        const k = /^ball/.test(t) ? 'B' : /^strike/.test(t) ? 'S' : /foul/.test(t) ? 'F' : /In Play/i.test(p.text) ? 'X' : /^strike|swing/i.test(p.text) ? 'S' : 'B';
+        ab.pitches.push({ n: p.atBatPitchNumber, x: okXY(p.pitchCoordinate) ? p.pitchCoordinate.x : null, y: okXY(p.pitchCoordinate) ? p.pitchCoordinate.y : null,
+          ty: p.pitchType && (p.pitchType.abbreviation || null), tn: p.pitchType && p.pitchType.text || null, mph: p.pitchVelocity || null, k, call: (p.text || '').replace(/^Pitch \d+\s*:\s*/, ''), b: p.resultCount && p.resultCount.balls, s: p.resultCount && p.resultCount.strikes });
+      }
+    }
+    return order.filter((a) => a.pitches.length || a.res).slice(-80);
+  }
+
   async function baseballCast(id, sport = 'mlb') {
     const d = await fetchJSON(`${SITE}/${SPORTS[sport].path}/summary?event=${id}`);
     const { h, st, home, away } = headerSides(d, sport);
@@ -454,6 +479,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       cur.items.push({ text: p.text, score: !!p.scoringPlay, away: p.awayScore, home: p.homeScore, outs: p.outs });
     }
     out.plays = halves.filter((x) => x.items.length).reverse().map((x) => ({ ...x, items: x.items.reverse() }));
+    out.atBats = pitchTracker(d.plays || []);
     out.scoring = (d.plays || []).filter((p) => p.scoringPlay && p.text).map((p) => ({ inning: p.period && `${p.period.type} ${p.period.displayValue ? p.period.displayValue.replace(' Inning', '') : p.period.number}`, text: p.text, away: p.awayScore, home: p.homeScore }));
     // live situation
     if (state === 'in') {
@@ -596,6 +622,45 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     return { sport, season: s0.season, seasontype: s0.season && s0.season.type, calendar: [], days, events, fetchedAt: new Date().toISOString() };
   }
 
+
+  // Shot locations: hockey rink + basketball court coordinates come with the play-by-play; soccer shots come from commentary field positions.
+  function shotMap(d, fam, sport, home, away, teamSide) {
+    const side = (id) => (id == null ? null : teamSide(id));
+    try {
+      if (fam === 'hockey') {
+        const out = [];
+        for (const p of d.plays || []) {
+          const ty = p.type && p.type.text || ''; if (!okXY(p.coordinate)) continue;
+          const k = /^goal/i.test(ty) ? 'goal' : /^shot/i.test(ty) ? 'save' : /^missed/i.test(ty) ? 'miss' : /^blocked/i.test(ty) ? 'block' : null; if (!k) continue;
+          out.push({ x: p.coordinate.x, y: p.coordinate.y, k, side: side(p.team && p.team.id), per: p.period && p.period.number, clk: p.clock && p.clock.displayValue, text: p.text || ty, str: p.strength && p.strength.abbreviation !== 'even-strength' ? p.strength.text : null });
+        }
+        return out.length ? { kind: 'hockey', list: out } : null;
+      }
+      if (fam === 'basketball') {
+        const out = [];
+        for (const p of d.plays || []) {
+          if (!p.shootingPlay || !okXY(p.coordinate) || Math.abs(p.coordinate.x) > 60 || p.coordinate.y > 47 || p.coordinate.y < -6) continue;
+          if (/free throw/i.test(p.text || '') || /free throw/i.test(p.type && p.type.text || '')) continue;
+          out.push({ x: p.coordinate.x, y: p.coordinate.y, m: !!p.scoringPlay, pts: p.scoreValue || p.pointsAttempted || 2, side: side(p.team && p.team.id), per: p.period && p.period.number, clk: p.clock && p.clock.displayValue, text: p.text });
+        }
+        return out.length ? { kind: 'basketball', list: out } : null;
+      }
+      if (fam === 'soccer') {
+        const hn = home.team.name || home.team.short; const an = away.team.name || away.team.short;
+        const names = ((d.header && d.header.competitions && d.header.competitions[0].competitors) || []).reduce((m, c) => { m[c.team.displayName] = c.homeAway; return m; }, {});
+        const out = [];
+        for (const c of d.commentary || []) {
+          const p = c.play; if (!p || !p.type || p.fieldPositionX == null) continue;
+          const ty = p.type.type || ''; const k = ty === 'goal' || ty === 'penalty---scored' ? 'goal' : ty === 'shot-on-target' ? 'on' : ty === 'shot-off-target' ? 'off' : ty === 'shot-blocked' ? 'block' : null; if (!k) continue;
+          const sd = names[p.team && p.team.displayName] || (p.team && p.team.displayName === hn ? 'home' : p.team && p.team.displayName === an ? 'away' : null);
+          out.push({ x: p.fieldPositionX, y: p.fieldPositionY, k, side: sd, clk: p.clock && p.clock.displayValue, per: p.period && p.period.number, text: p.shortText || p.text, who: p.participants && p.participants[0] && p.participants[0].athlete && p.participants[0].athlete.displayName, full: c.text });
+        }
+        return out.length ? { kind: 'soccer', list: out } : null;
+      }
+    } catch { /* graphics are optional */ }
+    return null;
+  }
+
   // Generic team-sport gamecast: score, periods, team stats, box score, plays/key events, leaders, win probability.
   async function genericCast(sport, id) {
     const sp = SPORTS[sport];
@@ -622,6 +687,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     if (!out.scoring.length && sp.family === 'hockey') out.scoring = (d.plays || []).filter((p) => p.scoringPlay).map(play);
     out.leaders = (d.leaders || []).map((tm) => ({ teamId: tm.team && tid(sport, tm.team.id), abbr: tm.team && tm.team.abbreviation,
       cats: (tm.leaders || []).map((c) => { const l = c.leaders && c.leaders[0]; return { cat: c.displayName, name: l && l.athlete && (l.athlete.shortName || l.athlete.displayName), id: l && ath(sport, l.athlete), line: l && l.displayValue }; }).filter((c) => c.name) })).filter((t) => t.cats.length);
+    out.shots = shotMap(d, sp.family, sport, home, away, teamSide);
     const wp = (d.winprobability || []).map((x) => pct(x.homeWinPercentage));
     out.wp = wp.length > 1 ? { home: downsample(wp, 120), current: wp[wp.length - 1] } : null;
     return out;

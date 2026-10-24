@@ -4,7 +4,7 @@ const express = require('express');
 const compression = require('compression');
 const Parser = require('rss-parser');
 const SOURCES = require('./sources');
-const { classify } = require('./classify');
+const { classify, sportsCheck } = require('./classify');
 
 const PORT = Number(process.env.PORT) || 8787;
 const ESPN = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football';
@@ -136,23 +136,33 @@ function normItem(it, src) {
   return { title, link, summary, source: sourceName, sourceId: src.id, via: src.via || null, published: it.isoDate || it.pubDate || null, categories: cats.slice(0, 200), type, reasons, image: img };
 }
 
+// "Only sports news": drop anything that isn't about sports. Off-topic sections/words (politics, business, entertainment, crime, weather, tech) and stream-spam are removed unless the headline is clearly about sports;
+// sports-desk feeds only lose clearly off-topic items. What was dropped is remembered per feed so /api/news?debug=1 can show it.
+const DROPPED = new Map();
+function onlySports(src, items) {
+  const strict = /^(deseret|sltrib|ksl|nfl-ksl)$/.test(src.id); // local general-news outlets must show a sports signal; // (strict mode — require a sports word — dropped too many real headlines like "Giants fall to Saints, 34-27"; the off-topic rules do the work)
+  const kept = []; const dropped = [];
+  for (const x of items) { const r = sportsCheck(x.title, x.link, x.categories, { strict }); if (r.ok) kept.push(x); else dropped.push({ title: x.title, source: x.source, why: r.why }); }
+  DROPPED.set(`${src.id}:${src.url}`, dropped);
+  return kept;
+}
 async function loadFeed(src) {
   return cached(`feed:${src.id}:${src.url}`, 10 * 60e3, async () => {
     if (src.type === 'espn-json') {
       const d = await fetchJSON(src.url);
-      return (d.articles || []).map((a) => {
+      return onlySports(src, (d.articles || []).map((a) => {
         const link = a.links && a.links.web && a.links.web.href;
         const title = cleanText(a.headline); const { type, reasons } = classify(title, link, a.type || '');
         return { title, link, summary: cleanText(a.description), source: 'ESPN', sourceId: 'espn', published: a.published, categories: '', type, reasons, image: a.images && a.images[0] && a.images[0].url };
-      });
+      }));
     }
     const xml = await fetchText(src.url);
     const feed = await parser.parseString(xml);
     const items = (feed.items || []).slice(0, src.url.includes('news.google.com') ? 40 : 60).map((it) => normItem(it, src));
-    if (!src.must) return items;
+    if (!src.must) return onlySports(src, items);
     const re = new RegExp(src.must, 'i');
     const not = /golf[- ]balls?[- ]sized|size of (a )?golf balls?|hail/i; // weather stories that only mention golf balls
-    return items.filter((x) => re.test(`${x.title} ${x.categories}`) && !(src.id.startsWith('golf-') && not.test(x.title)));
+    return onlySports(src, items.filter((x) => re.test(`${x.title} ${x.categories}`) && !(src.id.startsWith('golf-') && not.test(x.title))));
   });
 }
 
@@ -205,7 +215,8 @@ app.get('/api/news', wrap(async (req) => {
     seen.add(k1); seen.add(k2); items.push(it);
   }
   items.sort((a, b) => (Date.parse(b.published || 0) || 0) - (Date.parse(a.published || 0) || 0));
-  return { sport, items: items.slice(0, 800), status: results.map(({ id, ok, error, items: it }) => ({ id, ok, error, count: it.length })), fetchedAt: new Date().toISOString() };
+  const dropped = req.query.debug ? results.flatMap((r) => (DROPPED.get([...DROPPED.keys()].find((k) => k.startsWith(`${r.id}:`))) || []).map((d) => ({ feed: r.id, ...d }))) : undefined;
+  return { sport, dropped, items: items.slice(0, 800), status: results.map(({ id, ok, error, items: it }) => ({ id, ok, error, count: it.length })), fetchedAt: new Date().toISOString() };
 }));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));

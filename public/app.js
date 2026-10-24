@@ -2,7 +2,8 @@ import { LEAGUE_MUTES, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
 import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js';
 import * as BD from './backdrop.js';
-import { scheduleView, playerHero, playerTabs, playerBody } from './people.js';
+import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js';
+import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
 
 // ---------------- state ----------------
@@ -68,9 +69,16 @@ function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.ad
 function applyTheme() {
   if (S.theme === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = S.theme;
   // one theme-color that matches the app background, so the status bar blends in when installed
-  const metas = document.querySelectorAll('meta[name="theme-color"]');
-  metas.forEach((m, i) => { if (i) m.remove(); else { m.removeAttribute('media'); m.content = isDark() ? '#030303' : '#F2EFE8'; } });
+  syncThemeColor();
 }
+function syncThemeColor() {
+  const metas = document.querySelectorAll('meta[name="theme-color"]');
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || (isDark() ? '#061225' : '#F2F5FB');
+  metas.forEach((m, i) => { if (i) m.remove(); else { m.removeAttribute('media'); m.content = bg; } });
+}
+// team pages wear the team's ESPN colors; every other page is back to red-white-and-blue
+function teamTheme(t) { if (!t || !applyTeamTheme(t, isDark())) clearTeamTheme(); syncThemeColor(); }
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (document.documentElement.dataset.team) route(true); else syncThemeColor(); });
 
 // ---------------- app bar (sticky compact header) ----------------
 const AB = { title: $('#ab-title'), back: $('#ab-back'), action: $('#ab-action') };
@@ -140,7 +148,7 @@ function teamRow(c, ev) {
   const poss = ev.state === 'in' && ev.possession && ev.possession === t.id;
   return `<div class="trow ${lost ? 'lost' : ''}">
     <img src="${esc(logo(t))}" alt="" loading="lazy" width="28" height="28" />
-    <a class="nm" href="#/schedule/${t.id}">${c.rank ? `<span class="rk">${c.rank}</span>` : ''}<b>${esc(t.short || t.name)}</b>${mine ? '<span class="star" title="Following">●</span>' : mp.length ? `<span class="star" title="Your player${mp.length > 1 ? 's' : ''}: ${esc(mp.map((p) => p.name).join(', '))}">★</span>` : ''}${poss ? '<span class="poss" title="Possession">◂</span>' : ''}<span class="rec">${esc(c.record || '')}</span></a>
+    <a class="nm" href="#/schedule/${t.id}" title="${esc(t.short || t.name)} schedule">${c.rank ? `<span class="rk">${c.rank}</span>` : ''}<b>${esc(t.short || t.name)}</b>${mine ? '<span class="star" title="Following">●</span>' : mp.length ? `<span class="star" title="Your player${mp.length > 1 ? 's' : ''}: ${esc(mp.map((p) => p.name).join(', '))}">★</span>` : ''}${poss ? '<span class="poss" title="Possession">◂</span>' : ''}<span class="rec">${esc(c.record || '')}</span></a>
     <span class="sc">${ev.state === 'pre' ? '' : esc(c.score ?? '')}</span></div>`;
 }
 function gameCard(ev) {
@@ -394,30 +402,28 @@ async function viewScores(quick) {
   const all = sb.events; const evs = all.filter((e) => !mf.game(e)); const mutedCount = all.length - evs.length;
   const mine = evs.filter(isMineEv).sort(sortGames);
   const rest = evs.filter((e) => !isMineEv(e));
-  const sections = []; const placed = new Set();
   let toolbar = ''; let sub = '';
+  // Everything that isn't a favorite, filtered to what the page is set to show (CFB: My confs / All FBS)
+  let pool = rest;
   if (sp === 'cfb') {
-    const confIds = scoresMode === 'all' || !S.conferences.length ? CONFS.map((c) => c.id) : S.conferences;
-    for (const cid of confIds) {
-      const c = CONFS.find((x) => x.id === cid); if (!c) continue;
-      const games = rest.filter((e) => !placed.has(e.id) && (e.home.conferenceId === cid || e.away.conferenceId === cid)).sort(sortGames);
-      games.forEach((g) => placed.add(g.id));
-      if (games.length) sections.push(`<h2>${esc(c.short)} <span class="count">${games.length}</span></h2><div class="grid">${games.map(gameCard).join('')}</div>`);
-    }
-    if (scoresMode === 'all') {
-      const other = rest.filter((e) => !placed.has(e.id)).sort(sortGames);
-      if (other.length) sections.push(`<h2>Other <span class="count">${other.length}</span></h2><div class="grid">${other.map(gameCard).join('')}</div>`);
-    }
-  } else {
-    // NFL / MLB: by day (latest results last for past days, upcoming first)
-    const live = rest.filter((e) => e.state === 'in');
-    if (live.length) sections.push(`<h2>Live <span class="count">${live.length}</span></h2><div class="grid">${live.sort(sortGames).map(gameCard).join('')}</div>`);
-    const byDay = new Map();
-    for (const e of rest.filter((x) => x.state !== 'in').sort((a, b) => Date.parse(a.date) - Date.parse(b.date))) { const k = dayKey(e.date); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(e); }
-    const days = [...byDay.entries()];
-    const up = days.filter(([, g]) => g.some((e) => e.state === 'pre')); const past = days.filter(([, g]) => !g.some((e) => e.state === 'pre')).reverse();
-    for (const [, g] of [...up, ...past]) sections.push(`<h2>${esc(dayLabel(g[0].date))} <span class="count">${g.length}</span></h2><div class="grid">${g.map(gameCard).join('')}</div>`);
+    const confIds = scoresMode === 'all' || !S.conferences.length ? null : new Set(S.conferences);
+    pool = confIds ? rest.filter((e) => confIds.has(e.home.conferenceId) || confIds.has(e.away.conferenceId)) : rest;
   }
+  // Order of the page: Favorites → Live now → Upcoming → Finished (a game is only ever shown once)
+  const live = pool.filter((e) => e.state === 'in').sort(sortGames);
+  const upcoming = pool.filter((e) => e.state === 'pre').sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+  const finished = pool.filter((e) => e.state === 'post').sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+  const block = (title, list, extra = '') => {
+    if (!list.length) return '';
+    const days = new Set(list.map((e) => dayKey(e.date)));
+    let body;
+    if (days.size > 1) { // several days in one section: a small date label above each day's games
+      const byDay = new Map(); for (const e of list) { const k = dayKey(e.date); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(e); }
+      body = [...byDay.values()].map((g) => `<h3 class="dayh">${esc(dayLabel(g[0].date))}</h3><div class="grid">${g.map(gameCard).join('')}</div>`).join('');
+    } else body = `<div class="grid">${list.map(gameCard).join('')}</div>`;
+    return `<section class="sc-sec ${extra}"><h2>${title} <span class="count">${list.length}</span></h2>${body}</section>`;
+  };
+  const sections = [block('<span class="livet">●</span> Live now', live, 'is-live'), block('Upcoming', upcoming), block('Finished', finished)];
   if (weekly && sb.calendar && sb.calendar.length) {
     const cur = `${sb.seasontype}:${sb.week}`; const sel = (scoresWeek || cur);
     const curLabel = (sb.calendar.find((w) => `${w.seasontype}:${w.week}` === sel) || {});
@@ -429,7 +435,7 @@ async function viewScores(quick) {
   view.innerHTML = LT('Scores', sub) + `
     ${toolbar ? `<div class="toolbar sticky">${toolbar}</div>` : ''}
     ${mutedCount ? `<div class="notice">${mutedCount} game${mutedCount > 1 ? 's' : ''} hidden (muted teams)</div>` : ''}
-    <h2>${followsIn(sp).some(isAthleteId) ? 'Your teams & players' : 'Your teams'} <span class="count">${mine.length}</span></h2>
+    <h2>★ Favorites <span class="count">${mine.length}</span></h2>
     ${mine.length ? `<div class="grid">${mine.map(gameCard).join('')}</div>` : `<div class="card empty">${followsIn(sp).length ? 'No games for your teams or players in this window.' : `You aren’t following any ${esc(SPORTS[sp].short)} teams or players yet. <a href="#/settings/teams">Pick some</a>.`}</div>`}
     ${sp === 'cfb' && scoresMode === 'mine' ? '' : (sections.join('') || '<div class="empty">No other games.</div>')}`;
   const w = $('#week'); if (w) w.onchange = (e) => { tick(); scoresWeek = e.target.value === w.dataset.cur ? '' : e.target.value; viewScores(); };
@@ -443,6 +449,7 @@ async function scoresEvents(quick) {
   const ctx = castCtx(); const evs = (eb.events || []).slice();
   const mine = evs.filter(isMineEv); const rest = evs.filter((e) => !mine.includes(e));
   const o = { in: 0, pre: 1, post: 2 };
+  mine.sort((a, b) => o[a.state] - o[b.state] || Date.parse(a.date) - Date.parse(b.date));
   rest.sort((a, b) => o[a.state] - o[b.state] || (a.state === 'post' ? Date.parse(b.date) - Date.parse(a.date) : Date.parse(a.date) - Date.parse(b.date)));
   view.innerHTML = LT(`${esc(SPORTS[sp].short)} events`, `${evs.length} on ESPN’s board · your local time`)
     + (mine.length ? `<h2>Your ${esc(SPORTS[sp].what)} <span class="count">${mine.length}</span></h2><div class="grid">${mine.map((e) => eventCard(e, ctx, { n: 6 })).join('')}</div>` : '')
@@ -476,13 +483,21 @@ async function scoresTennis(quick) {
   if (!t.draws.includes(tennisDraw)) tennisDraw = t.draws.find((d) => /Singles/.test(d)) || t.draws[0];
   const ctx = castCtx(); const mf = muteFilter();
   const ms = t.matches.filter((m) => m.draw === tennisDraw && !mf.game(m));
-  const rounds = []; for (const m of ms) { let r = rounds.find((x) => x.name === m.round); if (!r) rounds.push(r = { name: m.round, ms: [], last: 0 }); r.ms.push(m); r.last = Math.max(r.last, Date.parse(m.date)); }
-  rounds.sort((a, b) => b.last - a.last);
   const ord = { in: 0, pre: 1, post: 2 };
+  const mineM = ms.filter(isMineEv).sort((a, b) => ord[a.state] - ord[b.state] || Date.parse(a.date) - Date.parse(b.date));
+  const poolM = ms.filter((m) => !mineM.includes(m));
+  // Favorites → Live → Upcoming → Finished; within a section, matches are grouped by round
+  const tsec = (title, list, extra = '') => {
+    if (!list.length) return '';
+    const rounds = []; for (const m of list) { let r = rounds.find((x) => x.name === m.round); if (!r) rounds.push(r = { name: m.round, ms: [] }); r.ms.push(m); }
+    const byTime = (a, b) => Date.parse(a.date) - Date.parse(b.date);
+    return `<section class="sc-sec ${extra}"><h2>${title} <span class="count">${list.length}</span></h2>${rounds.map((r) => `<h3 class="dayh">${esc(r.name || '')}</h3><div class="grid">${r.ms.sort(byTime).map((m) => tennisMatch(m, ctx)).join('')}</div>`).join('')}</section>`;
+  };
   view.innerHTML = LT(esc(t.name), `${esc(t.tour)} · ${esc(t.venue || '')}`) + `
     <div class="toolbar sticky"><select class="btn" id="tt" aria-label="Tournament">${ts.map((x) => `<option value="${esc(x.id)}" ${x.id === t.id ? 'selected' : ''}>${esc(x.tour)} · ${esc(x.name)}</option>`).join('')}</select>
       <div class="seg">${t.draws.map((d) => `<button data-draw="${esc(d)}" class="${d === tennisDraw ? 'on' : ''}">${esc(d.replace("Men's ", 'M ').replace("Women's ", 'W '))}</button>`).join('')}</div></div>
-    ${rounds.map((r) => `<h2>${esc(r.name)} <span class="count">${r.ms.length}</span></h2><div class="grid">${r.ms.sort((a, b) => ord[a.state] - ord[b.state] || Date.parse(a.date) - Date.parse(b.date)).map((m) => tennisMatch(m, ctx)).join('')}</div>`).join('') || '<div class="empty">No matches.</div>'}`;
+    ${tsec('★ Favorites', mineM, 'fav')}${tsec('<span class="livet">●</span> Live now', poolM.filter((m) => m.state === 'in'), 'live')}${tsec('Upcoming', poolM.filter((m) => m.state === 'pre'))}${tsec('Finished', poolM.filter((m) => m.state === 'post').sort((a, b) => Date.parse(b.date) - Date.parse(a.date)))}
+    ${ms.length ? '' : '<div class="card empty">No matches in this draw right now.</div>'}`;
   $('#tt').onchange = (e) => { tick(); tennisT = e.target.value; viewScores(true); };
   view.querySelectorAll('[data-draw]').forEach((b) => (b.onclick = () => { tick(); tennisDraw = b.dataset.draw; viewScores(true); }));
   scheduleRefresh(ms.some((m) => m.state === 'in'));
@@ -714,7 +729,7 @@ const watchHTML = (ev, opts) => watchButtons(ev, myProviders(), opts);
 const castCtx = () => { const mf = muteFilter(); return { logo, follows, muted: (id) => mf.teamId(id), watch: watchHTML }; };
 let castLive = false;
 async function viewGame(sp, id, quick) {
-  if (castState.sport !== sp || castState.id !== id) { const keep = castState.player; Object.assign(castState, { tab: 'summary', player: sp === 'golf' ? keep : null, sport: sp, id }); }
+  if (castState.sport !== sp || castState.id !== id) { const keep = castState.player; Object.assign(castState, { tab: 'summary', player: sp === 'golf' ? keep : null, sport: sp, id, fp: null, fd: null, ab: null, sf: 'all' }); }
   setBar('Gamecast', { back: `#/${lastTab}` });
   if (!quick) paint(`<div class="card gc-head"><div class="sk w30 sm"></div><div class="sk w70"></div><div class="sk w50 sm"></div></div>${SK.games(1)}${SK.rows(8)}`);
   let d; try { d = await api(`/api/game/${sp}/${id}`, 10e3); } catch (e) { view.innerHTML = errBox(e); return; }
@@ -748,49 +763,91 @@ function gameBackdrop(sp, d) {
   } catch { BD.setSport(sp); }
 }
 const UNIT = (sp) => ({ baseball: 'Runs', soccer: 'Goals', hockey: 'Goals' }[(SPORTS[sp] || {}).family] || 'Points');
-async function viewTeam(id) {
+let teamTab = 'schedule'; let teamTabFor = ''; let schedAll = { up: false, past: false };
+const TEAM_TABS = [['schedule', 'Schedule'], ['stats', 'Stats'], ['news', 'News'], ['roster', 'Roster']];
+async function viewSchedule(id) { return viewTeam(id, 'schedule'); } // #/schedule/<id> = the team page, opened on its Schedule tab
+async function viewTeam(id, forceTab) {
   await ensureTeams(sportOfId(id));
-  const meta = teamById(id) || {};
-  setBar(meta.short || 'Team', { back: `#/${lastTab}` });
+  const meta = teamById(id) || {}; const sp = meta.sport || sportOfId(id);
+  if (teamTabFor !== id) { teamTabFor = id; teamTab = 'schedule'; schedAll = { up: false, past: false }; }
+  if (forceTab) teamTab = forceTab;
+  const here = () => /^#\/(team|schedule)\//.test(location.hash);
+  const back = HIST.length > 1 ? HIST[HIST.length - 2] : `#/${lastTab}`;
+  setBar(meta.short || 'Team', { back });
+  teamTheme(meta);
   paint(`<div class="card team-hero" style="--team:#${esc(meta.color || '1f6f5c')}">${meta.logo ? `<img src="${esc(logo(meta))}" alt="" />` : '<span class="sk logo big"></span>'}<div><h1>${esc(meta.name || '')}</h1><div class="sk w30 sm"></div></div></div>
-    <h2>Record & scoring</h2><div class="kv">${rep(5, () => '<div class="card"><div class="sk w40"></div><div class="sk w70 sm"></div></div>')}</div>
-    <div class="cols"><section><h2>Schedule</h2>${SK.rows(10)}</section><section><h2>Season stats</h2>${SK.news(3)}</section></div>`);
+    <div class="toolbar sticky"><div class="seg">${TEAM_TABS.map(([k, l]) => `<button class="${k === teamTab ? 'on' : ''}" disabled>${l}</button>`).join('')}</div></div>${SK.rows(8)}`);
   let d; try { d = await api(`/api/team/${id}`, 2 * 60e3); } catch (e) { view.innerHTML = errBox(e); return; }
   const t = d.team;
-  if (!location.hash.startsWith('#/team/')) return;
-  BD.setTeam({ ...meta, ...t, logo: logo(t.logo ? t : meta) }, meta.sport || sportOfId(id));
-  setBar(t.name, { back: `#/${lastTab}` });
+  if (!here()) return;
+  teamTheme({ ...meta, ...t });
+  BD.setTeam({ ...meta, ...t, logo: logo(t.logo ? t : meta) }, sp);
+  setBar(t.name, { back });
   const following = S.follow.includes(t.id); const muted = S.muteTeams.includes(t.id);
-  const sched = d.schedule.map((ev) => {
-    const home = ev.home.team?.id === t.id; const me = home ? ev.home : ev.away; const opp = home ? ev.away : ev.home;
-    let res = '';
-    if (ev.state === 'post') res = `<span class="res ${me.winner ? 'W' : 'L'}">${me.winner ? 'W' : 'L'} ${esc(me.score)}–${esc(opp.score)}</span>`;
-    else if (ev.state === 'in') res = `<span class="res" style="color:var(--live)">LIVE ${esc(me.score)}–${esc(opp.score)}</span>`;
-    else res = `<span class="faint small">${/TBD/.test(ev.detail) ? 'TBD' : new Date(ev.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>`;
-    return `<a class="sched-row" href="#/game/${meta.sport || 'cfb'}/${esc(ev.id)}"><span class="faint small">${new Date(ev.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-      <span class="opp"><span class="faint small">${home ? 'vs' : '@'}</span><img src="${esc(logo(opp.team))}" alt="" loading="lazy" />${opp.rank ? `<span class="faint small">${opp.rank}</span>` : ''}<span>${esc(opp.team?.short || 'TBD')}</span></span>${res}</a>`;
-  }).join('');
+  const roster = d.roster || [];
+  const tabs = TEAM_TABS.filter(([k]) => k !== 'roster' || roster.length);
+  if (!tabs.some(([k]) => k === teamTab)) teamTab = 'schedule';
+  const summary = (t.record && t.record[0] && t.record[0].summary) || '';
   const recs = t.record.map((r) => `<div class="card"><div class="v">${esc(r.summary)}</div><div class="l">${esc(r.desc || r.name || 'Record')}</div></div>`).join('');
-  view.innerHTML = `<div class="card team-hero" style="--team:#${esc(t.color || '1f6f5c')}"><img src="${esc(logo(t))}" alt="" />
-      <div><h1>${esc(t.name)}</h1><div class="muted">${esc(t.standing || '')}${meta.conference ? ` · ${esc(meta.conference)}` : ''}</div></div>
-      <div class="actions"><button class="btn ${following ? 'primary' : ''}" id="fol">${following ? '✓ Following' : '+ Follow'}</button><button class="btn ${muted ? 'danger' : ''}" id="mut">${muted ? 'Muted' : 'Mute'}</button></div></div>
-    <h2>Record & scoring</h2><div class="kv">${recs}${meta.confRecord ? `<div class="card"><div class="v">${esc(meta.confRecord)}</div><div class="l">Conference</div></div>` : ''}
-      ${t.ppg != null ? `<div class="card"><div class="v">${(+t.ppg).toFixed(1)}</div><div class="l">${UNIT(meta.sport || sportOfId(id))} per game</div></div>` : ''}
-      ${t.oppg != null ? `<div class="card"><div class="v">${(+t.oppg).toFixed(1)}</div><div class="l">${UNIT(meta.sport || sportOfId(id))} allowed / game</div></div>` : ''}
+  const statsHTML = () => `<h2>Record & scoring</h2><div class="kv">${recs}${meta.confRecord ? `<div class="card"><div class="v">${esc(meta.confRecord)}</div><div class="l">Conference</div></div>` : ''}
+      ${t.ppg != null ? `<div class="card"><div class="v">${(+t.ppg).toFixed(1)}</div><div class="l">${UNIT(sp)} per game</div></div>` : ''}
+      ${t.oppg != null ? `<div class="card"><div class="v">${(+t.oppg).toFixed(1)}</div><div class="l">${UNIT(sp)} allowed / game</div></div>` : ''}
       ${meta.streak ? `<div class="card"><div class="v">${esc(meta.streak)}</div><div class="l">Streak</div></div>` : ''}</div>
-    <div class="cols"><section><h2>Schedule <a class="more-link" href="#/schedule/${esc(t.id)}">Full schedule & tickets ›</a></h2><div class="card panel">${sched || '<div class="empty">No schedule.</div>'}</div></section>
-    <section><h2>Season stats</h2><div class="stat-groups">${d.stats.map((g) => `<div class="card"><h4>${esc(g.name)}</h4>${g.items.map((s) => `<div class="r"><span>${esc(s.label)}</span><b>${esc(s.value)}</b></div>`).join('')}</div>`).join('') || `<div class="empty">${meta.sport === 'mlb' ? 'Season stats aren’t in ESPN’s free MLB team feed.' : 'No season stats in ESPN’s free feed yet.'}</div>`}</div>
-    <h2>Latest news</h2><div id="team-news">${SK.news(4)}</div></section></div>
-    ${(d.roster || []).length ? `<h2>Roster <span class="count">${d.roster.length} · ★ to follow a player</span></h2><div class="card panel roster">${d.roster.map((p) => `<div class="ro-row ${follows(p.id) ? 'mine' : ''}">${p.headshot ? `<img class="hs" src="${esc(p.headshot)}" alt="" loading="lazy" />` : '<span class="hs"></span>'}<a class="nm" href="#/player/${esc(p.id)}"><b>${esc(p.name)}</b> <span class="faint small">${esc([p.jersey ? '#' + p.jersey : '', p.pos].filter(Boolean).join(' · '))}</span></a><button class="pf ${follows(p.id) ? 'on' : ''}" data-pfollow="${esc(p.id)}" data-pname="${esc(p.name)}" data-pflag="${esc(p.headshot || '')}" data-pteam="${esc(t.id)}" data-ppos="${esc(p.pos || '')}" aria-pressed="${follows(p.id)}" aria-label="${follows(p.id) ? 'Unfollow' : 'Follow'} ${esc(p.name)}">${follows(p.id) ? '★' : '☆'}</button></div>`).join('')}</div>` : ''}`;
+    <h2>Season stats</h2><div class="stat-groups">${d.stats.map((g) => `<div class="card"><h4>${esc(g.name)}</h4>${g.items.map((s) => `<div class="r"><span>${esc(s.label)}</span><b>${esc(s.value)}</b></div>`).join('')}</div>`).join('') || `<div class="empty">${sp === 'mlb' ? 'Season stats aren’t in ESPN’s free MLB team feed.' : 'No season stats in ESPN’s free feed yet.'}</div>`}</div>`;
+  const rosterHTML = () => `<h2>Roster <span class="count">${roster.length} · ★ to follow a player</span></h2><div class="card panel roster">${roster.map((p) => `<div class="ro-row ${follows(p.id) ? 'mine' : ''}">${p.headshot ? `<img class="hs" src="${esc(p.headshot)}" alt="" loading="lazy" />` : '<span class="hs"></span>'}<a class="nm" href="#/player/${esc(p.id)}"><b>${esc(p.name)}</b> <span class="faint small">${esc([p.jersey ? '#' + p.jersey : '', p.pos].filter(Boolean).join(' · '))}</span></a><button class="pf ${follows(p.id) ? 'on' : ''}" data-pfollow="${esc(p.id)}" data-pname="${esc(p.name)}" data-pflag="${esc(p.headshot || '')}" data-pteam="${esc(t.id)}" data-ppos="${esc(p.pos || '')}" aria-pressed="${follows(p.id)}" aria-label="${follows(p.id) ? 'Unfollow' : 'Follow'} ${esc(p.name)}">${follows(p.id) ? '★' : '☆'}</button></div>`).join('')}</div>`;
+  view.innerHTML = `<div class="team-page"><div class="card team-hero" style="--team:#${esc(t.color || '1f6f5c')}"><img src="${esc(logo(t))}" alt="" />
+      <div><h1>${esc(t.name)}</h1><div class="muted">${[summary, t.standing, meta.conference].filter(Boolean).map(esc).join(' · ')}</div></div>
+      <div class="actions"><button class="btn ${following ? 'primary' : ''}" id="fol">${following ? '✓ Following' : '+ Follow'}</button><button class="btn ${muted ? 'danger' : ''}" id="mut">${muted ? 'Muted' : 'Mute'}</button></div></div>
+    <div class="toolbar sticky team-tabs"><div class="seg" role="tablist">${tabs.map(([k, l]) => `<button data-ttab="${k}" class="${teamTab === k ? 'on' : ''}" role="tab" aria-selected="${teamTab === k}">${l}</button>`).join('')}</div></div>
+    <div id="team-body"></div></div>`;
   $('#fol').onclick = () => { tick(); S.follow = following ? S.follow.filter((x) => x !== t.id) : [...S.follow, t.id]; if (!following) S.muteTeams = S.muteTeams.filter((x) => x !== t.id); save(); toast(following ? `Unfollowed ${t.name}` : `Following ${t.name}`); SILENT = true; viewTeam(id).finally(() => (SILENT = false)); };
   $('#mut').onclick = () => { tick(); S.muteTeams = muted ? S.muteTeams.filter((x) => x !== t.id) : [...S.muteTeams, t.id]; if (!muted) S.follow = S.follow.filter((x) => x !== t.id); save(); toast(muted ? `Unmuted ${t.name}` : `Muted ${t.name}`); SILENT = true; viewTeam(id).finally(() => (SILENT = false)); };
-  try {
-    const n = await api(newsPath(t.id, meta.sport || 'cfb'), 5 * 60e3);
-    const m = teamMatcher(meta.id ? meta : t, TEAMS, meta.sport || 'cfb');
-    const { items } = filterNews(n.items);
-    const mine = items.filter((i) => m(itemText(i))).slice(0, 15);
-    $('#team-news').innerHTML = `<div class="card panel news-list">${mine.map(newsItem).join('') || `<div class="empty">${muted ? 'This team is muted, so its news is hidden.' : 'No recent straight-news stories.'}</div>`}</div>`;
-  } catch (e) { $('#team-news').innerHTML = errBox(e); }
+  const body = $('#team-body');
+  // --- tabs: switching never refetches the team, and keeps the URL honest (#/team/<id>) ---
+  view.querySelectorAll('[data-ttab]').forEach((b) => (b.onclick = () => { tick(); teamTab = b.dataset.ttab; if (location.hash.startsWith('#/schedule/')) history.replaceState(null, '', `#/team/${id}`); view.querySelectorAll('[data-ttab]').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); }); paintTab(); scrollTo(0, Math.min(scrollY, 0)); }));
+  const loadSched = async () => {
+    let sd; try { sd = await api(`/api/schedule/team/${encodeURIComponent(id)}`, 2 * 60e3); } catch (e) { sd = null; }
+    if (!here() || teamTab !== 'schedule' || !$('#team-sched')) return;
+    if (!sd || !sd.events) { // fall back to the (ticket-less) list that came with the team feed
+      const rows = (d.schedule || []).map((ev) => schedItemLite(ev, t, sp)).join('');
+      $('#team-sched').innerHTML = `<div class="notice">Couldn’t load the full schedule just now — showing the basic list.</div><div class="card panel">${rows || '<div class="empty">No schedule on ESPN yet.</div>'}</div>`;
+      return;
+    }
+    const y = scrollY;
+    $('#team-sched').innerHTML = `${scheduleSections(sd.events, t.id, sd.sport || sp, peopleCtx(), { limitUp: schedAll.up ? 0 : 12, limitPast: schedAll.past ? 0 : 12 })}
+      <p class="faint small">${sd.season ? `${esc(sd.season)} season · ` : ''}Schedule, scores and TV from ESPN. Ticket links go to the game’s SeatGeek page${sd.ticketsPriced ? '; prices appear when SeatGeek publishes them' : ''}.</p>`;
+    if (SILENT) scrollTo(0, y);
+    $('#team-sched').querySelectorAll('[data-more]').forEach((b) => (b.onclick = () => { tick(); schedAll[b.dataset.more] = true; loadSched(); }));
+    scheduleRefresh(sd.events.some((e) => e.state === 'in'), 30e3);
+  };
+  const loadNews = async () => {
+    try {
+      const n = await api(newsPath(t.id, sp), 5 * 60e3);
+      if (!$('#team-news')) return;
+      const m = teamMatcher(meta.id ? meta : t, TEAMS, sp);
+      const { items } = filterNews(n.items);
+      const mine = items.filter((i) => m(itemText(i))).slice(0, 15);
+      $('#team-news').innerHTML = `<div class="card panel news-list">${mine.map(newsItem).join('') || `<div class="empty">${muted ? 'This team is muted, so its news is hidden.' : 'No recent straight-news stories.'}</div>`}</div>`;
+    } catch (e) { if ($('#team-news')) $('#team-news').innerHTML = errBox(e); }
+  };
+  function paintTab() {
+    if (teamTab !== 'schedule') scheduleRefresh(false);
+    if (teamTab === 'schedule') { body.innerHTML = `<div id="team-sched">${SK.rows(6)}</div>`; loadSched(); }
+    else if (teamTab === 'stats') body.innerHTML = statsHTML();
+    else if (teamTab === 'news') { body.innerHTML = `<h2>Latest news</h2><div id="team-news">${SK.news(4)}</div>`; loadNews(); }
+    else body.innerHTML = rosterHTML();
+  }
+  paintTab();
+}
+// bare-bones schedule row, only used if /api/schedule/team can't be reached
+function schedItemLite(ev, t, sp) {
+  const home = ev.home.team?.id === t.id; const me = home ? ev.home : ev.away; const opp = home ? ev.away : ev.home;
+  let res = '';
+  if (ev.state === 'post') res = `<span class="res ${me.winner ? 'W' : 'L'}">${me.winner ? 'W' : 'L'} ${esc(me.score)}–${esc(opp.score)}</span>`;
+  else if (ev.state === 'in') res = `<span class="res" style="color:var(--live)">LIVE ${esc(me.score)}–${esc(opp.score)}</span>`;
+  else res = `<span class="faint small">${/TBD/.test(ev.detail) ? 'TBD' : new Date(ev.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>`;
+  return `<a class="sched-row" href="#/game/${sp}/${esc(ev.id)}"><span class="faint small">${new Date(ev.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+    <span class="opp"><span class="faint small">${home ? 'vs' : '@'}</span><img src="${esc(logo(opp.team))}" alt="" loading="lazy" />${opp.rank ? `<span class="faint small">${opp.rank}</span>` : ''}<span>${esc(opp.team?.short || 'TBD')}</span></span>${res}</a>`;
 }
 
 // ---------------- schedule + player pages ----------------
@@ -805,21 +862,6 @@ function bindSched() {
     const tr = e.target.closest('tr[data-href]'); if (tr && !e.target.closest('a')) { location.hash = tr.dataset.href; return; }
     const pt = e.target.closest('[data-ptab]'); if (pt) { tick(); playerTab = pt.dataset.ptab; renderPlayer(); }
   };
-}
-async function viewSchedule(id) {
-  const sp = sportOfId(id); await ensureTeams(sp).catch(() => {});
-  const meta = teamById(id) || {};
-  setBar(meta.short ? `${meta.short} schedule` : 'Schedule', { back: HIST.length > 1 ? HIST[HIST.length - 2] : `#/${lastTab}` });
-  paint(`<div class="card team-hero"><span class="sk logo big"></span><div><div class="sk w50"></div><div class="sk w30 sm"></div></div></div>${SK.rows(10)}`);
-  let d; try { d = await api(`/api/schedule/team/${encodeURIComponent(id)}`, 2 * 60e3); } catch (e) { view.innerHTML = errBox(e); return; }
-  if (!location.hash.startsWith('#/schedule/')) return;
-  BD.setTeam({ ...meta, ...d.team, logo: logo(d.team) }, sp);
-  setBar(`${d.team.short || d.team.name} schedule`, { back: HIST.length > 1 ? HIST[HIST.length - 2] : `#/${lastTab}` });
-  const y = scrollY;
-  view.innerHTML = `<div class="sched-page">${scheduleView(d, peopleCtx())}</div>`;
-  if (SILENT) scrollTo(0, y);
-  bindSched();
-  scheduleRefresh(d.events.some((e) => e.state === 'in'), 60e3);
 }
 let playerTab = null; let PLAYER = null; let PSCHED = null;
 function renderPlayer() {
@@ -840,6 +882,7 @@ async function viewPlayer(id) {
   if (!PLAYER) paint(`<div class="card team-hero"><span class="sk logo big"></span><div><div class="sk w50"></div><div class="sk w30 sm"></div></div></div>${SK.rows(8)}`);
   let p; try { p = await api(`/api/player/${encodeURIComponent(id)}`, 5 * 60e3); } catch (e) { view.innerHTML = errBox(e); return; }
   if (!location.hash.startsWith('#/player/')) return;
+  teamTheme(p.team ? { ...(teamById(p.team.id) || {}), ...p.team } : null);
   PLAYER = p; setBar(p.short || p.name, { back: HIST.length > 1 ? HIST[HIST.length - 2] : `#/${lastTab}` });
   if (p.team) BD.setTeam({ ...(teamById(p.team.id) || {}), ...p.team, logo: logo(p.team) }, p.sport); else BD.setPlayers(p.sport, [p.headshot || p.flag].filter(Boolean));
   renderPlayer();
@@ -1097,19 +1140,19 @@ function viewSettings(sub) {
   const mutes = activeMutes(); const mySrc = SOURCES.filter((s) => S.sports.includes(s.sport)); const onCount = mySrc.filter((s) => sourceOn(s.id)).length; const bl = S.blockOutlets || [];
   view.innerHTML = LT('Settings', 'Saved on this device only') + `
     <div class="group-lbl">Your feed</div><div class="list card">
-      ${linkRow('#/settings/sports', 'sports', 'var(--ridge-orange)', 'Sports', S.sports.map((k) => SPORTS[k].short).join(', '))}
-      ${linkRow('#/settings/teams', 'team', 'var(--ridge-olive)', 'Teams & players', teamsTxt)}
-      ${S.sports.includes('cfb') ? linkRow('#/settings/conferences', 'conf', 'var(--ridge-olive-l)', 'CFB conferences', confTxt) : ''}
-      ${linkRow('#/settings/watch', 'tv', 'var(--ridge-orange)', 'How you watch', myProviders().map((id) => (PROVIDERS.find((p) => p.id === id) || {}).name).filter(Boolean).join(', ') || 'Pick your TV & streaming services')}</div>
+      ${linkRow('#/settings/sports', 'sports', 'var(--usa-red-b)', 'Sports', S.sports.map((k) => SPORTS[k].short).join(', '))}
+      ${linkRow('#/settings/teams', 'team', 'var(--usa-blue-m)', 'Teams & players', teamsTxt)}
+      ${S.sports.includes('cfb') ? linkRow('#/settings/conferences', 'conf', 'var(--usa-blue-m)', 'CFB conferences', confTxt) : ''}
+      ${linkRow('#/settings/watch', 'tv', 'var(--usa-red-b)', 'How you watch', myProviders().map((id) => (PROVIDERS.find((p) => p.id === id) || {}).name).filter(Boolean).join(', ') || 'Pick your TV & streaming services')}</div>
     <div class="group-lbl">Filters</div><div class="list card">
-      ${linkRow('#/settings/mute', 'mute', 'var(--ridge-orange-h)', 'Mute', mutes.length ? mutes.join(', ') : 'Nothing muted')}
-      ${linkRow('#/settings/sources', 'src', 'var(--ridge-olive)', 'News sources', `${onCount} of ${mySrc.length} on${bl.length ? ` · ${bl.length} blocked` : ''}`)}
-      ${iconFlag('straightOnly', 'straight', 'var(--ridge-olive-l)', 'Straight news only', 'Hide opinion, picks, betting & podcasts')}
-      ${iconFlag('sportOnly', 'ball', 'var(--ridge-olive)', 'This sport only', 'Hide other sports from school, team & local feeds')}</div>
+      ${linkRow('#/settings/mute', 'mute', 'var(--usa-red)', 'Mute', mutes.length ? mutes.join(', ') : 'Nothing muted')}
+      ${linkRow('#/settings/sources', 'src', 'var(--usa-blue-m)', 'News sources', `${onCount} of ${mySrc.length} on${bl.length ? ` · ${bl.length} blocked` : ''}`)}
+      ${iconFlag('straightOnly', 'straight', 'var(--usa-blue-m)', 'Straight news only', 'Hide opinion, picks, betting & podcasts')}
+      ${iconFlag('sportOnly', 'ball', 'var(--usa-blue-m)', 'This sport only', 'Hide other sports from school, team & local feeds')}</div>
     <div class="group-lbl">App</div><div class="list card">
       ${linkRow('#/settings/appearance', 'moon', '#3a3a38', 'Appearance', cap(S.theme))}
-      <button class="row" data-act="tour">${icon('spark', 'var(--ridge-olive)')}<span class="rt"><b>Replay welcome tour</b><small>Step through setup again</small></span><span class="chev">›</span></button>
-      ${linkRow('#/settings/about', 'info', 'var(--ridge-olive-l)', 'About & install', 'How filtering works · data sources')}</div>
+      <button class="row" data-act="tour">${icon('spark', 'var(--usa-blue-m)')}<span class="rt"><b>Replay welcome tour</b><small>Step through setup again</small></span><span class="chev">›</span></button>
+      ${linkRow('#/settings/about', 'info', 'var(--usa-blue-m)', 'About & install', 'How filtering works · data sources')}</div>
     <div class="list card" style="margin-top:22px"><button class="row danger" data-act="reset"><span class="rt"><b>Reset all settings</b></span></button></div>
     <p class="faint small center">Straight Sports · prototype · no ads, no accounts</p>`;
   view.onclick = (e) => {
@@ -1152,7 +1195,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=14" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=15" alt="" /></div>
         <h1>Straight<b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
@@ -1264,7 +1307,7 @@ function openStory(link) {
     ${others.length ? `<div class="lbl">Also covered by ${others.length} other source${others.length > 1 ? 's' : ''}</div><div class="list card">${others.map((o) => { ITEMS.set(o.link, o); return `<button class="row" data-story="${esc(o.link)}"><span class="rt"><b>${esc(o.title)}</b><small>${esc(o.source)} · ${timeAgo(o.published)}</small></span><span class="chev">›</span></button>`; }).join('')}</div>` : ''}
     <div class="why">${why}</div>
     <div class="lbl">Not for you?</div>
-    <div class="list card"><button class="row" data-sact="block">${icon('block', 'var(--ridge-orange)')}<span class="rt"><b>Hide everything from ${esc(it.source)}</b><small>You can undo this in Settings → News sources</small></span></button></div>
+    <div class="list card"><button class="row" data-sact="block">${icon('block', 'var(--usa-red-b)')}<span class="rt"><b>Hide everything from ${esc(it.source)}</b><small>You can undo this in Settings → News sources</small></span></button></div>
     <div class="chips" style="margin-top:10px">${keywordIdeas(it.title).map((k) => `<button class="chip lg ghost" data-skw="${esc(k)}">🔇 Mute “${esc(k)}”</button>`).join('')}</div>
     <form class="kw-form" data-sform="kw"><input placeholder="Mute another keyword…" autocomplete="off" enterkeyhint="done" /><button class="btn">Mute</button></form>`;
   $('.sheet-body', sh).scrollTop = 0;
@@ -1363,6 +1406,8 @@ document.addEventListener('click', (e) => {
   const inCast = (location.hash || '').startsWith('#/game/');
   const tab = e.target.closest('[data-gctab]');
   if (tab && inCast) { tick(); castState.tab = tab.dataset.gctab; viewGame(castState.sport, castState.id, true); return; }
+  const gs = e.target.closest('[data-gcset]');
+  if (gs && inCast) { tick(); const [k, ...v] = gs.dataset.gcset.split('='); if (['fp', 'fd', 'ab', 'sf'].includes(k)) { castState[k] = v.join('=') || null; if (k === 'fd') castState.fp = null; viewGame(castState.sport, castState.id, true); } return; }
   const pf = e.target.closest('[data-pfollow]');
   if (pf) {
     e.preventDefault(); e.stopPropagation(); tick();
@@ -1407,6 +1452,7 @@ async function route(silent) {
   const h = location.hash || '#/home';
   const [, name = 'home', arg, arg2] = h.split('/');
   if (!['team', 'game', 'schedule', 'player'].includes(name)) lastTab = name;
+  if (!['team', 'schedule', 'player'].includes(name)) { clearTeamTheme(); syncThemeColor(); }
   syncSportUI(name);
   if (!silent) { if (HIST[HIST.length - 2] === h) HIST.pop(); else if (HIST[HIST.length - 1] !== h) HIST.push(h); }
   document.querySelectorAll('.nav a[data-tab]').forEach((a) => a.classList.toggle('active', a.dataset.tab === lastTab));

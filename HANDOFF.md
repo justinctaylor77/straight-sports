@@ -17,6 +17,7 @@ Owner: Justin Taylor (user). He approved the app as final on Oct 24, 2026 and as
 
 ## Commit history (newest first)
 - e0b388e logo green recolored to olive drab #6B8E23; cache-busted icon URLs (ss-v14)
+- (ss-v15, this commit) USA red/white/blue theme (dark+light); team pages/players re-skin in the team's ESPN colors via public/teamtheme.js (inline CSS vars on <html>, cleared on other routes, solid readable hero); Scores = Favorites → Live → Upcoming → Finished; Schedule tab on every team page + tappable team names in score cards (schedule data/API always worked; it just had no visible entry point); stricter sports-only news (server/classify.js sportsCheck, /api/news?debug); Gamecast graphics in public/plays.js: football pass/run/kick field plays, MLB strike-zone pitch tracker + spray chart, NHL rink shots, NBA/CBB shot chart, soccer shot map, golf leaderboard bars + hole strip, tennis court + set bars, F1/NASCAR/Indy podium. Screenshots: scripts/shots-v9.js, scripts/shots-gamecast.js → screenshots/v9/.
 - 9430ac8 new S logo: header mark, PNG icons/favicons, splash (ss-v13)
 - 4c0f402 faster live refresh: gamecast 10s, lists 15s, server live cache 6-8s (ss-v12)
 - 757f73b / c24394d / 4047683 exact Ridge colors (olive, black, orange)
