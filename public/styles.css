@@ -922,7 +922,7 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
    Change the palette here — everything below reads these variables. (:not(#_) out-ranks the per-sport accents above.) */
 :root:not(#_) {
   --ridge-black: #030303; --ridge-s1: #0E0E0E; --ridge-s2: #171717;
-  --ridge-olive: #5A6B3A; --ridge-olive-l: #7A8B4F;
+  --ridge-olive: #6B8E23; --ridge-olive-l: #8DB33A;
   --ridge-orange: #F56600; --ridge-orange-h: #FF8533;
   --ridge-text: #F2EFE8;
 }
@@ -931,7 +931,7 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
   --bg: var(--ridge-black); --surface: var(--ridge-s1); --surface-2: var(--ridge-s2); --outer: #070707;
   --text: var(--ridge-text); --muted: #c2bdb3; --faint: #948f86; --border: rgba(242,239,232,.10); --chip: rgba(242,239,232,.07);
   --accent: var(--ridge-orange); --accent-h: var(--ridge-orange-h); --accent-ink: var(--ridge-black); --accent-soft: rgba(245,102,0,.16);
-  --olive: var(--ridge-olive); --olive-t: var(--ridge-olive-l); --olive-ink: var(--ridge-text); --olive-soft: rgba(122,139,79,.20);
+  --olive: var(--ridge-olive); --olive-t: var(--ridge-olive-l); --olive-ink: var(--ridge-text); --olive-soft: rgba(141,179,58,.20);
   --live: var(--ridge-orange); --warn: #e9b44c;
   --glass: rgba(14,14,14,.82); --glass-2: rgba(23,23,23,.70); --hl: rgba(242,239,232,.06); --scrim: rgba(3,3,3,.64);
   --shadow: 0 6px 24px rgba(0,0,0,.45);
@@ -941,7 +941,7 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
   --bg: var(--ridge-text); --surface: #ffffff; --surface-2: #f7f5f0; --outer: #e9e5dc;
   --text: var(--ridge-black); --muted: #46443f; --faint: #6b6860; --border: #ddd8cd; --chip: #ebe7de;
   --accent: #C24F00; --accent-h: var(--ridge-orange); --accent-ink: #ffffff; --accent-soft: rgba(245,102,0,.14);
-  --olive: var(--ridge-olive); --olive-t: #4a5830; --olive-ink: #ffffff; --olive-soft: rgba(90,107,58,.14);
+  --olive: var(--ridge-olive); --olive-t: #4F6A1A; --olive-ink: #ffffff; --olive-soft: rgba(107,142,35,.14);
   --live: #C24F00; --glass: rgba(255,255,255,.88); --glass-2: rgba(255,255,255,.72); --scrim: rgba(242,239,232,.8);
 }
 @media (prefers-color-scheme: light) {
@@ -949,7 +949,7 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
     --bg: var(--ridge-text); --surface: #ffffff; --surface-2: #f7f5f0; --outer: #e9e5dc;
     --text: var(--ridge-black); --muted: #46443f; --faint: #6b6860; --border: #ddd8cd; --chip: #ebe7de;
     --accent: #C24F00; --accent-ink: #ffffff; --accent-soft: rgba(245,102,0,.14);
-    --olive-t: #4a5830; --olive-ink: #ffffff; --olive-soft: rgba(90,107,58,.14);
+    --olive-t: #4F6A1A; --olive-ink: #ffffff; --olive-soft: rgba(107,142,35,.14);
     --live: #C24F00; --glass: rgba(255,255,255,.88); --glass-2: rgba(255,255,255,.72); --scrim: rgba(242,239,232,.8);
   }
 }
@@ -960,7 +960,7 @@ span.hs { display: inline-block; width: 40px; height: 40px; border-radius: 50%; 
 /* tabs: olive */
 .seg button.on, .sportbar .chip.on { --accent: var(--olive); --accent-ink: var(--olive-ink); }
 .nav a.active, .seg-a.grok-tab, .chip.on, .dot.on, .dot.done { --accent: var(--olive-t); --accent-soft: var(--olive-soft); }
-.sportbar .chip.on { box-shadow: 0 4px 16px -4px rgba(90,107,58,.55); }
+.sportbar .chip.on { box-shadow: 0 4px 16px -4px rgba(107,142,35,.55); }
 /* follows: olive */
 .game.mine, .rank-row.mine, .st-row.mine, .lb-row.mine, .gk-row.mine, .ro-row.mine, .lu-row.mine, .ev-card.mine, .ev-row.mine, .ev-bout.big.mine,
 .box tr.mine, .br-t.mine, .star, .pf, .pick-row.on, .tile.on, .switch input:checked, #fol, .sc-follow {

@@ -1,5 +1,5 @@
 // Service worker: app shell cache-first, API network-first (offline fallback), logos stale-while-revalidate.
-const VERSION = 'ss-v10';
+const VERSION = 'ss-v11';
 const SHELL = ['/', '/index.html', '/styles.css', '/app.js', '/lib.js', '/gamecast.js', '/backdrop.js', '/catalog.js', '/watch.js', '/people.js', '/fonts/barlow-condensed-600.woff2', '/fonts/barlow-condensed-700.woff2', '/fonts/barlow-condensed-800.woff2', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== VERSION && k !== 'scfb-img').map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
