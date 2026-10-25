@@ -1,0 +1,423 @@
+{
+  "date": "2026-10-25",
+  "season": 2026,
+  "week": 9,
+  "afterWeek": 8,
+  "title": "Grok Independent FBS Top 25 (Week 9 / post-Week 8 results, Oct 25 2026)",
+  "source": "User's weekly Grok automation (Sunday 8:00 AM MT)",
+  "method": {
+    "note": "This is the first run of the hybrid system (no prior Grok ranking for movement). Predictive Rank (PR) averages current SP+ and FPI ranks. Résumé Rank (RR) uses the specified point system (+5 top-10 win, +3 top-25 win, +2 road/neutral Power win, +1 other FBS win, –4 unranked loss, –2 ranked loss, +3 undefeated, +2 H2H over higher-predictive team), converted to rank. Combined = 0.40×PR + 0.60×RR (lowest score ranks higher). No overrides. Data drawn from latest SP+, FPI, records, and known results.ESPN +1",
+    "predictiveWeight": 0.4,
+    "resumeWeight": 0.6,
+    "overrides": false
+  },
+  "ranks": [
+    {
+      "rank": 1,
+      "team": "Ohio State",
+      "record": "6-1",
+      "reason": "Elite PR (#1 both models), quality road win over Indiana; résumé solid despite early loss.",
+      "prev": 1,
+      "move": 0
+    },
+    {
+      "rank": 2,
+      "team": "Miami",
+      "record": "7-0",
+      "reason": "Undefeated (+3), top-tier PR, dominant recent wins (e.g., Pitt); strongest ACC résumé.",
+      "prev": 2,
+      "move": 0
+    },
+    {
+      "rank": 3,
+      "team": "Georgia",
+      "record": "6-1",
+      "reason": "Top predictive (#2 SP+), strong efficiency despite Auburn loss; high-end résumé.",
+      "prev": 5,
+      "move": 2
+    },
+    {
+      "rank": 4,
+      "team": "Notre Dame",
+      "record": "6-1",
+      "reason": "Excellent PR, competitive résumé with solid wins; only loss to ranked BYU.",
+      "prev": 4,
+      "move": 0
+    },
+    {
+      "rank": 5,
+      "team": "Indiana",
+      "record": "7-1",
+      "reason": "Strong PR (top-5/6), undefeated-level efficiency except narrow loss to OSU; recent Michigan win.",
+      "prev": 6,
+      "move": 1
+    },
+    {
+      "rank": 6,
+      "team": "Utah",
+      "record": "7-0",
+      "reason": "Perfect record (+3), good PR (#10 range), quality wins including Houston; undefeated Big 12 leader.",
+      "prev": 8,
+      "move": 2
+    },
+    {
+      "rank": 7,
+      "team": "UCLA",
+      "record": "7-0",
+      "reason": "Undefeated (+3) in tough Big Ten, improving résumé with solid defense/efficiency.",
+      "prev": 11,
+      "move": 4
+    },
+    {
+      "rank": 8,
+      "team": "LSU",
+      "record": "6-2",
+      "reason": "High PR (#6-7), multiple quality wins; résumé boosted by recent Auburn win.",
+      "prev": 13,
+      "move": 5
+    },
+    {
+      "rank": 9,
+      "team": "Texas",
+      "record": "5-2",
+      "reason": "Strong predictive (#8 both), résumé improved by Ole Miss win; losses not fatal per computers.",
+      "prev": 15,
+      "move": 6
+    },
+    {
+      "rank": 10,
+      "team": "Alabama",
+      "record": "6-2",
+      "reason": "High FPI, solid PR, recent wins (e.g., Texas A&M); résumé competitive in SEC.",
+      "prev": 12,
+      "move": 2
+    },
+    {
+      "rank": 11,
+      "team": "BYU",
+      "record": "6-1",
+      "reason": "Big top-10 win over Notre Dame (+5), strong earlier résumé; UCF loss (–4) and mid PR hurt.",
+      "prev": 3,
+      "move": -8
+    },
+    {
+      "rank": 12,
+      "team": "Texas Tech",
+      "record": "6-1",
+      "reason": "Good PR, earlier quality wins; Cincinnati loss drops résumé but still competitive.",
+      "prev": 7,
+      "move": -5
+    },
+    {
+      "rank": 13,
+      "team": "Tennessee",
+      "record": "6-2",
+      "reason": "Solid PR, some quality results; recent South Carolina loss (–4) costs points.",
+      "prev": 9,
+      "move": -4
+    },
+    {
+      "rank": 14,
+      "team": "Ole Miss",
+      "record": "5-2",
+      "reason": "High-end offense/PR in places, mixed résumé after Texas loss.",
+      "prev": 10,
+      "move": -4
+    },
+    {
+      "rank": 15,
+      "team": "Arizona",
+      "record": "6-1",
+      "reason": "Rising résumé (recent dominant win), solid mid-tier PR.",
+      "prev": 25,
+      "move": 10
+    },
+    {
+      "rank": 16,
+      "team": "Kentucky",
+      "record": "7-1",
+      "reason": "Strong record/résumé in SEC, improving; lower PR than top tier.",
+      "prev": 20,
+      "move": 4
+    },
+    {
+      "rank": 17,
+      "team": "Nebraska",
+      "record": "5-2",
+      "reason": "Decent PR (#13-16 range), competitive Big Ten résumé.",
+      "prev": null,
+      "move": "new"
+    },
+    {
+      "rank": 18,
+      "team": "Houston",
+      "record": "6-2",
+      "reason": "Quality wins earlier, loss to Utah; mid PR.",
+      "prev": 14,
+      "move": -4
+    },
+    {
+      "rank": 19,
+      "team": "Northwestern",
+      "record": "6-1",
+      "reason": "Solid record and efficiency, Big Ten wins.",
+      "prev": 22,
+      "move": 3
+    },
+    {
+      "rank": 20,
+      "team": "Wake Forest",
+      "record": "6-1",
+      "reason": "Strong recent form, mid PR, undefeated-ish résumé.",
+      "prev": 19,
+      "move": -1
+    },
+    {
+      "rank": 21,
+      "team": "USC",
+      "record": "6-2",
+      "reason": "Offensive talent, but recent loss and lower PR.",
+      "prev": 16,
+      "move": -5
+    },
+    {
+      "rank": 22,
+      "team": "Oregon",
+      "record": "4-3",
+      "reason": "High-end talent/PR residual, but record and losses drag résumé.",
+      "prev": 18,
+      "move": -4
+    },
+    {
+      "rank": 23,
+      "team": "Florida",
+      "record": "5-2",
+      "reason": "Some quality results (e.g., earlier Texas), mixed otherwise.",
+      "prev": 21,
+      "move": -2
+    },
+    {
+      "rank": 24,
+      "team": "Oklahoma",
+      "record": "4-3",
+      "reason": "Predictive interest, limited résumé points.",
+      "prev": null,
+      "move": "new"
+    },
+    {
+      "rank": 25,
+      "team": "Boise State",
+      "record": "6-1",
+      "reason": "Best G5 résumé candidate with wins and efficiency.",
+      "prev": 23,
+      "move": -2
+    }
+  ],
+  "justMissed": [
+    "SMU",
+    "Iowa",
+    "Louisville",
+    "Oklahoma State",
+    "South Carolina"
+  ],
+  "notes": {
+    "risersFallers": "Undefeated teams (Miami, Utah, UCLA) get résumé credit without being punished purely for schedule so far; computers still elevate Ohio State, Georgia, and Notre Dame. Utah ranks higher here than some human polls because of the perfect record + solid efficiency (SP+/FPI top-10 range) rather than pure brand. BYU benefits from the Notre Dame win but drops relative to pure AP love after the UCF loss and mid-tier predictive ranks. Other Big 12 notes: Texas Tech and Arizona hold mid-table spots on mixed results; the conference’s chaos (losses by BYU/TTU) is reflected without inflating or punishing unearned. Brand-name teams (Alabama, Texas, Oregon) are not inflated beyond their numbers/résumé; efficient  undefeated or near-undefeated sides are not docked. AP (pre-weekend) had Miami/BYU higher relative to computers; Grok is more predictive-weighted on the top and résumé-weighted on perfect records.",
+    "apVsGrok": "Undefeated teams (Miami, Utah, UCLA) get résumé credit without being punished purely for schedule so far; computers still elevate Ohio State, Georgia, and Notre Dame. Utah ranks higher here than some human polls because of the perfect record + solid efficiency (SP+/FPI top-10 range) rather than pure brand. BYU benefits from the Notre Dame win but drops relative to pure AP love after the UCF loss and mid-tier predictive ranks. Other Big 12 notes: Texas Tech and Arizona hold mid-table spots on mixed results; the conference’s chaos (losses by BYU/TTU) is reflected without inflating or punishing unearned. Brand-name teams (Alabama, Texas, Oregon) are not inflated beyond their numbers/résumé; efficient  undefeated or near-undefeated sides are not docked. AP (pre-weekend) had Miami/BYU higher relative to computers; Grok is more predictive-weighted on the top and résumé-weighted on perfect records.",
+    "nextWeek": "Key games include Ohio State at USC, Georgia vs Florida, Miami vs North Carolina, Utah at Cincinnati, BYU vs Arizona State, and other conference tests. Upsets or close calls involving the undefeateds or one-loss powers (especially Big Ten/SEC/Big 12) could reshuffle the top 10–15 significantly given the hybrid’s balance of efficiency and résumé points. Chaos has been the norm this season.",
+    "cfpOutlook": "Projected current top 12 (hybrid-informed, with conference champ auto-bids in mind): 1 Miami (ACC), 2 Ohio State (Big Ten), 3 Georgia (SEC), 4 Notre Dame, 5 Indiana, 6 Utah (Big 12), 7 UCLA, 8 LSU, 9 Texas, 10 Alabama, 11 BYU, 12 Texas Tech / Kentucky / Boise State (G5). Top 4 receive byes.\n\nBig Ten: Ohio State or Indiana most likely champ; UCLA is a real threat as undefeated. Multiple bids possible if they separate.\nSEC: Georgia favored; Alabama, LSU, Kentucky, Tennessee, Texas all live. Chaos continues.\nBig 12: Utah currently best positioned as undefeated; BYU and Texas Tech still factors despite losses.\nACC: Miami clear favorite.\nIndependents/G5: Notre Dame is a top-12 lock if it stays in range. Highest G5 (Boise State or similar) gets the auto-bid."
+  },
+  "previous": "2026-10-18",
+  "droppedOut": [
+    {
+      "team": "Iowa",
+      "prev": 17
+    },
+    {
+      "team": "SMU",
+      "prev": 24
+    }
+  ],
+  "updatedAt": "2026-10-25T15:13:16.939Z",
+  "teams": {
+    "Ohio State": {
+      "espnId": "194",
+      "name": "Ohio State Buckeyes",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/194.png"
+    },
+    "Miami": {
+      "espnId": "2390",
+      "name": "Miami Hurricanes",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/2390.png"
+    },
+    "Georgia": {
+      "espnId": "61",
+      "name": "Georgia Bulldogs",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/61.png"
+    },
+    "Notre Dame": {
+      "espnId": "87",
+      "name": "Notre Dame Fighting Irish",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/87.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/87.png"
+    },
+    "Indiana": {
+      "espnId": "84",
+      "name": "Indiana Hoosiers",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/84.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/84.png"
+    },
+    "Utah": {
+      "espnId": "254",
+      "name": "Utah Utes",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/254.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/254.png"
+    },
+    "UCLA": {
+      "espnId": "26",
+      "name": "UCLA Bruins",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/26.png"
+    },
+    "LSU": {
+      "espnId": "99",
+      "name": "LSU Tigers",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/99.png"
+    },
+    "Texas": {
+      "espnId": "251",
+      "name": "Texas Longhorns",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/251.png"
+    },
+    "Alabama": {
+      "espnId": "333",
+      "name": "Alabama Crimson Tide",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/333.png"
+    },
+    "BYU": {
+      "espnId": "252",
+      "name": "BYU Cougars",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/252.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/252.png"
+    },
+    "Texas Tech": {
+      "espnId": "2641",
+      "name": "Texas Tech Red Raiders",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2641.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/2641.png"
+    },
+    "Tennessee": {
+      "espnId": "2633",
+      "name": "Tennessee Volunteers",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/2633.png"
+    },
+    "Ole Miss": {
+      "espnId": "145",
+      "name": "Ole Miss Rebels",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/145.png"
+    },
+    "Arizona": {
+      "espnId": "12",
+      "name": "Arizona Wildcats",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/12.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/12.png"
+    },
+    "Kentucky": {
+      "espnId": "96",
+      "name": "Kentucky Wildcats",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/96.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/96.png"
+    },
+    "Nebraska": {
+      "espnId": "158",
+      "name": "Nebraska Cornhuskers",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/158.png"
+    },
+    "Houston": {
+      "espnId": "248",
+      "name": "Houston Cougars",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/248.png"
+    },
+    "Northwestern": {
+      "espnId": "77",
+      "name": "Northwestern Wildcats",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/77.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/77.png"
+    },
+    "Wake Forest": {
+      "espnId": "154",
+      "name": "Wake Forest Demon Deacons",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/154.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/154.png"
+    },
+    "USC": {
+      "espnId": "30",
+      "name": "USC Trojans",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/30.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/30.png"
+    },
+    "Oregon": {
+      "espnId": "2483",
+      "name": "Oregon Ducks",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/2483.png"
+    },
+    "Florida": {
+      "espnId": "57",
+      "name": "Florida Gators",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/57.png"
+    },
+    "Oklahoma": {
+      "espnId": "201",
+      "name": "Oklahoma Sooners",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/201.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/201.png"
+    },
+    "Boise State": {
+      "espnId": "68",
+      "name": "Boise State Broncos",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/68.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/68.png"
+    },
+    "SMU": {
+      "espnId": "2567",
+      "name": "SMU Mustangs",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2567.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/2567.png"
+    },
+    "Iowa": {
+      "espnId": "2294",
+      "name": "Iowa Hawkeyes",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2294.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/2294.png"
+    },
+    "Louisville": {
+      "espnId": "97",
+      "name": "Louisville Cardinals",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/97.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/97.png"
+    },
+    "Oklahoma State": {
+      "espnId": "197",
+      "name": "Oklahoma State Cowboys",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/197.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/197.png"
+    },
+    "South Carolina": {
+      "espnId": "2579",
+      "name": "South Carolina Gamecocks",
+      "logo": "https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png",
+      "logoDark": "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/2579.png"
+    }
+  }
+}
