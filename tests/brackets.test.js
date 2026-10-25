@@ -1,7 +1,7 @@
 // 12-team CFP bracket rules + CFP detection. Run: node tests/brackets.test.js
 const assert = require('assert');
 const fs = require('fs'); const path = require('path');
-const { buildBracket, rowsFromEspnRanking, isCfp } = require('../server/brackets');
+const { buildBracket, rowsFromEspnRanking, isCfp, legacyBracket } = require('../server/brackets');
 
 let n = 0;
 const mk = (list) => list.map(([name, conf, id], i) => ({ order: i + 1, rank: i + 1, id: id || `t${i}`, name, short: name, conference: conf, record: '1-0' }));
@@ -72,5 +72,13 @@ t('mock CFP payload (ESPN shape) becomes a 12-team bracket, ties keep feed order
   const b = buildBracket(rows);
   assert.strictEqual(b.seeds.length, 12);
   assert.ok(b.seeds.every((s, i) => s.seed === i + 1));
+});
+t('legacy bracket (old app versions) keeps the old field names with the new seeds', () => {
+  const mkr = (i, conf, id) => ({ rank: i, team: `T${i}`, conference: conf, record: '1-0', info: { id, short: `T${i}`, name: `T${i}` } });
+  const jt = { ranks: Array.from({ length: 25 }, (_, i) => mkr(i + 1, ['SEC', 'Big Ten', 'ACC', 'Big 12', 'MAC'][i % 5], String(1000 + i))) };
+  const lb = legacyBracket(jt);
+  assert.strictEqual(lb.seeds.length, 12); assert.ok(lb.seeds[0].team && lb.seeds[0].info && 'champ' in lb.seeds[0]);
+  assert.deepStrictEqual(lb.quarterfinals.map((q) => q.from), ['R1-8v9', 'R1-5v12', 'R1-6v11', 'R1-7v10']);
+  assert.ok(lb.firstRound[0].site && lb.firstRound[0].home.team); assert.strictEqual(legacyBracket(null), null);
 });
 console.log(`brackets.test.js: ${n} groups passed`);

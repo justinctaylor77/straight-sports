@@ -25,8 +25,9 @@ export const sportOfId = (id) => { const m = /^([a-z0-9]+):/.exec(String(id)); r
 export const isAthleteId = (id) => /^[a-z0-9]+:a\d+$/.test(String(id)) || /^(golf|tennis):/.test(String(id));
 
 export const DEFAULTS = {
-  v: 4, onboarded: false,
-  sports: ['cfb'], sport: 'cfb', players: {},
+  v: 5, onboarded: false,
+  // sportsChosen=false means "never picked": every sport in the catalog is shown. Picking sports (onboarding or Settings) sets it true.
+  sports: SPORT_IDS.slice(), sportsChosen: false, sport: 'cfb', players: {},
   conferences: [], follow: [], muteTeams: [], muteLeagues: [], muteKeywords: [],
   sources: {}, straightOnly: true, sportOnly: true, theme: 'system',
   watch: { providers: [] }, // how you watch: TV / streaming provider ids (see watch.js)
@@ -58,9 +59,19 @@ export function migrate(raw) {
     if (raw.onboarded && !(raw.watch && Array.isArray(raw.watch.providers))) s.watch = { providers: ['yttv'] };
     s.v = 4;
   }
+  if (!raw.v || raw.v < 5) {
+    // v5 (all sports by default): installs that only ever had the old default sport list (just CFB, or nothing) never chose
+    // their sports, so they now see every sport. Anyone with more than CFB, or a saved choice, keeps exactly what they picked.
+    const cur = Array.isArray(raw.sports) ? raw.sports.filter((x) => SPORTS[x]) : [];
+    s.sportsChosen = typeof raw.sportsChosen === 'boolean' ? raw.sportsChosen : !(cur.length === 0 || (cur.length === 1 && cur[0] === 'cfb'));
+    // NBA/WNBA mutes were auto-added in v3 for existing installs; an install that never chose sports didn't choose those either.
+    if (!s.sportsChosen && raw.onboarded) s.muteLeagues = (s.muteLeagues || []).filter((l) => l !== 'nba' && l !== 'wnba');
+    s.v = 5;
+  }
   s.watch = { providers: [...new Set(((s.watch && s.watch.providers) || []).filter((x) => typeof x === 'string'))] };
   s.sports = (s.sports || []).filter((x) => SPORTS[x]);
-  if (!s.sports.length) s.sports = ['cfb'];
+  if (!s.sportsChosen) s.sports = SPORT_IDS.slice(); // never picked: everything (also picks up sports added to the catalog later)
+  else if (!s.sports.length) s.sports = ['cfb'];
   if (!s.sports.includes(s.sport)) s.sport = s.sports[0];
   s.players = s.players || {};
   return s;
@@ -69,7 +80,7 @@ export function loadSettings() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || '{}');
     const s = migrate(raw);
-    if (raw.onboarded && (!raw.v || raw.v < 4)) saveSettings(s); // persist the upgrade once
+    if (raw.onboarded && (!raw.v || raw.v < 5)) saveSettings(s); // persist the upgrade once
     return s;
   } catch { return structuredClone(DEFAULTS); }
 }

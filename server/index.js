@@ -97,7 +97,7 @@ const GROK = require('./grok')({ getTeams: () => SP.getTeams('cfb'), getPolls: c
 const top25 = wrap(async (req) => {
   const d = await GROK.get(req.query.date ? String(req.query.date) : '');
   if (!d) { const e = new Error('no JT Top 25 run for that date'); e.status = 404; throw e; }
-  return d;
+  return { ...d, bracket: require('./brackets').legacyBracket(d) }; // `bracket` only for older app versions still open on phones
 });
 const top25Hist = (req, res) => res.json({ dates: GROK.history() });
 // ---------- 12-team CFP brackets: JT Top 25, AP Top 25, official CFP rankings (see server/brackets.js) ----------

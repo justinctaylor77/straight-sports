@@ -1251,3 +1251,6 @@ a.nm[href^="#/schedule"]:hover b, a.nm[href^="#/schedule"]:focus-visible b { col
 .br-foot { margin-top: 14px; } .br-foot h3 { margin-top: 0; }
 .br-foot a, .br-empty a, .br-empty + p a { text-decoration: underline; }
 .br-outlook { margin-top: 14px; }
+
+/* all-sports default note (v17) */
+.sports-note { margin: 0 0 10px; } .sports-note.faint { padding: 0 2px; }

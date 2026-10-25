@@ -88,3 +88,6 @@ node tests/brackets.test.js                 # 12-team bracket rules + CFP payloa
 node scripts/shots-v16.js [baseUrl] [outDir] [prefix]  # bracket views at 390px → screenshots/v16/
 node scripts/screenshots-v4.js [baseUrl]    # Playwright: phone + desktop → screenshots/v4/ (needs playwright-core + Chrome)
 ```
+
+## Sports shown by default (v1.1.0 "Two-Minute Drill")
+Settings key `straightcfb.settings.v1` (schema v5). `sportsChosen: false` (the default) means the user never picked sports, so `settings.sports` is forced to every sport in `public/catalog.js` and the chip bar, Scores, News and Schedule cover all of them. Picking a sport (onboarding or Settings → Sports) sets `sportsChosen: true`; "Show all sports" in Settings → Sports resets it. Migration from v4: saved sports of just `['cfb']` (the old default) are treated as never chosen. Release notes in `CHANGELOG.md`; QA in `QA-REPORT-two-minute-drill.md` (`scripts/qa-v17.sh`).

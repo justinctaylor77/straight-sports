@@ -708,18 +708,28 @@ function brBody(v, d) {
     ${v.outlook ? `<div class="card nt br-outlook"><h3>JT’s own CFP outlook</h3><p>${esc(v.outlook)}</p><p class="gk-note">JT’s written outlook, copied as published. The bracket above is computed from the JT ranking with the current CFP rules, so the two can differ.</p></div>` : ''}
     ${brFootnote(v, d)}`;
 }
+const BR_TIMEOUT = 25000; // Render's free tier can take a while to wake up: show a loading state, then a clear error with Retry
+const brError = (msg) => `<div class="card empty br-err" role="alert"><b>Couldn’t load the bracket.</b><p>${esc(msg)}</p><button class="btn" data-brretry="1">Try again</button></div>`;
 async function viewBracket(quick) {
-  const m = (location.hash || '').match(/^#\/rankings\/bracket\/?(jt|ap|cfp)?/); if (m && m[1]) brView = m[1];
+  const m = (location.hash || '').match(/^#\/rankings\/bracket\/?(jt|ap|cfp)?/); if (m) brView = m[1] || (quick ? brView : 'jt'); // entering from a button/promo always starts on My Bracket
   setBar('Playoff Bracket', { back: '#/rankings' });
-  if (!quick) paint(LT('Playoff Bracket', SK.sub()) + SK.rows(8));
-  let d; try { d = await api('/api/brackets', 5 * 60e3); } catch (e) { view.innerHTML = LT('Playoff Bracket') + errBox(e); return; }
-  const tabs = [['jt', 'My Bracket'], ['ap', 'AP Projected'], ['cfp', 'Official CFP']];
-  const v = d[brView] || d.jt;
-  view.innerHTML = LT('Playoff Bracket', `12-team College Football Playoff · ${esc(v.title)}`) +
-    `<div class="toolbar sticky"><div class="seg br-seg" role="tablist">${tabs.map(([k, n]) => `<button role="tab" aria-selected="${k === v.id}" data-bv="${k}" class="${k === v.id ? 'on' : ''}">${n}${k === 'cfp' && d.cfp.status === 'pending' ? ' <i class="br-dot" aria-label="not released"></i>' : ''}</button>`).join('')}</div></div>
-    ${brBody(v, d)}
-    <p class="faint small">* Projected champion. Generated ${esc(new Date(d.generatedAt).toLocaleString())}. Rankings come from the JT Top 25 and ESPN’s rankings feed; nothing is stored or estimated.</p>`;
-  view.querySelectorAll('[data-bv]').forEach((b) => (b.onclick = () => { tick(); brView = b.dataset.bv; history.replaceState(null, '', `#/rankings/bracket/${brView}`); viewBracket(true); }));
+  const head = LT('Playoff Bracket', '12-team College Football Playoff');
+  if (!quick) paint(head + '<p class="faint small br-loading" role="status">Loading the bracket…</p>' + SK.rows(8));
+  const retry = () => { mem.delete('/api/brackets'); viewBracket(false); };
+  const showErr = (msg) => { view.innerHTML = head + brError(msg); const b = view.querySelector('[data-brretry]'); if (b) b.onclick = retry; };
+  let d;
+  try {
+    d = await Promise.race([api('/api/brackets', 5 * 60e3), new Promise((_, rej) => setTimeout(() => rej(new Error('The server is taking too long to respond. It may be waking up; try again in a moment.')), BR_TIMEOUT))]);
+  } catch (e) { showErr(e.message || 'Network error.'); return; }
+  try {
+    const tabs = [['jt', 'My Bracket'], ['ap', 'AP Projected'], ['cfp', 'Official CFP']];
+    const v = d[brView] || d.jt || d.ap || d.cfp; if (!v) throw new Error('No bracket data came back.');
+    view.innerHTML = LT('Playoff Bracket', `12-team College Football Playoff · ${esc(v.title)}`) +
+      `<div class="toolbar sticky"><div class="seg br-seg" role="tablist">${tabs.map(([k, n]) => `<button role="tab" aria-selected="${k === v.id}" data-bv="${k}" class="${k === v.id ? 'on' : ''}">${n}${k === 'cfp' && d.cfp && d.cfp.status === 'pending' ? ' <i class="br-dot" aria-label="not released"></i>' : ''}</button>`).join('')}</div></div>
+      ${brBody(v, d)}
+      <p class="faint small">* Projected champion. Generated ${esc(new Date(d.generatedAt).toLocaleString())}. Rankings come from the JT Top 25 and ESPN’s rankings feed; nothing is stored or estimated.</p>`;
+    view.querySelectorAll('[data-bv]').forEach((b) => (b.onclick = () => { tick(); brView = b.dataset.bv; history.replaceState(null, '', `#/rankings/bracket/${brView}`); viewBracket(true); }));
+  } catch (e) { console.error(e); showErr(`Something went wrong showing it (${e.message}).`); }
 }
 // Short description + methodology. Only what is actually known about the automation: the 60/40 hybrid weights, the
 // predictive definition and "no manual overrides" come from the weekly run's own method field; schedule, comparisons and
@@ -993,7 +1003,7 @@ function partHTML(p) {
   const f = (id) => S.follow.includes(id);
   switch (p) {
     case 'sportseg': return S.sports.length > 1 ? `<div class="chips sport-chips">${S.sports.map((k) => `<button class="chip lg ${k === pSport() ? 'on' : ''}" data-psport="${k}">${SPORTS[k].emoji} ${esc(SPORTS[k].short)}<span class="cnt">${followsIn(k).length || ''}</span></button>`).join('')}</div>` : '';
-    case 'sports': return SPORT_GROUPS.map((g) => { const ks = SPORT_IDS.filter((k) => SPORTS[k].group === g); return ks.length ? `<div class="group-lbl tiles-lbl">${esc(g)}</div>${ks.map((k) => { const on = S.sports.includes(k); const v = SPORTS[k]; return `<button class="tile sport ${on ? 'on' : ''}" data-sport="${k}" aria-pressed="${on}" style="--sa:${v.accent}"><span class="em">${v.emoji}</span><span><b>${esc(v.name)}</b><small>${esc(v.blurb || '')}${v.kind === 'news' ? ' · headlines only' : ''}</small></span>${CHECK}</button>`; }).join('')}` : ''; }).join('');
+    case 'sports': return (S.sportsChosen ? '<div class="sports-note"><button class="btn small" data-allsports="1">Show all sports</button></div>' : '<p class="sports-note faint small">Showing every sport until you pick some. Tap a sport to show only the ones you choose.</p>') + SPORT_GROUPS.map((g) => { const ks = SPORT_IDS.filter((k) => SPORTS[k].group === g); return ks.length ? `<div class="group-lbl tiles-lbl">${esc(g)}</div>${ks.map((k) => { const on = S.sports.includes(k); const v = SPORTS[k]; return `<button class="tile sport ${on ? 'on' : ''}" data-sport="${k}" aria-pressed="${on}" style="--sa:${v.accent}"><span class="em">${v.emoji}</span><span><b>${esc(v.name)}</b><small>${esc(v.blurb || '')}${v.kind === 'news' ? ' · headlines only' : ''}</small></span>${CHECK}</button>`; }).join('')}` : ''; }).join('');
     case 'pmode': { const sp = pSport(); if (!teamSport(sp)) return '';
       return `<div class="seg pmode"><button data-pmode="teams" class="${pickMode === 'teams' ? 'on' : ''}" aria-pressed="${pickMode === 'teams'}">Teams</button><button data-pmode="players" class="${pickMode === 'players' ? 'on' : ''}" aria-pressed="${pickMode === 'players'}">Players</button></div>`; }
     case 'quicklbl': return pSport() === 'cfb' && UTAH().length ? 'Popular in Utah' : '';
@@ -1095,7 +1105,7 @@ function refreshParts(root, skip = []) {
   });
 }
 function prefClick(e, root) {
-  const b = e.target.closest('[data-prov],[data-tfollow],[data-sport],[data-psport],[data-pmode],[data-conf],[data-league],[data-unkw],[data-addkw],[data-unmute],[data-mute],[data-block],[data-unblock],[data-theme]');
+  const b = e.target.closest('[data-prov],[data-tfollow],[data-sport],[data-allsports],[data-psport],[data-pmode],[data-conf],[data-league],[data-unkw],[data-addkw],[data-unmute],[data-mute],[data-block],[data-unblock],[data-theme]');
   if (!b || !root.contains(b)) return false;
   e.preventDefault(); tick();
   const d = b.dataset; let skip = [];
@@ -1105,6 +1115,13 @@ function prefClick(e, root) {
     if (d.prov === 'none') next = cur.includes('none') ? [] : ['none'];
     else next = cur.includes(d.prov) ? cur.filter((x) => x !== d.prov) : [...cur.filter((x) => x !== 'none'), d.prov];
     S.watch = { ...(S.watch || {}), providers: next };
+  } else if (d.sport && !S.sportsChosen) {
+    // first explicit pick while showing everything: show just this sport (tap more to add them)
+    S.sports = [d.sport]; S.sportsChosen = true; S.sport = d.sport; pickSport = d.sport; teamQ = ''; teamConf = ''; browseTeam = '';
+    ensureTeams(d.sport).then(() => refreshParts(root));
+    syncSportUI();
+  } else if (d.allsports) {
+    S.sportsChosen = false; S.sports = SPORT_IDS.slice(); pickSport = null; syncSportUI();
   } else if (d.sport) {
     const on = S.sports.includes(d.sport);
     if (on && S.sports.length === 1) { toast('Keep at least one sport'); return true; }
@@ -1259,7 +1276,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=22" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=23" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
@@ -1575,7 +1592,7 @@ async function boot() {
   const splash = $('#splash'); const t0 = performance.now();
   try {
     // team lists: enabled team sports + any sport you follow or mute something in (CFB always: rankings/Grok use it)
-    const need = [...new Set(['cfb', ...S.sports, ...[...S.follow, ...S.muteTeams].filter((id) => !isAthleteId(id)).map(sportOfId)])].filter(teamSport);
+    const need = [...new Set(['cfb', ...(S.sportsChosen ? S.sports : [S.sport]), ...[...S.follow, ...S.muteTeams].filter((id) => !isAthleteId(id)).map(sportOfId)])].filter(teamSport);
     const [s] = await Promise.all([api('/api/sources', 36e5), ...need.map(ensureTeams)]);
     SOURCES = s;
     if (!TEAMS.length) throw new Error('team lists unavailable');
@@ -1589,4 +1606,13 @@ async function boot() {
   setTimeout(() => { splash.classList.add('hide'); setTimeout(() => splash.remove(), 450); }, Math.max(0, 450 - (performance.now() - t0)));
 }
 boot();
-if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+// Service worker: check for a new version on every open / return to the app, and reload once when a newer one takes over,
+// so an installed PWA that stayed open in the background doesn't keep running old JS against a newer server.
+if ('serviceWorker' in navigator) {
+  const hadController = !!navigator.serviceWorker.controller; let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloading) { reloading = true; location.reload(); } });
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((reg) => {
+    reg.update().catch(() => {});
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+  }).catch(() => {}));
+}

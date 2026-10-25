@@ -105,6 +105,22 @@ function rowsFromJt(jt) {
   });
 }
 
+// Compatibility for app versions that were open on a phone before the Bracket page shipped (ss-v21 and older): they read
+// `bracket` from /api/grok-top25 in the old shape. Same seeds as the new page (current rules), old field names.
+function legacyBracket(jt) {
+  if (!jt || !jt.ranks) return null;
+  const b = buildBracket(rowsFromJt(jt));
+  const byId = new Map(jt.ranks.filter((r) => r.info).map((r) => [String(r.info.id), r]));
+  const L = (x) => { if (!x) return x; const r = byId.get(x.id) || {}; return { seed: x.seed, rank: x.rank, team: r.team || x.name, info: r.info, conference: x.conference, champ: x.type === 'champ', bye: x.bye }; };
+  return {
+    projected: true, note: 'Updated bracket rules: close and reopen the app to get the new Bracket page.',
+    champions: b.champions.map((c) => { const r = byId.get(c.id) || {}; return { conference: c.conference, team: r.team || c.short, rank: c.rank, info: r.info, autoBid: true }; }),
+    seeds: b.seeds.map(L),
+    firstRound: b.firstRound.map((m) => ({ id: m.id, home: L(m.home), away: L(m.away), site: m.host })),
+    quarterfinals: b.quarterfinals.map((q) => ({ id: q.id, top: L(q.top), from: q.from })),
+    semifinals: b.semifinals.map((x) => ({ id: x.id, from: x.from })),
+  };
+}
 const isCfp = (r) => r && (r.type === 'cfp' || /playoff|\bcfp\b/i.test(`${r.name || ''} ${r.shortName || ''}`));
 const weekOf = (r) => (r.occurrence && r.occurrence.number) || (r.headline && (r.headline.match(/Week (\d+)/) || [])[1]) || null;
 
@@ -178,4 +194,5 @@ module.exports.buildBracket = buildBracket;
 module.exports.rowsFromEspnRanking = rowsFromEspnRanking;
 module.exports.rowsFromJt = rowsFromJt;
 module.exports.isCfp = isCfp;
+module.exports.legacyBracket = legacyBracket;
 module.exports.CFP_SCHEDULE = CFP_SCHEDULE;
