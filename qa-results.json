@@ -1,0 +1,562 @@
+[
+ {
+  "id": "U-01",
+  "area": "Static",
+  "desc": "Every JS file parses (node --check)",
+  "steps": "node --check on all tracked/new .js/.mjs files",
+  "expected": "No syntax errors",
+  "actual": "44 files OK",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-02",
+  "area": "Unit",
+  "desc": "Bracket seeding/byes/pending-CFP/legacy-shape unit tests",
+  "steps": "node tests/brackets.test.js",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "brackets.test.js: 10 groups passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-03",
+  "area": "Unit",
+  "desc": "Settings migration + all-sports default (v5) unit tests",
+  "steps": "node tests/migrate.test.mjs",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "migrate.test: all assertions passed | migrate v5 (all-sports default): ok",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-04",
+  "area": "Unit",
+  "desc": "News/mute filter unit tests (regression)",
+  "steps": "node tests/news-filter.test.js",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "news-filter ok",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-05",
+  "area": "Static",
+  "desc": "Cache-bust versions agree (index.html, sw.js VERSION/SHELL, app.js icon)",
+  "steps": "grep version strings",
+  "expected": "Everything is ss-v23 / ?v=23 for changed assets; no leftover ?v=22",
+  "actual": "sw VERSION=ss-v23; leftover ?v=22 in 0 files",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "A-01",
+  "area": "API",
+  "desc": "/api/brackets returns three views with 12 seeds (JT, AP) and a pending CFP",
+  "steps": "GET /api/brackets",
+  "expected": "jt/ap: 12 seeds, 4 first-round games, 4 QF, 2 SF; cfp.status=pending, no bracket; no mock flag",
+  "actual": "jt seeds=12, ap seeds=12, cfp.status=pending, mock=false",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "A-02",
+  "area": "API",
+  "desc": "CFP pending payload says when the first ranking is due",
+  "steps": "GET /api/brackets → cfp",
+  "expected": "status pending, message mentions Nov 3 (first CFP ranking)",
+  "actual": "{\"id\":\"cfp\",\"title\":\"Official CFP Bracket\",\"label\":\"Not released yet\",\"status\":\"pending\",\"released\":false,\"generatedAt\":\"2026-10-25T20:01:42.171Z\",\"message\":\"The College Football Playoff committee hasn’t released its Top",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "A-03",
+  "area": "API",
+  "desc": "Bracket rules: top-5 conference champs + 7 at-large, top-4 champs get byes, seed 1v… no champ outside the 12 left out",
+  "steps": "Inspect JT + AP seeds",
+  "expected": "Seeds 1-4 byes; 12 seeds unique; first round is 5v12,6v11,7v10,8v9",
+  "actual": "JT & AP: 12 unique seeds, seeds 1-4 byes, first round 5v12 6v11 7v10 8v9",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "A-04",
+  "area": "API",
+  "desc": "Old app versions still get a `bracket` on /api/grok-top25 and /api/jt-top25 (root-cause fix)",
+  "steps": "GET both endpoints",
+  "expected": "bracket.seeds=12 with team/info/champ fields; firstRound[].site; same data as new page",
+  "actual": "grok-top25 ok=true, jt-top25 ok=true, seeds match new page=true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "A-05",
+  "area": "API",
+  "desc": "Service worker + index.html are served uncached and every SHELL asset is reachable",
+  "steps": "GET /sw.js headers; GET every URL in SHELL",
+  "expected": "sw.js Cache-Control no-cache; VERSION ss-v23; all SHELL URLs 200",
+  "actual": "Cache-Control: no-cache; 27 shell URLs, non-200: 0",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "A-06",
+  "area": "API",
+  "desc": "Existing endpoints still respond (scoreboard, news, rankings, teams)",
+  "steps": "GET /api/scoreboard?sport=cfb, /api/news, /api/rankings, /api/teams?sport=nba",
+  "expected": "HTTP 200 JSON",
+  "actual": "/api/scoreboard?sport=cfb=200, /api/news?sport=cfb=200, /api/rankings?sport=cfb=200, /api/teams?sport=nba=200, /api/scoreboard?sport=nba=200, /api/scoreboard?sport=epl=200",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "A-07",
+  "area": "API",
+  "desc": "Mock CFP (local-only flag) produces a ready CFP bracket flagged as test data",
+  "steps": "GET :8798/api/brackets with BRACKETS_MOCK_CFP=1",
+  "expected": "cfp.status ready, 12 seeds, mock=true",
+  "actual": "cfp.status=ready, seeds=12, cfp.mock=true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "A-08",
+  "area": "API",
+  "desc": "Production server never serves mock CFP (flag off by default)",
+  "steps": "GET :8799/api/brackets",
+  "expected": "mock flag absent; cfp pending",
+  "actual": "cfp.mock=undefined, cfp=pending",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "B-01",
+  "area": "Bracket",
+  "desc": "Rankings → \"Bracket\" button shows the bracket (the reported bug)",
+  "steps": "Open #/rankings; tap the Bracket button in the poll bar",
+  "expected": "Bracket page with title, tabs, bracket grid and seed list — not blank",
+  "actual": "hash #/rankings/bracket, text 4266 chars, grid present",
+  "status": "PASS",
+  "evidence": "screenshots/v17/B-01-bracket-button-jt.png"
+ },
+ {
+  "id": "B-02",
+  "area": "Bracket",
+  "desc": "JT (My Bracket) view content",
+  "steps": "On bracket page, JT tab selected",
+  "expected": "12 seeds incl. Ohio State 1, \"bye\" marks, first round / quarterfinal / semifinal / championship columns, champions flagged",
+  "actual": "has Ohio State/Utah/BYU/First Round/Semifinal/Champion = true",
+  "status": "PASS",
+  "evidence": "screenshots/v17/B-02-jt.png"
+ },
+ {
+  "id": "B-03",
+  "area": "Bracket",
+  "desc": "AP Projected view content",
+  "steps": "Tap \"AP Projected\" tab",
+  "expected": "Tab selected, URL #/rankings/bracket/ap, 12 seeds from AP poll",
+  "actual": "selected=ap, hash=#/rankings/bracket/ap, grid=true",
+  "status": "PASS",
+  "evidence": "screenshots/v17/B-03-ap.png"
+ },
+ {
+  "id": "B-04",
+  "area": "Bracket",
+  "desc": "Official CFP \"not released yet\" state",
+  "steps": "Tap \"Official CFP\" tab",
+  "expected": "Friendly pending message with first-ranking date (Tue Nov 3); no empty/blank page; no fake bracket",
+  "actual": "OFFICIAL CFP BRACKET NOT RELEASED YET The College Football Playoff committee hasn’t released its Top 25 yet. This tab fills in automatically once ESPN publishes it. Expected: Tuesday, November 3, 2026",
+  "status": "PASS",
+  "evidence": "screenshots/v17/B-04-cfp-pending.png"
+ },
+ {
+  "id": "B-05",
+  "area": "Bracket",
+  "desc": "JT page \"Bracket\" sub-tab and Scores-page promo both reach the bracket",
+  "steps": "Home → tap Playoff Bracket promo card; JT Top 25 page → Bracket sub-tab",
+  "expected": "Both land on a rendered bracket",
+  "actual": "promo → #/rankings/bracket; JT sub-tab → #/rankings/bracket/jt; grid rendered both times",
+  "status": "PASS",
+  "evidence": "screenshots/v17/B-05-jt-subtab.png"
+ },
+ {
+  "id": "B-06",
+  "area": "Bracket",
+  "desc": "No horizontal page scroll on any bracket view; bracket area itself scrolls",
+  "steps": "Visit jt/ap/cfp at 390px; measure scrollWidth",
+  "expected": "document.scrollWidth ≤ 392; .br-scroll scrollable",
+  "actual": "page scrollWidth jt/ap/cfp = 390/390/390; bracket scroller overflows internally=true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "B-07",
+  "area": "Bracket",
+  "desc": "Console clean while using the bracket views",
+  "steps": "Review captured console/page errors/failed requests above",
+  "expected": "No page errors, no console errors from the app, no 4xx/5xx from app origin",
+  "actual": "no console/page errors, no failed app requests (third-party image/CDN console noise ignored: 0)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "B-08",
+  "area": "Bracket",
+  "desc": "Loading state shows while the API is slow (never blank)",
+  "steps": "Delay /api/brackets by 4s; open bracket",
+  "expected": "Immediately shows title + \"Loading the bracket…\" + skeleton, then content",
+  "actual": "loading text visible (71 chars) then grid rendered",
+  "status": "PASS",
+  "evidence": "screenshots/v17/B-08-loading.png"
+ },
+ {
+  "id": "B-09",
+  "area": "Bracket",
+  "desc": "Error state with Retry when the API fails; Retry recovers",
+  "steps": "Make /api/brackets return 500; open bracket; restore API; tap Try again",
+  "expected": "Clear error message + \"Try again\" button (not blank); after retry the bracket renders",
+  "actual": "error shown: \"Couldn’t load the bracket. Request failed (500) Try again\"; Retry → grid rendered",
+  "status": "PASS",
+  "evidence": "screenshots/v17/B-09-error-retry.png"
+ },
+ {
+  "id": "B-10",
+  "area": "Bracket",
+  "desc": "Hung server → timeout → error with Retry (cold-start case)",
+  "steps": "Make /api/brackets never answer; open bracket; wait 27s",
+  "expected": "After 25s the loading state turns into an error with Try again",
+  "actual": "Couldn’t load the bracket. The server is taking too long to respond. It may be waking up; try again in a moment. Try again",
+  "status": "PASS",
+  "evidence": "screenshots/v17/B-10-timeout.png"
+ },
+ {
+  "id": "B-11",
+  "area": "Bracket",
+  "desc": "Official CFP view with MOCK data renders a full bracket + TEST DATA banner (local only)",
+  "steps": "Run server with BRACKETS_MOCK_CFP=1; open #/rankings/bracket/cfp",
+  "expected": "CFP bracket with 12 seeds and a visible TEST DATA banner",
+  "actual": "TEST DATA banner=true, scrollWidth=390, no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v17/B-11-cfp-mock-local.png"
+ },
+ {
+  "id": "S-01",
+  "area": "Stale",
+  "desc": "Test rig: genuine old client (ss-v21 JS + SW) is installed and controlling the page",
+  "steps": "Serve ss-v21 public/, open app, wait for SW, reload",
+  "expected": "cache ss-v21 present, SW controls page, no new Bracket button (old UI)",
+  "actual": "caches=ss-v21,scfb-img; controlled=true; new bracket button=false",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "S-02",
+  "area": "Stale",
+  "desc": "Old ss-v21 client left open (JT \"Bracket\" sub-tab) now shows a bracket instead of \"No bracket for this week\" — root-cause fix",
+  "steps": "In the old client open JT Top 25 → Bracket sub-tab (server = new API)",
+  "expected": "Old UI shows seeds/first round (served from compat `bracket` field)",
+  "actual": "\"No bracket\" message=false; shows Ohio State=true",
+  "status": "PASS",
+  "evidence": "screenshots/v17/S-02-old-client-fixed.png"
+ },
+ {
+  "id": "S-03",
+  "area": "Stale",
+  "desc": "SW upgrade ss-v21 → ss-v23: new cache installed, old cache deleted, new SW takes control",
+  "steps": "Publish new version; SW update check; read caches",
+  "expected": "caches = ss-v23 (+scfb-img), ss-v21 removed",
+  "actual": "caches=scfb-img,ss-v23",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "S-04",
+  "area": "Stale",
+  "desc": "After reopening, the upgraded client is the new app (has Bracket button) and the bracket works",
+  "steps": "Reload after upgrade; tap Bracket",
+  "expected": "Bracket button visible and shows the new bracket page",
+  "actual": "Bracket button=true; new app.js served=true",
+  "status": "PASS",
+  "evidence": "screenshots/v17/S-04-upgraded-bracket.png"
+ },
+ {
+  "id": "S-05",
+  "area": "Stale",
+  "desc": "Future updates reload an open app automatically (controllerchange) — no more stuck old JS",
+  "steps": "With new app open, publish a newer SW (VERSION bumped), trigger update check",
+  "expected": "Page reloads itself and ends up controlled by the newer SW",
+  "actual": "page reloaded=true; caches=scfb-img,ss-v99",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "S-06",
+  "area": "Stale",
+  "desc": "Stale-cache returning user: offline-cached shell still opens the app",
+  "steps": "Go offline after the SW is active; reload",
+  "expected": "App shell loads from cache (not a blank page)",
+  "actual": "offline reload rendered 5101 chars of UI",
+  "status": "PASS",
+  "evidence": "screenshots/v17/S-06-offline.png"
+ },
+ {
+  "id": "S-07",
+  "area": "Stale",
+  "desc": "Console clean through the upgrade scenarios",
+  "steps": "Review diagnostics",
+  "expected": "No page errors / app-origin 4xx-5xx (aside from deliberate offline)",
+  "actual": "pageErrors=0; failed non-API=0; 0 total failed (offline/test-induced)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "P-01",
+  "area": "All sports",
+  "desc": "Brand-new profile (empty localStorage): onboarding appears, Skip → every sport available",
+  "steps": "Open app with no storage; Skip onboarding; open Scores",
+  "expected": "Sport chip bar lists all 25 sports (CFB, NFL, MLB, golf, tennis, NBA, WNBA, NHL, soccer…); saved sportsChosen=false",
+  "actual": "25/25 chips: cfb,nfl,mlb,golf,tennis,nba,wnba,mcbb,wcbb,nhl,mls,nwsl,epl,laliga,bund,seriea,ligue1,ucl,ligamx,cbase,ufc,boxing,f1,nascar,indy; saved sportsChosen=false",
+  "status": "PASS",
+  "evidence": "screenshots/v17/P-01b-fresh-all-sports.png"
+ },
+ {
+  "id": "P-02",
+  "area": "All sports",
+  "desc": "Fresh profile: switching to NBA / NFL / MLB / EPL shows that sport's scores page",
+  "steps": "Tap each chip",
+  "expected": "Scores page for that sport renders (games or a \"no games\" message), no error box",
+  "actual": "nba:ok(58) nfl:ok(15) mlb:ok(7) epl:ok(20) nhl:ok(61)",
+  "status": "PASS",
+  "evidence": "screenshots/v17/P-02-fresh-nba-scores.png"
+ },
+ {
+  "id": "P-03",
+  "area": "All sports",
+  "desc": "Fresh profile: News and Schedule tabs work for non-football sports",
+  "steps": "NBA chip → News tab; Schedule tab",
+  "expected": "Content renders, no error",
+  "actual": "news(nba) 10261 chars err=false; schedule 3346 chars err=false",
+  "status": "PASS",
+  "evidence": "screenshots/v17/P-03a-fresh-news.png"
+ },
+ {
+  "id": "P-04",
+  "area": "All sports",
+  "desc": "Fresh profile: Settings → Sports shows hint, every sport is \"on\", no 404s",
+  "steps": "Open #/settings/sports",
+  "expected": "Hint \"Showing every sport until you pick some\"; all tiles on",
+  "actual": "Showing every sport until you pick some. Tap a sport to show only the ones you choose.; tiles=26, shown on=25",
+  "status": "PASS",
+  "evidence": "screenshots/v17/P-04-fresh-settings-sports.png"
+ },
+ {
+  "id": "P-05",
+  "area": "All sports",
+  "desc": "Tapping a sport while \"all\" → only that sport; \"Show all sports\" restores everything",
+  "steps": "Settings → Sports: tap NFL; then tap Show all sports",
+  "expected": "After NFL: sportsChosen=true, sports=[nfl] (chip bar hidden, single sport); after Show all: all sports, sportsChosen=false",
+  "actual": "after NFL tap: {\"chosen\":true,\"sports\":[\"nfl\"]}; after Show all: chosen=false, 25 sports",
+  "status": "PASS",
+  "evidence": "screenshots/v17/P-05a-only-nfl.png"
+ },
+ {
+  "id": "P-06",
+  "area": "All sports",
+  "desc": "Settings reset returns to the all-sports default",
+  "steps": "Pick NFL, then Settings → Reset",
+  "expected": "After reset sportsChosen=false and all sports",
+  "actual": "chosen=false, 25 sports",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "P-07",
+  "area": "All sports",
+  "desc": "No console errors / failed app requests, no horizontal scroll in fresh all-sports mode",
+  "steps": "Review diagnostics",
+  "expected": "Clean; scrollWidth ≤ 392",
+  "actual": "no console/page errors, no failed app requests; scrollWidth=390",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "P-08",
+  "area": "All sports",
+  "desc": "STALE profile (v4 with only the old default [cfb]) is migrated to all sports",
+  "steps": "Seed localStorage v4 sports=[cfb], never chose; open Scores",
+  "expected": "Chip bar shows all 25 sports; saved settings v5 sportsChosen=false; auto NBA/WNBA mutes dropped",
+  "actual": "25 chips; v=5, sportsChosen=false, muteLeagues=[]",
+  "status": "PASS",
+  "evidence": "screenshots/v17/P-08-stale-profile-all-sports.png"
+ },
+ {
+  "id": "P-09",
+  "area": "All sports",
+  "desc": "Stale profile: CFB scores still the default landing sport; NBA reachable",
+  "steps": "After migration, current sport + tap NBA",
+  "expected": "CFB selected first; NBA renders",
+  "actual": "landing sport=cfb; NBA view rendered=true",
+  "status": "PASS",
+  "evidence": "screenshots/v17/P-09-stale-nba.png"
+ },
+ {
+  "id": "P-10",
+  "area": "All sports",
+  "desc": "Stale profile: no console errors / h-scroll",
+  "steps": "Review diagnostics",
+  "expected": "Clean",
+  "actual": "no console/page errors, no failed app requests; scrollWidth=390",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "P-11",
+  "area": "All sports",
+  "desc": "Users who PICKED sports keep exactly them (Justin's cfb,nfl,mlb,golf,tennis, v4 profile with no flag)",
+  "steps": "Seed v4 sports=[cfb,nfl,mlb,golf,tennis]; open Scores",
+  "expected": "Chip bar shows exactly those 5 sports; saved sportsChosen=true",
+  "actual": "chips=cfb,nfl,mlb,golf,tennis; sportsChosen=true",
+  "status": "PASS",
+  "evidence": "screenshots/v17/P-11-picked-sports-unchanged.png"
+ },
+ {
+  "id": "P-12",
+  "area": "All sports",
+  "desc": "Explicit \"CFB only\" choice (v5, sportsChosen=true) stays CFB only",
+  "steps": "Seed v5 sports=[cfb] sportsChosen=true",
+  "expected": "No sport chip bar (single sport); settings unchanged",
+  "actual": "chip bar hidden=true; sports=cfb",
+  "status": "PASS",
+  "evidence": "screenshots/v17/P-12-explicit-cfb-only.png"
+ },
+ {
+  "id": "R-01",
+  "area": "Regression",
+  "desc": "Home renders at 390px",
+  "steps": "Open #/home",
+  "expected": "Content visible (> 80 chars), no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "4952 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-01-home.png"
+ },
+ {
+  "id": "R-02",
+  "area": "Regression",
+  "desc": "Scores (CFB) renders at 390px",
+  "steps": "Open #/scores",
+  "expected": "Content visible (> 80 chars), no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "6182 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-02-scores.png"
+ },
+ {
+  "id": "R-03",
+  "area": "Regression",
+  "desc": "News renders at 390px",
+  "steps": "Open #/news",
+  "expected": "Content visible (> 80 chars), no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "16790 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-03-news.png"
+ },
+ {
+  "id": "R-04",
+  "area": "Regression",
+  "desc": "Rankings (AP poll) renders at 390px",
+  "steps": "Open #/rankings",
+  "expected": "Content visible (> 80 chars), no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1025 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-04-rankings.png"
+ },
+ {
+  "id": "R-05",
+  "area": "Regression",
+  "desc": "JT Top 25 renders at 390px",
+  "steps": "Open #/rankings/grok",
+  "expected": "Content visible (> 80 chars), no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "3557 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-05-rankings-grok.png"
+ },
+ {
+  "id": "R-06",
+  "area": "Regression",
+  "desc": "Team page (Utah) renders at 390px",
+  "steps": "Open #/team/254",
+  "expected": "Content visible (> 80 chars), no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1002 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-06-team-254.png"
+ },
+ {
+  "id": "R-07",
+  "area": "Regression",
+  "desc": "Schedule (Utah) renders at 390px",
+  "steps": "Open #/schedule/254",
+  "expected": "Content visible (> 80 chars), no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1002 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-07-schedule-254.png"
+ },
+ {
+  "id": "R-08",
+  "area": "Regression",
+  "desc": "Settings renders at 390px",
+  "steps": "Open #/settings",
+  "expected": "Content visible (> 80 chars), no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "551 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-08-settings.png"
+ },
+ {
+  "id": "R-09",
+  "area": "Regression",
+  "desc": "Settings → Sports renders at 390px",
+  "steps": "Open #/settings/sports",
+  "expected": "Content visible (> 80 chars), no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1271 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-09-settings-sports.png"
+ },
+ {
+  "id": "R-10",
+  "area": "Regression",
+  "desc": "NFL Scores via chip",
+  "steps": "Scores → NFL chip",
+  "expected": "NFL scoreboard renders",
+  "actual": "{\"on\":\"nfl\",\"len\":2138,\"err\":false}",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-10-nfl-scores.png"
+ },
+ {
+  "id": "R-11",
+  "area": "Regression",
+  "desc": "Gamecast / game page opens from a scores card (current chip = NFL from R-10)",
+  "steps": "Scores → open the first game card",
+  "expected": "Game page renders (header, teams, details), no error",
+  "actual": "#/game/nfl/401873017: 2272 chars, error=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v17/R-11-gamecast.png"
+ },
+ {
+  "id": "R-12",
+  "area": "Regression",
+  "desc": "Top 25 (AP) rows link through to a team page",
+  "steps": "Rankings → tap first team",
+  "expected": "Team page opens",
+  "actual": "#/team/nfl:2, 1604 chars",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "R-13",
+  "area": "Regression",
+  "desc": "Console clean across all smoke checks",
+  "steps": "Review diagnostics",
+  "expected": "No page errors / console errors / 4xx-5xx from the app origin",
+  "actual": "no console/page errors, no failed app requests (third-party CDN console noise ignored: 0)",
+  "status": "PASS",
+  "evidence": ""
+ }
+]
