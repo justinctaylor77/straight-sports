@@ -1,0 +1,107 @@
+[
+ {
+  "id": "L-01",
+  "desc": "/sw.js version",
+  "status": "PASS",
+  "actual": "VERSION=ss-v23",
+  "evidence": ""
+ },
+ {
+  "id": "L-02",
+  "desc": "/api/brackets works (3 views; CFP pending, no mock)",
+  "status": "PASS",
+  "actual": "HTTP 200; jt=12 ap=12 seeds; cfp=pending; mock=false",
+  "evidence": ""
+ },
+ {
+  "id": "L-03",
+  "desc": "/api/jt-top25 and /api/grok-top25 still carry legacy `bracket`",
+  "status": "PASS",
+  "actual": "jt-top25 HTTP 200 bracket seeds=12; grok-top25 bracket seeds=12",
+  "evidence": ""
+ },
+ {
+  "id": "L-04",
+  "desc": "Rankings → Bracket button → JT bracket renders (390px)",
+  "status": "PASS",
+  "actual": "grid rendered, 4266 chars",
+  "evidence": "screenshots/v17/live-bracket-button-jt.png"
+ },
+ {
+  "id": "L-05",
+  "desc": "AP Projected view renders",
+  "status": "PASS",
+  "actual": "{\"on\":\"ap\",\"g\":true}",
+  "evidence": "screenshots/v17/live-ap.png"
+ },
+ {
+  "id": "L-06",
+  "desc": "Official CFP not-released state renders",
+  "status": "PASS",
+  "actual": "OFFICIAL CFP BRACKET NOT RELEASED YET The College Football Playoff committee hasn’t released its Top 25 yet. This tab fills in automatically once ESPN publishes",
+  "evidence": "screenshots/v17/live-cfp.png"
+ },
+ {
+  "id": "L-07",
+  "desc": "No horizontal scroll on bracket views",
+  "status": "PASS",
+  "actual": "scrollWidth jt/ap/cfp=390/390/390",
+  "evidence": ""
+ },
+ {
+  "id": "L-08",
+  "desc": "Home promo → bracket (starts on My Bracket)",
+  "status": "PASS",
+  "actual": "grid rendered",
+  "evidence": ""
+ },
+ {
+  "id": "L-09",
+  "desc": "JT page Bracket sub-tab → bracket",
+  "status": "PASS",
+  "actual": "grid rendered",
+  "evidence": ""
+ },
+ {
+  "id": "L-10",
+  "desc": "Console/page errors + failed app requests during bracket checks",
+  "status": "PASS",
+  "actual": "none",
+  "evidence": ""
+ },
+ {
+  "id": "L-11",
+  "desc": "Fresh profile (empty storage) → Scores chips show all sports",
+  "status": "PASS",
+  "actual": "25 chips: cfb,nfl,mlb,golf,tennis,nba,wnba,mcbb,wcbb,nhl,mls,nwsl,epl,laliga,bund,seriea,ligue1,ucl,ligamx,cbase,ufc,boxing,f1,nascar,indy; sportsChosen=false",
+  "evidence": "screenshots/v17/live-fresh-all-sports.png"
+ },
+ {
+  "id": "L-12",
+  "desc": "Fresh profile: NBA scores render",
+  "status": "PASS",
+  "actual": "{\"on\":\"nba\",\"len\":6846}",
+  "evidence": "screenshots/v17/live-fresh-nba.png"
+ },
+ {
+  "id": "L-13",
+  "desc": "Fresh profile: no console/page errors, no h-scroll",
+  "status": "PASS",
+  "actual": "clean",
+  "evidence": ""
+ },
+ {
+  "id": "L-14",
+  "desc": "Stale profile (v4, only [cfb]) migrated to all sports",
+  "status": "PASS",
+  "actual": "25 chips; v=5; sportsChosen=false",
+  "evidence": "screenshots/v17/live-stale-profile-all-sports.png"
+ },
+ {
+  "id": "L-15",
+  "desc": "Picked sports (cfb,nfl,mlb,golf,tennis) unchanged",
+  "status": "PASS",
+  "actual": "cfb,nfl,mlb,golf,tennis",
+  "evidence": "screenshots/v17/live-picked-sports.png"
+ }
+]

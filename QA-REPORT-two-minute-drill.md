@@ -109,3 +109,35 @@ Evidence screenshots are local-only files under `screenshots/v17/` (that folder 
 - **Migration heuristic.** An existing install whose saved sports are exactly `[cfb]` can't be told apart from "never chose" — it is treated as never chose and now shows all sports. Someone who deliberately wanted CFB-only on an old install would need to pick CFB once in Settings → Sports (that is saved as an explicit choice, and stays; P-12).
 - **Tile behaviour while showing all:** the first tap on a sport in Settings → Sports selects *only* that sport (then more taps add), rather than toggling one off from 25.
 - **Justin's phone if it still shows only NCAAF:** fully close the app (swipe it away) and reopen it — the app now updates itself. If still stuck: Settings → Sports → tap **Show all sports** (shown once sports are picked), or Settings → Reset. Last resort on iPhone: delete the home-screen icon, Settings → Safari → Advanced → Website Data → remove straight-sports.onrender.com, then re-add it.
+
+
+## Live verification
+
+**Release "Two-Minute Drill" v1.1.0 is LIVE** at https://straight-sports.onrender.com (approved by Justin).
+
+- Deploy: `dep-dbf6e58473hc73c11dtg` — status **live** (triggered 2026-10-25 20:31:18Z, build finished 20:31:45Z)
+- Deployed commit: `eb7b5d9` (includes release commit `9e70470`)
+- Service worker served: `ss-v23`
+- Result: **15 PASS / 0 FAIL** (390px mobile viewport, fresh browser contexts, real production URL; script: `scripts/live-v17.js`, raw: `live-results.json`)
+- Note: the "Status: not released" line near the top of this report describes the pre-release state; this section supersedes it.
+- Official CFP bracket correctly shows "not released" (first CFP ranking expected Tue Nov 3, 2026); the CFP mock is local-only and is not active in production.
+
+| ID | Check | Result | Actual | Screenshot |
+|---|---|---|---|---|
+| L-01 | /sw.js version | **PASS** | VERSION=ss-v23 |  |
+| L-02 | /api/brackets works (3 views; CFP pending, no mock) | **PASS** | HTTP 200; jt=12 ap=12 seeds; cfp=pending; mock=false |  |
+| L-03 | /api/jt-top25 and /api/grok-top25 still carry legacy `bracket` | **PASS** | jt-top25 HTTP 200 bracket seeds=12; grok-top25 bracket seeds=12 |  |
+| L-04 | Rankings → Bracket button → JT bracket renders (390px) | **PASS** | grid rendered, 4266 chars | `screenshots/v17/live-bracket-button-jt.png` |
+| L-05 | AP Projected view renders | **PASS** | {"on":"ap","g":true} | `screenshots/v17/live-ap.png` |
+| L-06 | Official CFP not-released state renders | **PASS** | OFFICIAL CFP BRACKET NOT RELEASED YET The College Football Playoff committee hasn’t released its Top 25 yet. This tab fills in automatically once ESPN publishes | `screenshots/v17/live-cfp.png` |
+| L-07 | No horizontal scroll on bracket views | **PASS** | scrollWidth jt/ap/cfp=390/390/390 |  |
+| L-08 | Home promo → bracket (starts on My Bracket) | **PASS** | grid rendered |  |
+| L-09 | JT page Bracket sub-tab → bracket | **PASS** | grid rendered |  |
+| L-10 | Console/page errors + failed app requests during bracket checks | **PASS** | none |  |
+| L-11 | Fresh profile (empty storage) → Scores chips show all sports | **PASS** | 25 chips: cfb,nfl,mlb,golf,tennis,nba,wnba,mcbb,wcbb,nhl,mls,nwsl,epl,laliga,bund,seriea,ligue1,ucl,ligamx,cbase,ufc,boxing,f1,nascar,indy; sportsChosen=false | `screenshots/v17/live-fresh-all-sports.png` |
+| L-12 | Fresh profile: NBA scores render | **PASS** | {"on":"nba","len":6846} | `screenshots/v17/live-fresh-nba.png` |
+| L-13 | Fresh profile: no console/page errors, no h-scroll | **PASS** | clean |  |
+| L-14 | Stale profile (v4, only [cfb]) migrated to all sports | **PASS** | 25 chips; v=5; sportsChosen=false | `screenshots/v17/live-stale-profile-all-sports.png` |
+| L-15 | Picked sports (cfb,nfl,mlb,golf,tennis) unchanged | **PASS** | cfb,nfl,mlb,golf,tennis | `screenshots/v17/live-picked-sports.png` |
+
+Screenshots are local-only (gitignored) under `screenshots/v17/live-*.png`.
