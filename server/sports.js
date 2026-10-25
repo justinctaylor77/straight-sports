@@ -12,6 +12,7 @@ const CORE_TEAM = ['cfb', 'nfl', 'mlb'];
 
 module.exports = function makeSports({ cached, cache, fetchJSON }) {
   const VENUES = require('./venues')({ cached });
+  const OFFICIALS = require('./officials')({ cached, fetchJSON });
   const venueInfo = (gi, h, att) => VENUES.info(gi && gi.venue, att || 0).catch(() => null);
   // ids: CFB keeps bare ESPN ids (backwards compatible with v1/v2 saved settings); others are namespaced.
   const tid = (sport, id) => (sport === 'cfb' ? String(id) : `${sport}:${id}`);
@@ -388,6 +389,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       venue: venueOf(gi.venue), attendance: att, venueInfo: await venueInfo(gi, h, att), broadcast: broadcastsOf(h) || (d.broadcasts || []).map((b) => b.media && b.media.shortName).filter(Boolean).join(', ') || null, nets: netsOf(h, d.broadcasts),
       home, away, note: d.header.gameNote || (h.notes || []).map((n) => n.headline).filter(Boolean)[0] || null, link: gameLink(sport, id),
     };
+    out.officials = await OFFICIALS.forGame(sport, SPORTS[sport].path, id, gi, state).catch(() => null);
     // scoring summary
     out.scoring = (d.scoringPlays || []).map((p) => ({ period: p.period && p.period.number, clock: p.clock && p.clock.displayValue, teamId: p.team && tid(sport, p.team.id),
       abbr: p.team && p.team.abbreviation, type: p.type && (p.type.abbreviation || p.type.text), text: p.text, away: p.awayScore, home: p.homeScore }));

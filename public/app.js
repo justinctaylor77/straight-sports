@@ -1,6 +1,6 @@
 import { LEAGUE_MUTES, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=19';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=20';
 import * as GA from './anim.js?v=18';
 import * as BD from './backdrop.js';
 import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=19';

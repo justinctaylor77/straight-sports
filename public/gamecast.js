@@ -31,7 +31,7 @@ function header(d, ctx) {
       <div class="gc-mid"><div class="nums"><span data-s="away" class="${d.state === 'post' && !d.away.winner ? 'lo' : ''}">${score(d.away)}</span><span class="dash">${d.state === 'pre' ? 'vs' : '–'}</span><span data-s="home" class="${d.state === 'post' && !d.home.winner ? 'lo' : ''}">${score(d.home)}</span></div>
         <div class="st">${statusLine(d)}</div></div>
       ${side(d.home, d, ctx, 'r')}</div>
-    <div class="gc-meta">${[d.venue, d.broadcast && `TV: ${d.broadcast}`, d.attendance && `Att. ${(+d.attendance).toLocaleString()}`].filter(Boolean).map(esc).join(' · ')}</div>${ctx.watch ? ctx.watch(d) : ''}</div>`;
+    <div class="gc-meta">${[d.venue, d.broadcast && `TV: ${d.broadcast}`, d.attendance && `Att. ${(+d.attendance).toLocaleString()}`, refOf(d)].filter(Boolean).map(esc).join(' · ')}</div>${ctx.watch ? ctx.watch(d) : ''}</div>`;
 }
 function lineScore(d, { min = 4, extra = [] } = {}) {
   const n = Math.max(min, d.home.lines.length, d.away.lines.length);
@@ -72,7 +72,7 @@ function statCompare(d, ctx) {
       return `<div class="sr"><b>${esc(s.away)}</b><span>${esc(s.label)}</span><b>${esc(s.home)}</b>${!tm && /\d/.test(s.away) && !/-/.test(s.away) ? `<div class="bar"><i style="width:${(a / t) * 100}%;background:${hex(d.away.team.color, 'var(--muted)')}"></i><i style="width:${(h / t) * 100}%;background:${hex(d.home.team.color, 'var(--accent)')}"></i></div>` : ''}</div>`; }).join('')}</div>`;
 }
 const tabs = (list) => `<div class="toolbar sticky gc-tabs"><div class="seg" role="tablist">${list.map(([k, l]) => `<button data-gctab="${k}" class="${castState.tab === k ? 'on' : ''}" role="tab" aria-selected="${castState.tab === k}">${l}</button>`).join('')}</div></div>`;
-const footer = (d, extra = '') => `${d.state !== 'pre' && castState.tab === 'summary' ? venueCard(d) : ''}<p class="faint small gc-foot">${d.state === 'in' ? 'Updates automatically about every 10 seconds while this screen is open. ' : ''}Data: ESPN public feeds.${extra ? ` ${extra}` : ''} ${d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener noreferrer">Open on ESPN ↗</a>` : ''}</p>`;
+const footer = (d, extra = '') => `${d.state !== 'pre' && castState.tab === 'summary' ? venueCard(d) + officialsCard(d) : ''}<p class="faint small gc-foot">${d.state === 'in' ? 'Updates automatically about every 10 seconds while this screen is open. ' : ''}Data: ESPN public feeds.${extra ? ` ${extra}` : ''} ${d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener noreferrer">Open on ESPN ↗</a>` : ''}</p>`;
 const nf = (n) => Number(n).toLocaleString('en-US');
 // Venue facts: name/city/surface/attendance come from ESPN; capacity and year built from Wikipedia/Wikidata (server-verified).
 // Unknown capacity / year show N/A; attendance and sellout % are only shown once ESPN reports attendance (live or final).
@@ -92,11 +92,26 @@ function venueCard(d) {
     ${att && v.sellout != null ? `${row('Sellout', `${v.sellout.toFixed(1)}%`)}<div class="bar" aria-hidden="true"><i style="width:${Math.min(100, v.sellout)}%"></i></div>${v.sellout > 100 ? '<div class="vsrc">Attendance above listed capacity (standing room / expanded seating).</div>' : ''}` : ''}
     ${v.source ? `<div class="vsrc">Capacity &amp; year: <a href="${esc(v.source)}" target="_blank" rel="noopener noreferrer">Wikipedia</a>${v.attendance && d.state !== 'pre' ? ' · attendance: ESPN' : ''}</div>` : ''}</div>`;
 }
+// Officiating crew (football). From ESPN only; ESPN publishes no college officials and never names a college crew's conference,
+// so those show "not published". A conference label appears only when ESPN or a verified entry supplies it (d.officials.crewConference).
+const refOf = (d) => { const r = d.officials && d.officials.list.find((x) => x.position === 'Referee'); return r ? `Ref: ${r.name}${d.officials.crewConference ? ` (${d.officials.crewConference} crew)` : ''}` : null; };
+function officialsCard(d) {
+  const o = d.officials; if (!o) return '';
+  const cfb = d.sport === 'cfb';
+  const conf = o.crewConference ? `<b>${esc(o.crewConference)} crew</b>${o.crewSource && o.crewSource !== 'ESPN' ? ` <a href="${esc(o.crewSource)}" target="_blank" rel="noopener noreferrer">source</a>` : ''}` : '<span class="faint">Not published</span>';
+  const row = (k, val) => `<div class="r"><span>${k}</span><b>${val}</b></div>`;
+  if (!o.available) return `<div class="card gc-venue gc-off"><div class="vh"><b>Officials</b><span>${cfb ? 'College football' : ''}</span></div>
+    ${row('Referee &amp; crew', '<span class="faint">Not published</span>')}${cfb ? row('Crew conference', conf) : ''}
+    <div class="vsrc">ESPN doesn’t publish ${cfb ? 'college football officiating crews' : 'the officials for this game yet'}, so none are shown rather than guessed. This card fills in automatically if ESPN posts them.</div></div>`;
+  return `<div class="card gc-venue gc-off"><div class="vh"><b>Officials</b><span>${o.crewConference ? `${esc(o.crewConference)} crew` : cfb ? 'Crew conference not published' : ''}</span></div>
+    ${o.list.map((x) => row(esc(x.position || 'Official'), esc(x.name))).join('')}
+    ${o.crewConference ? row('Crew conference', conf) : cfb ? row('Crew conference', conf) : ''}<div class="vsrc">Source: ESPN.${cfb && !o.crewConference ? ' ESPN doesn’t say which conference the crew is from.' : ''}</div></div>`;
+}
 function preGame(d, inner = '') {
   return `<div class="card gc-pre"><div class="r"><span>Start</span><b>${esc(fmtWhen(d.date))}</b></div>
     ${d.venue && !d.venueInfo ? `<div class="r"><span>Venue</span><b>${esc(d.venue)}</b></div>` : ''}
     <div class="r"><span>TV</span><b>${esc(d.broadcast || 'Not listed')}</b></div>
-    <div class="r"><span>Records</span><b>${esc(d.away.team.abbr)} ${esc(d.away.record || '–')} · ${esc(d.home.team.abbr)} ${esc(d.home.record || '–')}</b></div>${inner}</div>${venueCard(d)}`;
+    <div class="r"><span>Records</span><b>${esc(d.away.team.abbr)} ${esc(d.away.record || '–')} · ${esc(d.home.team.abbr)} ${esc(d.home.record || '–')}</b></div>${inner}</div>${venueCard(d)}${officialsCard(d)}`;
 }
 
 // ---------- football ----------
