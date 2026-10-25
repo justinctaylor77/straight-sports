@@ -1,4 +1,4 @@
-// Straight Sports — tiny backend: proxies + caches ESPN public JSON and news RSS, serves the PWA.
+// Old School Sports — tiny backend: proxies + caches ESPN public JSON and news RSS, serves the PWA.
 const path = require('path');
 const express = require('express');
 const compression = require('compression');
@@ -9,7 +9,7 @@ const { classify, sportsCheck } = require('./classify');
 const PORT = Number(process.env.PORT) || 8787;
 const ESPN = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football';
 const ESPN_WEB = 'https://site.web.api.espn.com/apis/v2/sports/football/college-football';
-const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36 StraightSports/0.3';
+const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36 OldSchoolSports/0.3';
 
 const app = express();
 app.use(compression());
@@ -226,4 +226,4 @@ const pub = path.join(__dirname, '..', 'public');
 app.use(express.static(pub, { setHeaders: (res, p) => { if (p.endsWith('sw.js') || p.endsWith('.html')) res.set('Cache-Control', 'no-cache'); } }));
 app.get(/^\/(?!api\/).*/, (req, res) => res.sendFile(path.join(pub, 'index.html')));
 
-app.listen(PORT, '0.0.0.0', () => console.log(`Straight Sports listening on 0.0.0.0:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Old School Sports listening on 0.0.0.0:${PORT}`));

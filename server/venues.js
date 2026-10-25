@@ -8,7 +8,7 @@ const WP = 'https://en.wikipedia.org/w/api.php';
 const timeOf = (v) => (v && v.time ? v.time : '');
 const yearOf = (t) => { const m = /^[+-]?(\d{4})-/.exec(t || ''); return m ? +m[1] : null; };
 
-const WUA = 'StraightSports/1.0 (https://straight-sports.onrender.com; venue facts, cached 14 days) node';
+const WUA = 'OldSchoolSports/1.0 (https://straight-sports.onrender.com; venue facts, cached 14 days) node';
 const VENUE_WORDS = /stadium|ballpark|baseball park|arena|field|park|venue|coliseum|dome|racetrack|speedway|raceway|course|garden|bowl|center|centre|complex|pitch|ground|track|club|links|court|amphitheat/i;
 
 module.exports = function makeVenues({ cached }) {

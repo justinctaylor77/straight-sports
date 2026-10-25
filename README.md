@@ -1,4 +1,4 @@
-# Straight Sports
+# Old School Sports
 
 A customizable, low-bias sports app (installable PWA). Out of the box it covers **college football, NFL, MLB, golf (PGA/LPGA) and tennis (ATP/WTA)**; anyone who installs it can switch on more sports from the catalog (all optional and off by default).
 

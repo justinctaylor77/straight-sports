@@ -2,7 +2,7 @@
   "name": "straight-sports",
   "version": "0.3.0",
   "private": true,
-  "description": "Straight Sports: customizable, low-bias scores, Gamecasts and straight news for college football, NFL, MLB, golf and tennis (PWA)",
+  "description": "Old School Sports: customizable, low-bias scores, Gamecasts and straight news for college football, NFL, MLB, golf and tennis (PWA)",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",

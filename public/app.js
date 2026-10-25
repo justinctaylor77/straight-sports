@@ -1156,7 +1156,7 @@ function viewSettings(sub) {
       <button class="row" data-act="tour">${icon('spark', 'var(--usa-blue-m)')}<span class="rt"><b>Replay welcome tour</b><small>Step through setup again</small></span><span class="chev">›</span></button>
       ${linkRow('#/settings/about', 'info', 'var(--usa-blue-m)', 'About & install', 'How filtering works · data sources')}</div>
     <div class="list card" style="margin-top:22px"><button class="row danger" data-act="reset"><span class="rt"><b>Reset all settings</b></span></button></div>
-    <p class="faint small center">Straight Sports · prototype · no ads, no accounts</p>`;
+    <p class="faint small center">Old School Sports · no ads, no accounts</p>`;
   view.onclick = (e) => {
     const b = e.target.closest('[data-act]'); if (!b) return; tick();
     if (b.dataset.act === 'tour') openOnboarding(1);
@@ -1191,14 +1191,14 @@ const STEPS = 7; const CONF_STEP = 3; const WATCH_STEP = 5;
 function openOnboarding(start = 0) {
   if ($('#onb')) return;
   teamQ = ''; teamConf = '';
-  const el = document.createElement('div'); el.id = 'onb'; el.className = 'onb'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Welcome to Straight Sports');
+  const el = document.createElement('div'); el.id = 'onb'; el.className = 'onb'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Welcome to Old School Sports');
   el.innerHTML = `<div class="onb-frame">
     <div class="onb-top"><button class="onb-link" data-nav="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Back</button>
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=16" alt="" /></div>
-        <h1>Straight<b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=21" alt="" /></div>
+        <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
           <li><span class="fi">🔇</span><div><b>Mute anything</b><small>Leagues, teams, keywords or whole outlets.</small></div></li></ul>
@@ -1396,7 +1396,7 @@ function syncSportUI(name) {
   const de = document.documentElement; // non-core sports get their accent from the catalog
   if (CORE.includes(S.sport)) { delete de.dataset.xa; de.style.removeProperty('--xa'); } else { de.dataset.xa = ''; de.style.setProperty('--xa', SPORTS[S.sport].accent || '#ff7a1a'); }
   if (!['team', 'game', 'schedule', 'player'].includes(name)) BD.setSport(S.sport);
-  document.title = `Straight Sports · ${SPORTS[S.sport].short}`;
+  document.title = `Old School Sports · ${SPORTS[S.sport].short}`;
 }
 // "Play drive": steps the football play tracker through the drive, one play at a time, animating each; any manual tap stops it.
 let autoTimer = null;

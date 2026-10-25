@@ -57,7 +57,7 @@ run.updatedAt = new Date().toISOString();
 // ---- team → ESPN id + official logos (same resolver the server uses) ----
 // Uses the server's own FBS team list (ESPN standings, normTeam logos), so ids and logos match what the app shows.
 async function espnTeams() {
-  const fetchJSON = async (u) => { const r = await fetch(u, { headers: { 'user-agent': 'straight-sports/1.0' } }); if (!r.ok) throw new Error(`HTTP ${r.status} for ${u}`); return r.json(); };
+  const fetchJSON = async (u) => { const r = await fetch(u, { headers: { 'user-agent': 'old-school-sports/1.0' } }); if (!r.ok) throw new Error(`HTTP ${r.status} for ${u}`); return r.json(); };
   const SP = require('../server/sports')({ cached: (k, t, fn) => fn(), cache: new Map(), fetchJSON });
   return (await SP.getTeams('cfb')).teams;
 }
