@@ -7,7 +7,7 @@ A customizable, low-bias sports app (installable PWA). Out of the box it covers 
 - Straight news only: opinion, betting and hot-take pieces filtered out; mute teams, players, keywords and outlets
 - Follow teams **and players in every sport** (search by name or browse league → division/conference → roster). Followed teams/players are pinned first in scores, highlighted in Gamecast and boosted in news; settings stay on your device (localStorage), no account
 - Dynamic backdrop: sport artwork tinted with the sport's accent, team colors + logo on team pages, the two teams split diagonally in Gamecast, player flags/headshots for golf, tennis and event sports. Respects `prefers-reduced-motion`.
-- **Grok Top 25** tab in CFB rankings, with a comparison chart against the live AP/Coaches/CFP polls and a projected 12-team playoff bracket
+- **Grok Top 25** tab in CFB rankings, with a comparison chart against the live AP/Coaches/CFP polls and a Playoff Bracket page (JT, AP projected, official CFP)
 
 Data comes from ESPN's public JSON feeds and public RSS feeds. No API keys are used.
 
@@ -61,7 +61,7 @@ Input schema (`run.json`):
     "risersFallers": "Biggest risers in the hybrid view are…",
     "apVsGrok": "AP has Miami #1, …",      // optional; if Grok writes one combined paragraph, omit it and the script reuses risersFallers
     "nextWeek": "Week 8 features Utah vs. Houston, …",
-    "cfpOutlook": "Projected byes: Ohio State …"   // shown as "Grok's CFP outlook"; the Bracket tab is computed separately
+    "cfpOutlook": "Projected byes: Ohio State …"   // shown as "Grok's CFP outlook"; the bracket is computed separately by /api/brackets
   }
 }
 ```
@@ -70,16 +70,21 @@ Notes keys must be one of the four above and must be strings. Any that are missi
 
 The script adds `prev`, `move` (number, `"new"` or `null` for the first week), `previous` and `droppedOut`.
 
-`GET /api/grok-top25[?date=YYYY-MM-DD]` returns the stored run with each team resolved to ESPN team info, its conference and `live: { ap, coaches, cfp }`, plus `livePolls`, `history` and a projected `bracket`:
+`GET /api/grok-top25[?date=YYYY-MM-DD]` returns the stored run with each team resolved to ESPN team info, its conference and `live: { ap, coaches, cfp }`, plus `livePolls` and `history`. (The projected bracket moved to `/api/brackets`, see below.)
 
-- Each conference's champion is projected as its highest Grok-ranked team.
-- The 5 highest-ranked conference champions get automatic bids. The 4 highest-ranked champions are seeds 1–4 and get byes.
-- The 7 highest-ranked remaining teams fill seeds 5–12. First round: 5 v 12, 6 v 11, 7 v 10, 8 v 9, played at the higher seed's campus.
-- Quarterfinals: 1 v 8/9, 2 v 7/10, 3 v 6/11, 4 v 5/12.
+## Playoff bracket (Rankings → Bracket, `#/rankings/bracket/{jt|ap|cfp}`)
+
+`GET /api/brackets` (cached 5 min) returns three 12-team brackets, each with `source`, `generatedAt`, `label` and `bracket`: **My Bracket (JT)** from the latest JT Top 25, **AP Projected** from the AP Top 25 in ESPN's rankings feed, and **Official CFP** from ESPN's CFP committee ranking (matched by `type: "cfp"` or a "Playoff"/"CFP" name; falls back to the ESPN core API). Until the committee publishes, `cfp.status` is `"pending"` with the next release date from the CFP's published schedule (`CFP_SCHEDULE` in `server/brackets.js`); it fills in on its own once ESPN has the ranking. Logic lives in `server/brackets.js`.
+
+Rules implemented (2026-27 CFP, per collegefootballplayoff.com): ACC, Big 12, Big Ten and SEC champions + the highest-ranked Group of 6 team + Notre Dame (if ranked in the top 12) get automatic bids; the next highest-ranked teams fill out the 12. Seeds follow ranking order (an automatic qualifier outside the top 12 takes the last seeds) and seeds 1-4 get byes; byes are no longer reserved for conference champions. First round 5v12, 6v11, 7v10, 8v9 at the higher seed; quarterfinals 1 v 8/9, 2 v 7/10, 3 v 6/11, 4 v 5/12. Conference champions are not decided in October, so a Power 4 conference's projected champion is its highest-ranked team in that ranking.
+
+Test with a mocked CFP payload: `BRACKETS_MOCK_CFP=tests/fixtures/mock-cfp.json PORT=8798 node server/index.js` (shows a TEST DATA banner; never set this in production).
 
 ## Tests and screenshots
 
 ```bash
 node tests/migrate.test.mjs                 # saved settings survive upgrades unchanged
+node tests/brackets.test.js                 # 12-team bracket rules + CFP payload detection
+node scripts/shots-v16.js [baseUrl] [outDir] [prefix]  # bracket views at 390px → screenshots/v16/
 node scripts/screenshots-v4.js [baseUrl]    # Playwright: phone + desktop → screenshots/v4/ (needs playwright-core + Chrome)
 ```

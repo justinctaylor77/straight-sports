@@ -1207,3 +1207,47 @@ a.nm[href^="#/schedule"]:hover b, a.nm[href^="#/schedule"]:focus-visible b { col
   .gx-replay.rp, .gx-replay.auto { display: none; }
   .pg-ball, .pg-shadow, .pg-ripple, .pt-trail, .tb-shadow { display: none; }
 }
+
+/* ---------- Playoff bracket (v16): #/rankings/bracket/{jt|ap|cfp} ---------- */
+.gk-promo + .gk-promo { margin-top: 10px; }
+.br-seg { width: 100%; } .br-seg button { flex: 1; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
+.br-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); margin-left: 4px; vertical-align: middle; }
+.br-head { display: grid; gap: 8px; }
+.br-basis { margin: 0; font-size: 14px; }
+.br-spots { display: flex; flex-wrap: wrap; gap: 8px; }
+.br-spot { font-size: 12.5px; padding: 5px 10px; border-radius: 999px; background: var(--chip); color: var(--muted); }
+.br-spot.in { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); }
+.br-mock { border: 2px dashed var(--live); color: var(--live); font-weight: 700; }
+.br-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; margin: 12px -12px 0; padding: 4px 12px 10px; overscroll-behavior-x: contain; }
+.br-grid { display: grid; grid-template-columns: repeat(4, 236px); grid-template-rows: auto repeat(4, auto); column-gap: 18px; row-gap: 12px; width: max-content; }
+.br-h { font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 14px; color: var(--muted); padding: 2px 4px; grid-row: 1; }
+.br-h.c1, .br-c.c1 { grid-column: 1; } .br-h.c2, .br-c.c2 { grid-column: 2; } .br-h.c3, .br-c.c3 { grid-column: 3; } .br-h.c4, .br-c.c4 { grid-column: 4; }
+.br-c { display: flex; align-items: center; position: relative; scroll-snap-align: start; }
+.br-c:not(.c4)::after { content: ""; position: absolute; left: 100%; top: 50%; width: 18px; height: 2px; background: var(--border); }
+.br-game { width: 100%; padding: 0; overflow: hidden; margin: 0; }
+.br-game .host { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--faint); padding: 6px 10px 4px; border-bottom: 1px solid var(--border); }
+.bt, .br-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-left: 4px solid var(--tc, transparent); min-width: 0; }
+.bt + .bt { border-top: 1px solid var(--border); }
+.bt .sd, .br-row .sd { flex: none; width: 24px; font-family: var(--display); font-weight: 800; font-size: 20px; text-align: center; color: var(--accent); }
+.bt img, .br-row img { flex: none; width: 28px; height: 28px; object-fit: contain; }
+.bt .n, .br-row .n { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.2; }
+.bt .n b, .br-row .n b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt .n small, .br-row .n small { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ty.champ { color: var(--accent); font-weight: 600; } .ty.g6 { color: var(--text); font-weight: 600; } .ty.nd { font-weight: 600; color: var(--text); }
+.bt.tbd { color: var(--faint); font-size: 13px; border-left-color: transparent; min-height: 42px; }
+.bt.tbd .n b { font-weight: 500; white-space: normal; }
+.bt.spot, .br-row.spot { background: color-mix(in srgb, var(--accent) 13%, transparent); }
+.bt.mine, .br-row.mine { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
+.tg { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 6px; border-radius: 5px; background: var(--chip); color: var(--muted); }
+.tg.bye { background: var(--accent); color: var(--accent-ink); }
+.br-hint { margin: 0 0 8px; text-align: center; }
+.br-list { padding: 0; overflow: hidden; margin: 0; }
+.br-row + .br-row { border-top: 1px solid var(--border); }
+.br-row.out { opacity: .85; }
+.br-empty { text-align: center; padding: 22px 16px; }
+.br-big { font-family: var(--display); font-size: 34px; text-transform: uppercase; margin: 4px 0 8px; }
+.br-next { font-size: 15px; }
+.br-sched { text-align: left; margin: 10px 0; } .br-sched summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.br-foot { margin-top: 14px; } .br-foot h3 { margin-top: 0; }
+.br-foot a, .br-empty a, .br-empty + p a { text-decoration: underline; }
+.br-outlook { margin-top: 14px; }

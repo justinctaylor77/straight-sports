@@ -564,6 +564,7 @@ function genStandTable(g, cols, withDiv) {
 }
 async function viewRankings(quick) {
   const sp = S.sport; const lbl = SPI().tab4;
+  if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/bracket')) return viewBracket(quick);
   if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/grok/how')) return viewGrokHow(quick);
   if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/grok')) return viewGrok(quick);
   setBar(lbl);
@@ -612,7 +613,7 @@ async function viewRankings(quick) {
   const poll = d.polls.find((p) => p.id === pollId) || d.polls[0];
   const ranks = poll.ranks.filter((r) => !mf.teamId(r.team.id)); const hiddenN = poll.ranks.length - ranks.length;
   view.innerHTML = LT('Rankings', `${esc(poll.headline || poll.name)}${poll.date ? ` · ${new Date(poll.date).toLocaleDateString()}` : ''}`) + `
-    <div class="toolbar sticky"><div class="seg">${d.polls.map((p) => `<button data-poll="${p.id}" class="${p.id === poll.id ? 'on' : ''}">${p.id === 'ap' ? 'AP Top 25' : p.id === 'usa' ? 'Coaches Poll' : esc(p.name)}</button>`).join('')}${sp === 'cfb' ? '<a class="seg-a grok-tab" href="#/rankings/grok">JT Top 25</a>' : ''}</div></div>
+    <div class="toolbar sticky"><div class="seg">${d.polls.map((p) => `<button data-poll="${p.id}" class="${p.id === poll.id ? 'on' : ''}">${p.id === 'ap' ? 'AP Top 25' : p.id === 'usa' ? 'Coaches Poll' : esc(p.name)}</button>`).join('')}${sp === 'cfb' ? '<a class="seg-a grok-tab" href="#/rankings/grok">JT Top 25</a><a class="seg-a grok-tab br-tab" href="#/rankings/bracket">Bracket</a>' : ''}</div></div>
     ${hiddenN ? `<div class="notice">${hiddenN} muted team(s) hidden</div>` : ''}
     <div class="card panel">${ranks.map(rankRow).join('')}</div>
     ${poll.others.length ? `<h2>Others receiving votes</h2><p class="muted small">${poll.others.filter((o) => !mf.teamId(o.team.id)).map((o) => `<a href="#/team/${o.team.id}">${esc(o.team.location)}</a> ${o.points}`).join(' · ')}</p>` : ''}
@@ -627,7 +628,8 @@ const gName = (x) => (x && x.info ? x.info.short : x && x.team) || 'TBD';
 async function grokPromo() {
   try {
     const g = await api('/api/grok-top25', 10 * 60e3);
-    return `<a class="card gk-promo" href="#/rankings/grok"><div><div class="gk-kicker">Week ${esc(g.week)} · independent hybrid</div><div class="gk-title">JT Top 25</div><div class="faint small">${g.ranks.slice(0, 4).map((r) => `${r.rank}. ${esc(gName(r))}`).join(' · ')}</div></div><span class="go">View ›</span></a>`;
+    return `<a class="card gk-promo" href="#/rankings/grok"><div><div class="gk-kicker">Week ${esc(g.week)} · independent hybrid</div><div class="gk-title">JT Top 25</div><div class="faint small">${g.ranks.slice(0, 4).map((r) => `${r.rank}. ${esc(gName(r))}`).join(' · ')}</div></div><span class="go">View ›</span></a>
+      <a class="card gk-promo" href="#/rankings/bracket"><div><div class="gk-kicker">12-team playoff</div><div class="gk-title">Playoff Bracket</div><div class="faint small">My bracket (JT) · AP projected · Official CFP</div></div><span class="go">View ›</span></a>`;
   } catch { return ''; }
 }
 function grokChart(g, lp) {
@@ -647,16 +649,77 @@ function grokChart(g, lp) {
     <div class="gk-axis"><span></span><span class="ticks"><span>1</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25</span></span><span>vs AP</span></div>${rows}
     <p class="gk-note">“+n” means JT ranks the team n spots higher than the AP voters. Dots at the right edge are unranked in that poll.</p></div>`;
 }
-function grokBracket(b) {
+// ---------------- Playoff bracket: My (JT), AP projected, official CFP (/api/brackets; rules in server/brackets.js) ----------------
+let brView = 'jt';
+const BR_TYPE = { champ: (s) => `${s.conference} champ (proj.)`, g6: () => 'Top Group of 6 (auto bid)', nd: () => 'Auto bid (top 12)', atlarge: () => 'At-large' };
+const BR_SHORT = { champ: (s) => `${s.conference} champ*`, g6: () => 'Top G6 (auto)', nd: () => 'Auto bid', atlarge: () => 'At-large' };
+const SPOT_IDS = new Set(['254', '252']); // Utah, BYU are always highlighted
+function brTeam(s, extra = '') {
   const my = myTeamIds();
-  const T = (s, tag) => s ? `<div class="br-t ${my.has(s.info?.id) ? 'mine' : ''}" style="--tc:#${esc(s.info?.color || '888')}"><span class="sd">${s.seed}</span><img src="${esc(gLogo(s.info))}" alt="" loading="lazy" /><span class="n">${esc(gName(s))}<small>${s.champ ? `${esc(s.conference)} champ (proj.)` : `No. ${s.rank}`}</small></span>${tag || ''}</div>` : '<div class="br-t tbd"><span class="sd"></span><span></span><span class="n">TBD</span></div>';
+  return `<div class="bt ${my.has(s.id) ? 'mine' : ''} ${SPOT_IDS.has(s.id) ? 'spot' : ''}" style="--tc:#${esc(s.color || '888')}"><span class="sd">${s.seed}</span><img src="${esc(logo(s))}" alt="" loading="lazy" /><span class="n"><b>${esc(s.short)}</b><small>${s.record ? `${esc(s.record)} · ` : ''}No. ${s.rank}</small><small class="ty ${esc(s.type)}">${esc(BR_SHORT[s.type](s))}</small></span>${extra}</div>`;
+}
+const brTbd = (t) => `<div class="bt tbd"><span class="sd"></span><span></span><span class="n"><b>${t}</b></span></div>`;
+function brGrid(b) {
   const r1 = Object.fromEntries(b.firstRound.map((m) => [m.id, m]));
-  const fr = b.quarterfinals.map((q) => r1[q.from]).map((m) => `<div class="card br-game"><div class="host">${esc(m.site)}</div>${T(m.home, '<span class="tg">Home</span>')}${T(m.away)}</div>`).join('');
-  const qf = b.quarterfinals.map((q) => { const m = r1[q.from]; return `<div class="card br-game"><div class="host">Quarterfinal · bowl site</div>${T(q.top, '<span class="tg bye">Bye</span>')}<div class="br-t tbd"><span class="sd"></span><span></span><span class="n">Winner ${m.home.seed}/${m.away.seed}</span></div></div>`; }).join('');
-  const sf = (b.semifinals || []).map((s, i) => `<div class="card br-game"><div class="host">Semifinal ${i + 1}</div>${s.from.map((f) => { const q = b.quarterfinals.find((x) => x.id === f); const m = q && r1[q.from]; return `<div class="br-t tbd"><span class="sd"></span><span></span><span class="n">${q ? `${esc(gName(q.top))} or ${m.home.seed}/${m.away.seed} winner` : 'TBD'}</span></div>`; }).join('')}</div>`).join('') + '<div class="card br-game"><div class="host">National championship</div><div class="br-t tbd"><span class="sd"></span><span></span><span class="n">Semifinal winners</span></div></div>';
-  return `<h2>Projected conference champions</h2><div class="gk-champs">${b.champions.map((c) => `<div class="card gk-champ" style="--tc:#${esc(c.info?.color || '888')}"><img src="${esc(gLogo(c.info))}" alt="" loading="lazy" /><div><div class="cf">${esc(c.conference)}</div><b>${esc(gName(c))}</b><span class="pj">Projected · JT No. ${c.rank}</span></div></div>`).join('')}</div>
-    <h2>12-team bracket</h2><div class="br"><div class="br-col"><h3>First round</h3>${fr}</div><div class="br-col"><h3>Quarterfinals</h3>${qf}</div><div class="br-col"><h3>Semis & final</h3>${sf}</div></div>
-    <p class="gk-note">${esc(b.note || '')} Format: the top 5 conference champions get in; the 4 highest-ranked champions get byes and seeds 1–4; seeds 5–12 play first-round games at the higher seed’s campus.</p>`;
+  const dim = (id) => { const m = r1[id]; return `${m.home.seed}/${m.away.seed}`; };
+  const col = (title, cls) => `<div class="br-h ${cls}">${title}</div>`;
+  let h = col('First round', 'c1') + col('Quarterfinals', 'c2') + col('Semifinals', 'c3') + col('National championship', 'c4');
+  b.firstRound.forEach((m, i) => { h += `<div class="br-c c1" style="grid-row:${i + 2}"><div class="card br-game"><div class="host">${esc(m.host || '')}</div>${m.home ? brTeam(m.home, '<span class="tg">Home</span>') : brTbd('TBD')}${m.away ? brTeam(m.away) : brTbd('TBD')}</div></div>`; });
+  b.quarterfinals.forEach((q, i) => { h += `<div class="br-c c2" style="grid-row:${i + 2}"><div class="card br-game"><div class="host">Quarterfinal · bowl site</div>${q.top ? brTeam(q.top, '<span class="tg bye">Bye</span>') : brTbd('TBD')}${brTbd(`Winner ${dim(q.from)}`)}</div></div>`; });
+  const qlabel = (id) => { const q = b.quarterfinals.find((x) => x.id === id); return `${q.top ? esc(q.top.short) : '?'} vs ${dim(q.from)} winner`; };
+  b.semifinals.forEach((sf, i) => { h += `<div class="br-c c3" style="grid-row:${i * 2 + 2} / span 2"><div class="card br-game"><div class="host">Semifinal ${i + 1}</div>${brTbd(qlabel(sf.from[0]))}${brTbd(qlabel(sf.from[1]))}</div></div>`; });
+  h += `<div class="br-c c4" style="grid-row:2 / span 4"><div class="card br-game"><div class="host">Final</div>${brTbd('Winner of semifinal 1')}${brTbd('Winner of semifinal 2')}</div></div>`;
+  return `<div class="br-scroll" tabindex="0" aria-label="Bracket, scroll sideways for later rounds"><div class="br-grid">${h}</div></div><p class="br-hint faint small">Swipe sideways for the quarterfinals, semifinals and final →</p>`;
+}
+function brFootnote(v, d) {
+  const li = (t) => `<li>${t}</li>`;
+  const fmt = d.format;
+  return `<div class="card br-foot"><h3>How this bracket is built</h3><ul class="gk-how-list">
+    ${li(`<b>Format (${esc(fmt.year)} season).</b> Automatic bids: the ACC, Big 12, Big Ten and SEC champions, plus the highest-ranked team from the American, C-USA, MAC, Mountain West, Pac-12 or Sun Belt, plus Notre Dame if it is ranked in the top 12. The next highest-ranked teams fill the field to 12.`)}
+    ${li('<b>Seeding.</b> Seeds follow the ranking order, and the top 4 seeds get first-round byes. Since 2025 byes are no longer reserved for conference champions; an automatic qualifier ranked outside the top 12 takes the lowest seed(s).')}
+    ${li('<b>Games.</b> First round: 5 v 12, 6 v 11, 7 v 10, 8 v 9, at the higher seed’s campus. Quarterfinals: 1 v 8/9, 2 v 7/10, 3 v 6/11, 4 v 5/12. Semifinals pair the 1/4 and 2/3 sides of the bracket; in 2026 the top three seeds choose their bowl path, so official bowl pairings can differ.')}
+    ${li('<b>Projected champions.</b> No conference titles are decided yet. Each Power 4 conference’s projected champion is its highest-ranked team in this ranking (not the standings, no tiebreakers). The top Group of 6 team gets the fifth automatic bid whether or not it is a champion.')}
+    ${li('<b>Only ranked teams.</b> Only teams in this Top 25 are considered. Nothing is estimated or filled in.')}
+    ${v.id === 'cfp' ? li('<b>Official bracket.</b> The committee publishes a Top 25 each Tuesday in November; the official 12-team bracket is announced on Selection Day. Until then this applies the format to the committee’s latest ranking.') : ''}
+    </ul><p class="faint small">Rules: <a href="${esc(fmt.sources[0].url)}" target="_blank" rel="noopener">CFP</a> · <a href="${esc(fmt.sources[1].url)}" target="_blank" rel="noopener">NCAA.com</a></p></div>`;
+}
+function brBody(v, d) {
+  const when = (iso) => (iso ? new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+  const day = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  if (v.status === 'pending') {
+    return `<div class="card br-empty"><div class="gk-kicker">Official CFP bracket</div><h2 class="br-big">Not released yet</h2><p>${esc(v.message)}</p>
+      ${v.next ? `<p class="br-next"><b>Expected:</b> ${esc(day(v.next.date))}${v.next.time ? `, ${esc(v.next.time)} on ESPN` : ''}${v.next.note ? ` (${esc(v.next.note)})` : ''}.</p>` : ''}
+      <details class="br-sched"><summary>All six release dates</summary><ul class="gk-how-list">${v.schedule.dates.map((x) => `<li><b>${esc(day(x.date))}</b> · ${esc(x.time)}${x.note ? ` · ${esc(x.note)}` : ''}</li>`).join('')}</ul></details>
+      <p class="faint small">Dates: <a href="${esc(v.schedule.url)}" target="_blank" rel="noopener">${esc(v.schedule.source)}</a>. Checked live against ESPN’s rankings feed; nothing is shown until the committee ranks teams.</p></div>
+      <p class="faint small">Meanwhile, see <a href="#/rankings/bracket/jt">your bracket</a> or the <a href="#/rankings/bracket/ap">AP projected bracket</a>.</p>`;
+  }
+  if (v.status !== 'ready') return `<div class="card empty">${esc(v.message || 'Not available right now.')}</div>`;
+  const b = v.bracket; const sp = b.spotlight || {};
+  const chip = (nm) => { const x = sp[nm]; return `<span class="br-spot ${x && x.inField ? 'in' : ''}"><b>${nm}</b> ${x && x.inField ? `No. ${x.seed} seed${x.bye ? ' · first-round bye' : ''}` : x && x.rank ? `No. ${x.rank}, outside the 12-team field` : 'not in this Top 25'}</span>`; };
+  return `${v.mock ? '<div class="notice br-mock">TEST DATA: mocked CFP payload (local testing only)</div>' : ''}
+    <div class="card br-head"><div class="gk-src"><span class="gk-tag grok">${esc(v.label)}</span>${v.id === 'cfp' ? '<span class="gk-tag live">Committee ranking</span>' : ''}</div>
+      <p class="br-basis">${esc(v.basis)}</p>
+      <div class="br-spots">${chip('Utah')}${chip('BYU')}</div>
+      <p class="faint small">Source: ${esc(v.source.name)}${v.source.week ? ` · week ${esc(v.source.week)}` : ''}${v.source.date ? ` · ${esc(when(v.source.date))}` : ''}</p></div>
+    ${brGrid(b)}
+    <h2>The 12-team field</h2><div class="card br-list">${b.seeds.map((s) => `<div class="br-row ${myTeamIds().has(s.id) ? 'mine' : ''} ${SPOT_IDS.has(s.id) ? 'spot' : ''}" style="--tc:#${esc(s.color || '888')}"><span class="sd">${s.seed}</span><img src="${esc(logo(s))}" alt="" loading="lazy" /><span class="n"><b>${esc(s.short)}</b> <small>${s.record ? `${esc(s.record)} · ` : ''}No. ${s.rank} · ${esc(s.conference || '')}</small><small class="ty ${esc(s.type)}">${esc(BR_TYPE[s.type](s))}</small></span>${s.bye ? '<span class="tg bye">Bye</span>' : ''}</div>`).join('')}</div>
+    ${b.out.length ? `<h2>First teams out</h2><div class="card br-list">${b.out.map((o) => `<div class="br-row out ${SPOT_IDS.has(o.id) ? 'spot' : ''}" style="--tc:#${esc(o.color || '888')}"><span class="sd">·</span><img src="${esc(logo(o))}" alt="" loading="lazy" /><span class="n"><b>${esc(o.short)}</b> <small>${o.record ? `${esc(o.record)} · ` : ''}No. ${o.rank}</small><small>${esc(o.reason)}</small></span></div>`).join('')}</div>` : ''}
+    ${b.missingChampions && b.missingChampions.length ? `<p class="notice">No ranked team in: ${b.missingChampions.map(esc).join(', ')}, so that conference’s automatic bid isn’t shown.</p>` : ''}
+    ${v.outlook ? `<div class="card nt br-outlook"><h3>JT’s own CFP outlook</h3><p>${esc(v.outlook)}</p><p class="gk-note">JT’s written outlook, copied as published. The bracket above is computed from the JT ranking with the current CFP rules, so the two can differ.</p></div>` : ''}
+    ${brFootnote(v, d)}`;
+}
+async function viewBracket(quick) {
+  const m = (location.hash || '').match(/^#\/rankings\/bracket\/?(jt|ap|cfp)?/); if (m && m[1]) brView = m[1];
+  setBar('Playoff Bracket', { back: '#/rankings' });
+  if (!quick) paint(LT('Playoff Bracket', SK.sub()) + SK.rows(8));
+  let d; try { d = await api('/api/brackets', 5 * 60e3); } catch (e) { view.innerHTML = LT('Playoff Bracket') + errBox(e); return; }
+  const tabs = [['jt', 'My Bracket'], ['ap', 'AP Projected'], ['cfp', 'Official CFP']];
+  const v = d[brView] || d.jt;
+  view.innerHTML = LT('Playoff Bracket', `12-team College Football Playoff · ${esc(v.title)}`) +
+    `<div class="toolbar sticky"><div class="seg br-seg" role="tablist">${tabs.map(([k, n]) => `<button role="tab" aria-selected="${k === v.id}" data-bv="${k}" class="${k === v.id ? 'on' : ''}">${n}${k === 'cfp' && d.cfp.status === 'pending' ? ' <i class="br-dot" aria-label="not released"></i>' : ''}</button>`).join('')}</div></div>
+    ${brBody(v, d)}
+    <p class="faint small">* Projected champion. Generated ${esc(new Date(d.generatedAt).toLocaleString())}. Rankings come from the JT Top 25 and ESPN’s rankings feed; nothing is stored or estimated.</p>`;
+  view.querySelectorAll('[data-bv]').forEach((b) => (b.onclick = () => { tick(); brView = b.dataset.bv; history.replaceState(null, '', `#/rankings/bracket/${brView}`); viewBracket(true); }));
 }
 // Short description + methodology. Only what is actually known about the automation: the 60/40 hybrid weights, the
 // predictive definition and "no manual overrides" come from the weekly run's own method field; schedule, comparisons and
@@ -678,9 +741,9 @@ async function viewGrokHow(quick) {
       <li><b>No manual overrides.</b> The order is the score, with no brand bias.</li></ul>`)}
     ${sec('When it updates', '<p>A new ranking is built every Sunday morning (8:00 AM Mountain), after the weekend’s results. Earlier weeks stay available from the week picker.</p>')}
     ${sec('How it’s compared', '<p>Every JT spot is shown next to the AP poll, the Coaches poll and the College Football Playoff rankings. Those numbers are pulled live from ESPN and never estimated. CFP numbers appear once the committee releases its rankings.</p>')}
-    ${sec('The projected bracket', `<p>The Bracket tab is computed in the app from the JT order using the 12-team 5+7 format:</p><ul class="gk-how-list">
-      <li>The 5 highest-ranked conference champions get automatic bids, and the next 7 highest-ranked teams are at-large.</li>
-      <li>The top 4 conference champions get seeds 1–4 and first-round byes.</li>
+    ${sec('The projected bracket', `<p>The Bracket tab applies the current 12-team CFP format to the JT order:</p><ul class="gk-how-list">
+      <li>Automatic bids: the ACC, Big 12, Big Ten and SEC champions, the highest-ranked Group of 6 team, and Notre Dame if it is in the top 12. The next highest-ranked teams fill out the 12.</li>
+      <li>Seeds follow the ranking order, and the top 4 seeds get first-round byes.</li>
       <li>Seeds 5–12 play in the first round at the higher seed’s campus.</li>
       <li>Each conference’s projected champion is its highest JT-ranked team.</li></ul>`)}
     ${m.note ? sec('This week’s method note', `<p class="muted">${esc(m.note)}</p>`) : ''}
@@ -701,7 +764,6 @@ async function viewGrok(quick) {
       ${g.justMissed?.length ? `<h2>Just missed</h2><p class="muted small">${g.justMissed.map((j) => j.info ? `<a href="#/team/${esc(j.info.id)}">${esc(j.info.short)}</a>` : esc(j.team)).join(' · ')}</p>` : ''}
       ${g.droppedOut?.length ? `<h2>Dropped out</h2><p class="muted small">${g.droppedOut.map((x) => esc(x.team || x)).join(' · ')}</p>` : ''}`;
   } else if (grokTab === 'chart') body = grokChart(g, lp);
-  else if (grokTab === 'bracket') body = g.bracket ? grokBracket(g.bracket) : '<div class="card empty">No bracket for this week.</div>';
   else {
     const n = g.notes || {};
     const box = (t, v) => `<div class="card nt"><h3>${t}</h3><p class="${v ? '' : 'na'}">${v ? esc(v) : 'Not included in this week’s JT output.'}</p></div>`;
@@ -718,7 +780,7 @@ async function viewGrok(quick) {
       ${hist.length > 1 ? `<select id="gdate" class="btn" aria-label="Week">${hist.map((d) => `<option value="${d}" ${d === g.date ? 'selected' : ''}>${d}</option>`).join('')}</select>` : ''}</div>
     ${body}
     <p class="faint small">JT order from your weekly automation (data/grok-top25). AP, Coaches and CFP numbers are pulled live from ESPN and never estimated.</p>`;
-  view.querySelectorAll('[data-gt]').forEach((b) => (b.onclick = () => { tick(); grokTab = b.dataset.gt; viewGrok(true); }));
+  view.querySelectorAll('[data-gt]').forEach((b) => (b.onclick = () => { tick(); if (b.dataset.gt === 'bracket') { location.hash = '#/rankings/bracket/jt'; return; } grokTab = b.dataset.gt; viewGrok(true); }));
   const sel = $('#gdate'); if (sel) sel.onchange = () => { grokDate = sel.value === hist[0] ? '' : sel.value; viewGrok(true); };
 }
 
@@ -1197,7 +1259,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=21" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=22" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>

@@ -100,6 +100,26 @@ const top25 = wrap(async (req) => {
   return d;
 });
 const top25Hist = (req, res) => res.json({ dates: GROK.history() });
+// ---------- 12-team CFP brackets: JT Top 25, AP Top 25, official CFP rankings (see server/brackets.js) ----------
+const CORE = 'https://sports.core.api.espn.com/v2/sports/football/leagues/college-football';
+const BRACKETS = require('./brackets')({
+  getTeams: () => SP.getTeams('cfb'),
+  getJt: () => GROK.get(''),
+  getRawRankings: () => cached('rankings:raw', 5 * 60e3, () => fetchJSON(`${ESPN}/rankings`)),
+  // Fallback if the site feed lags: ESPN core API ranking for this week (CFP committee rankings are type "cfp").
+  getCoreCfp: (raw) => cached('rankings:core-cfp', 10 * 60e3, async () => {
+    const y = raw.latestSeason && raw.latestSeason.year; const w = raw.latestWeek && raw.latestWeek.number; if (!y || !w) return null;
+    const list = await fetchJSON(`${CORE}/seasons/${y}/types/2/weeks/${w}/rankings?lang=en&region=us`);
+    for (const it of list.items || []) {
+      const d = await fetchJSON(String(it.$ref).replace(/^http:/, 'https:')).catch(() => null);
+      if (!d || d.type !== 'cfp' || !(d.ranks || []).length) continue;
+      return { type: 'cfp', name: d.name, headline: d.headline, date: d.date, occurrence: d.occurrence,
+        ranks: d.ranks.map((x) => ({ current: x.current, recordSummary: x.record && x.record.summary, team: { id: String((String(x.team && x.team.$ref).match(/teams\/(\d+)/) || [])[1] || '') } })) };
+    }
+    return null;
+  }),
+});
+app.get('/api/brackets', wrap(() => cached('brackets', 5 * 60e3, () => BRACKETS.compute())));
 app.get(['/api/grok-top25', '/api/jt-top25'], top25);
 app.get(['/api/grok-top25/history', '/api/jt-top25/history'], top25Hist);
 app.get('/api/players/:sport', wrap((req) => { const s = sportOf(req); if (!['golf', 'tennis'].includes(s) && kindOf(s) !== 'event') throw bad('players: golf, tennis or event sports'); return SP.players(s); }));

@@ -1,6 +1,6 @@
 // Grok Top 25: the user's weekly Grok ranking, stored as JSON in data/grok-top25/ (see README for the schema).
 // Enriches each run with ESPN team data (logo, colors, conference), live AP / Coaches / CFP ranks from ESPN,
-// and a projected 12-team CFP bracket built from Grok's order.
+// Enriches each run with ESPN team data. The playoff bracket is built separately in server/brackets.js.
 const fs = require('fs');
 const path = require('path');
 
@@ -23,34 +23,7 @@ function matcher(teams, run) {
   return (name) => resolve(name, ids[name] && ids[name].espnId);
 }
 
-// Real 12-team CFP format: the five highest-ranked conference champions get automatic bids, the next seven highest-ranked
-// teams are at-large. The four highest-ranked conference champions get seeds 1-4 (first-round byes); the other eight are
-// seeded 5-12 by rank, and in the first round the higher seed hosts (5v12, 6v11, 7v10, 8v9).
-function bracket(rows) {
-  const champs = [];
-  const seenConf = new Set();
-  for (const r of rows) {
-    const c = r.conference;
-    if (!c || /independent/i.test(c) || seenConf.has(c)) continue;
-    seenConf.add(c); champs.push(r);
-  }
-  const auto = champs.slice(0, 5);
-  const field = [...auto];
-  for (const r of rows) { if (field.length >= 12) break; if (!field.includes(r)) field.push(r); }
-  const byes = auto.slice().sort((a, b) => a.rank - b.rank).slice(0, 4);
-  const rest = field.filter((r) => !byes.includes(r)).sort((a, b) => a.rank - b.rank);
-  const seeds = [...byes, ...rest].map((r, i) => ({ seed: i + 1, rank: r.rank, team: r.team, info: r.info, conference: r.conference, champ: auto.includes(r), bye: i < 4, autoBid: auto.includes(r) }));
-  const S = (n) => seeds[n - 1];
-  const first = [[5, 12], [8, 9], [6, 11], [7, 10]].map(([h, a]) => ({ id: `R1-${h}v${a}`, home: S(h), away: S(a), site: `Campus of No. ${h} seed` }));
-  const quarters = [[1, '8v9'], [4, '5v12'], [2, '7v10'], [3, '6v11']].map(([s, m]) => ({ id: `QF-${s}`, top: S(s), from: `R1-${m}` }));
-  return {
-    projected: true,
-    champions: champs.map((r) => ({ conference: r.conference, team: r.team, rank: r.rank, info: r.info, autoBid: auto.includes(r) })),
-    seeds, firstRound: first, quarterfinals: quarters,
-    semifinals: [{ id: 'SF-1', from: ['QF-1', 'QF-4'] }, { id: 'SF-2', from: ['QF-2', 'QF-3'] }],
-    note: 'Projected from JT’s order: each conference’s highest JT-ranked team is its projected champion. Only teams in the JT Top 25 are considered.',
-  };
-}
+// (The projected 12-team bracket now lives in server/brackets.js and is served by /api/brackets.)
 
 module.exports = function makeGrok({ getTeams, getPolls }) {
   async function get(date) {
@@ -73,10 +46,8 @@ module.exports = function makeGrok({ getTeams, getPolls }) {
       justMissed: (run.justMissed || []).map((n) => ({ team: n, info: info(find(n)) })),
       apTop5: (run.apTop5 || []).map((x) => ({ ...x, info: info(find(x.team)) })),
       livePolls: { source: 'ESPN rankings API (live)', ap: meta(ap), coaches: meta(coaches), cfp: meta(cfp), cfpReleased: !!cfp },
-      bracket: bracket(rows),
       history: history(),
     };
   }
   return { get, history };
 };
-module.exports.bracket = bracket;
