@@ -1,0 +1,131 @@
+{
+ "sport": "wnba",
+ "date": "2026-10-25",
+ "kind": "jt-power",
+ "season": "2026",
+ "gamesMax": 44,
+ "ranks": {
+  "wnba:20": 1,
+  "wnba:129689": 2,
+  "wnba:8": 3,
+  "wnba:17": 4,
+  "wnba:5": 5,
+  "wnba:3": 6,
+  "wnba:16": 7,
+  "wnba:9": 8,
+  "wnba:11": 9,
+  "wnba:19": 10,
+  "wnba:6": 11,
+  "wnba:132052": 12,
+  "wnba:14": 13,
+  "wnba:18": 14,
+  "wnba:131935": 15
+ },
+ "order": [
+  {
+   "rank": 1,
+   "id": "wnba:20",
+   "team": "Atlanta Dream",
+   "record": "30-14",
+   "score": 73.57
+  },
+  {
+   "rank": 2,
+   "id": "wnba:129689",
+   "team": "Golden State Valkyries",
+   "record": "32-12",
+   "score": 73.35
+  },
+  {
+   "rank": 3,
+   "id": "wnba:8",
+   "team": "Minnesota Lynx",
+   "record": "33-11",
+   "score": 73.31
+  },
+  {
+   "rank": 4,
+   "id": "wnba:17",
+   "team": "Las Vegas Aces",
+   "record": "31-13",
+   "score": 71.47
+  },
+  {
+   "rank": 5,
+   "id": "wnba:5",
+   "team": "Indiana Fever",
+   "record": "28-16",
+   "score": 65.76
+  },
+  {
+   "rank": 6,
+   "id": "wnba:3",
+   "team": "Dallas Wings",
+   "record": "27-17",
+   "score": 63.87
+  },
+  {
+   "rank": 7,
+   "id": "wnba:16",
+   "team": "Washington Mystics",
+   "record": "28-16",
+   "score": 61.71
+  },
+  {
+   "rank": 8,
+   "id": "wnba:9",
+   "team": "New York Liberty",
+   "record": "26-18",
+   "score": 60.11
+  },
+  {
+   "rank": 9,
+   "id": "wnba:11",
+   "team": "Phoenix Mercury",
+   "record": "16-28",
+   "score": 37.78
+  },
+  {
+   "rank": 10,
+   "id": "wnba:19",
+   "team": "Chicago Sky",
+   "record": "16-28",
+   "score": 36.77
+  },
+  {
+   "rank": 11,
+   "id": "wnba:6",
+   "team": "Los Angeles Sparks",
+   "record": "16-28",
+   "score": 36.17
+  },
+  {
+   "rank": 12,
+   "id": "wnba:132052",
+   "team": "Portland Fire",
+   "record": "17-27",
+   "score": 35.12
+  },
+  {
+   "rank": 13,
+   "id": "wnba:14",
+   "team": "Seattle Storm",
+   "record": "8-36",
+   "score": 21.86
+  },
+  {
+   "rank": 14,
+   "id": "wnba:18",
+   "team": "Connecticut Sun",
+   "record": "11-33",
+   "score": 21.08
+  },
+  {
+   "rank": 15,
+   "id": "wnba:131935",
+   "team": "Toronto Tempo",
+   "record": "11-33",
+   "score": 20.6
+  }
+ ]
+}

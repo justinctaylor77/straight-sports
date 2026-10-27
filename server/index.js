@@ -119,6 +119,12 @@ const BRACKETS = require('./brackets')({
     return null;
   }),
 });
+// Rankings & Brackets for every sport (server/feeds.js): JT top lists + championship / playoff views
+const FEEDS = require('./feeds')({ cached, fetchJSON, SP });
+const feedSport = (req) => { const s = String(req.params.sport || ''); if (!FEEDS.ALL.includes(s)) throw bad('unknown sport'); return s; };
+app.get('/api/lists', wrap(() => FEEDS.index()));
+app.get('/api/lists/:sport', wrap((req) => FEEDS.list(feedSport(req))));
+app.get('/api/playoffs/:sport', wrap((req) => FEEDS.playoffs(feedSport(req))));
 app.get('/api/brackets', wrap(() => cached('brackets', 5 * 60e3, () => BRACKETS.compute())));
 app.get(['/api/grok-top25', '/api/jt-top25'], top25);
 app.get(['/api/grok-top25/history', '/api/jt-top25/history'], top25Hist);

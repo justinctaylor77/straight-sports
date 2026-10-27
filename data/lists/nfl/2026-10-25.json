@@ -1,0 +1,267 @@
+{
+ "sport": "nfl",
+ "date": "2026-10-25",
+ "kind": "jt-power",
+ "season": "2026",
+ "gamesMax": 7,
+ "ranks": {
+  "nfl:12": 1,
+  "nfl:16": 2,
+  "nfl:25": 3,
+  "nfl:2": 4,
+  "nfl:3": 5,
+  "nfl:30": 6,
+  "nfl:4": 7,
+  "nfl:23": 8,
+  "nfl:5": 9,
+  "nfl:9": 10,
+  "nfl:19": 11,
+  "nfl:8": 12,
+  "nfl:7": 13,
+  "nfl:17": 14,
+  "nfl:33": 15,
+  "nfl:26": 16,
+  "nfl:13": 17,
+  "nfl:29": 18,
+  "nfl:1": 19,
+  "nfl:14": 20,
+  "nfl:6": 21,
+  "nfl:27": 22,
+  "nfl:34": 23,
+  "nfl:21": 24,
+  "nfl:20": 25,
+  "nfl:11": 26,
+  "nfl:18": 27,
+  "nfl:22": 28,
+  "nfl:28": 29,
+  "nfl:15": 30,
+  "nfl:10": 31,
+  "nfl:24": 32
+ },
+ "order": [
+  {
+   "rank": 1,
+   "id": "nfl:12",
+   "team": "Kansas City Chiefs",
+   "record": "5-0",
+   "score": 77.44
+  },
+  {
+   "rank": 2,
+   "id": "nfl:16",
+   "team": "Minnesota Vikings",
+   "record": "6-0",
+   "score": 77.33
+  },
+  {
+   "rank": 3,
+   "id": "nfl:25",
+   "team": "San Francisco 49ers",
+   "record": "6-1",
+   "score": 72.05
+  },
+  {
+   "rank": 4,
+   "id": "nfl:2",
+   "team": "Buffalo Bills",
+   "record": "5-1",
+   "score": 67.33
+  },
+  {
+   "rank": 5,
+   "id": "nfl:3",
+   "team": "Chicago Bears",
+   "record": "5-2",
+   "score": 63.45
+  },
+  {
+   "rank": 6,
+   "id": "nfl:30",
+   "team": "Jacksonville Jaguars",
+   "record": "4-2",
+   "score": 62.78
+  },
+  {
+   "rank": 7,
+   "id": "nfl:4",
+   "team": "Cincinnati Bengals",
+   "record": "4-2",
+   "score": 61.78
+  },
+  {
+   "rank": 8,
+   "id": "nfl:23",
+   "team": "Pittsburgh Steelers",
+   "record": "5-2",
+   "score": 61.25
+  },
+  {
+   "rank": 9,
+   "id": "nfl:5",
+   "team": "Cleveland Browns",
+   "record": "5-2",
+   "score": 58.45
+  },
+  {
+   "rank": 10,
+   "id": "nfl:9",
+   "team": "Green Bay Packers",
+   "record": "4-2",
+   "score": 57.44
+  },
+  {
+   "rank": 11,
+   "id": "nfl:19",
+   "team": "New York Giants",
+   "record": "4-2-1",
+   "score": 56.7
+  },
+  {
+   "rank": 12,
+   "id": "nfl:8",
+   "team": "Detroit Lions",
+   "record": "3-2",
+   "score": 56.06
+  },
+  {
+   "rank": 13,
+   "id": "nfl:7",
+   "team": "Denver Broncos",
+   "record": "4-2",
+   "score": 56
+  },
+  {
+   "rank": 14,
+   "id": "nfl:17",
+   "team": "New England Patriots",
+   "record": "4-3",
+   "score": 54.95
+  },
+  {
+   "rank": 15,
+   "id": "nfl:33",
+   "team": "Baltimore Ravens",
+   "record": "4-3",
+   "score": 53.45
+  },
+  {
+   "rank": 16,
+   "id": "nfl:26",
+   "team": "Seattle Seahawks",
+   "record": "3-3",
+   "score": 52.89
+  },
+  {
+   "rank": 17,
+   "id": "nfl:13",
+   "team": "Las Vegas Raiders",
+   "record": "3-3",
+   "score": 50
+  },
+  {
+   "rank": 18,
+   "id": "nfl:29",
+   "team": "Carolina Panthers",
+   "record": "3-3",
+   "score": 49.22
+  },
+  {
+   "rank": 19,
+   "id": "nfl:1",
+   "team": "Atlanta Falcons",
+   "record": "3-4",
+   "score": 46.55
+  },
+  {
+   "rank": 20,
+   "id": "nfl:14",
+   "team": "Los Angeles Rams",
+   "record": "2-4",
+   "score": 42.44
+  },
+  {
+   "rank": 21,
+   "id": "nfl:6",
+   "team": "Dallas Cowboys",
+   "record": "2-4",
+   "score": 41.89
+  },
+  {
+   "rank": 22,
+   "id": "nfl:27",
+   "team": "Tampa Bay Buccaneers",
+   "record": "2-5",
+   "score": 41.35
+  },
+  {
+   "rank": 23,
+   "id": "nfl:34",
+   "team": "Houston Texans",
+   "record": "2-5",
+   "score": 39.75
+  },
+  {
+   "rank": 24,
+   "id": "nfl:21",
+   "team": "Philadelphia Eagles",
+   "record": "2-4",
+   "score": 39.33
+  },
+  {
+   "rank": 25,
+   "id": "nfl:20",
+   "team": "New York Jets",
+   "record": "2-5",
+   "score": 38.95
+  },
+  {
+   "rank": 26,
+   "id": "nfl:11",
+   "team": "Indianapolis Colts",
+   "record": "2-5",
+   "score": 37.65
+  },
+  {
+   "rank": 27,
+   "id": "nfl:18",
+   "team": "New Orleans Saints",
+   "record": "2-5",
+   "score": 37.05
+  },
+  {
+   "rank": 28,
+   "id": "nfl:22",
+   "team": "Arizona Cardinals",
+   "record": "2-4",
+   "score": 37
+  },
+  {
+   "rank": 29,
+   "id": "nfl:28",
+   "team": "Washington Commanders",
+   "record": "1-4-1",
+   "score": 34.72
+  },
+  {
+   "rank": 30,
+   "id": "nfl:15",
+   "team": "Miami Dolphins",
+   "record": "1-5",
+   "score": 29
+  },
+  {
+   "rank": 31,
+   "id": "nfl:10",
+   "team": "Tennessee Titans",
+   "record": "1-6",
+   "score": 28.95
+  },
+  {
+   "rank": 32,
+   "id": "nfl:24",
+   "team": "Los Angeles Chargers",
+   "record": "0-6",
+   "score": 21.56
+  }
+ ]
+}

@@ -6,6 +6,7 @@ import * as BD from './backdrop.js';
 import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=19';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
+import { createLists, FEED as LIST_FEED } from './lists.js?v=24';
 
 // ---------------- state ----------------
 let S = loadSettings();
@@ -242,6 +243,11 @@ async function newsColumn(html, news, title = 'Top stories for you') {
 }
 
 async function viewHome() {
+  await viewHomeBase();
+  if (view.querySelector(".lb-promo")) return;
+  const lt = view.querySelector('.lt'); if (lt) lt.insertAdjacentHTML('afterend', LISTS.hubPromo());
+}
+async function viewHomeBase() {
   setBar('Home');
   const sp = S.sport;
   const today = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
@@ -562,13 +568,22 @@ function genStandTable(g, cols, withDiv) {
   return `<div class="card panel st-gen"><div class="st-row hd" style="--nc:${cols.length}"><span></span><span class="nm">${esc(g.name)}</span>${cols.map((c) => `<span class="n">${esc(c)}</span>`).join('')}</div>
     ${g.rows.map((r) => `<a class="st-row ${my.has(r.team.id) ? 'mine' : ''}" style="--nc:${cols.length}" href="#/team/${esc(r.team.id)}"><img src="${esc(logo(r.team))}" alt="" loading="lazy" /><span class="nm"><b>${esc(r.team.short || r.team.location)}</b>${withDiv && r.div ? ` <span class="faint small">${esc(r.div)}</span>` : ''}</span>${(r.cells || []).map((c) => `<span class="n">${esc(c)}</span>`).join('')}</a>`).join('')}</div>`;
 }
+const LISTS = createLists({ view, api, mem, setBar, LT, paint, SK, tick, S, SPORTS, logo, myTeamIds, openCfb: (h) => { S.sport = 'cfb'; save(); syncSportUI(); location.hash = h; } });
+// v1.2.0: every sport's Rankings tab gets a link to its top list + bracket; the new pages live under #/rankings/{lists|list|playoffs}
 async function viewRankings(quick) {
+  if (LISTS.show(quick)) return;
+  await viewRankingsBase(quick);
+  if (!/^#\/rankings\/?$/.test(location.hash || '')) return;
+  const lt = view.querySelector('.lt'); if (!lt || view.querySelector('.lb-promo')) return;
+  lt.insertAdjacentHTML('afterend', LISTS.promo(S.sport) + (LIST_FEED.includes(S.sport) ? LISTS.hubPromo().replace('class="card gk-promo lb-promo"', 'class="card gk-promo lb-promo lb-promo2"') : ''));
+}
+async function viewRankingsBase(quick) {
   const sp = S.sport; const lbl = SPI().tab4;
   if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/bracket')) return viewBracket(quick);
   if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/grok/how')) return viewGrokHow(quick);
   if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/grok')) return viewGrok(quick);
   setBar(lbl);
-  if (newsSport(sp)) { view.innerHTML = LT(lbl) + `<div class="card empty">ESPN’s free feeds have no ${esc(SPI().name)} rankings. <a href="#/news">Read the news ›</a></div>`; return; }
+  if (newsSport(sp)) { view.innerHTML = LT(lbl) + `<div class="card empty">ESPN’s free feeds have no ${esc(SPI().name)} rankings.${LIST_FEED.includes(sp) ? ' The top list and bracket below come from NCAA.com and other public sources.' : ''} <a href="#/news">Read the news ›</a></div>`; return; }
   if (!quick) paint(LT(lbl, SK.sub()) + `<div class="toolbar sticky"><span class="sk w40 btnlike"></span></div>${SK.rows(12)}`);
   let d; try { d = await api(`/api/rankings?sport=${sp}`, 10 * 60e3); } catch (e) { view.innerHTML = LT(lbl) + errBox(e); return; }
   const mf = muteFilter();
@@ -1276,7 +1291,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=23" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=24" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>

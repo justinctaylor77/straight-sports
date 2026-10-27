@@ -1,0 +1,251 @@
+{
+ "sport": "mlb",
+ "date": "2026-10-25",
+ "kind": "jt-power",
+ "season": "2026",
+ "gamesMax": 162,
+ "ranks": {
+  "mlb:8": 1,
+  "mlb:19": 2,
+  "mlb:10": 3,
+  "mlb:16": 4,
+  "mlb:15": 5,
+  "mlb:30": 6,
+  "mlb:25": 7,
+  "mlb:4": 8,
+  "mlb:2": 9,
+  "mlb:5": 10,
+  "mlb:23": 11,
+  "mlb:29": 12,
+  "mlb:22": 13,
+  "mlb:6": 14,
+  "mlb:20": 15,
+  "mlb:28": 16,
+  "mlb:1": 17,
+  "mlb:18": 18,
+  "mlb:9": 19,
+  "mlb:12": 20,
+  "mlb:21": 21,
+  "mlb:13": 22,
+  "mlb:14": 23,
+  "mlb:24": 24,
+  "mlb:17": 25,
+  "mlb:3": 26,
+  "mlb:26": 27,
+  "mlb:7": 28,
+  "mlb:11": 29,
+  "mlb:27": 30
+ },
+ "order": [
+  {
+   "rank": 1,
+   "id": "mlb:8",
+   "team": "Milwaukee Brewers",
+   "record": "103-59",
+   "score": 72.06
+  },
+  {
+   "rank": 2,
+   "id": "mlb:19",
+   "team": "Los Angeles Dodgers",
+   "record": "100-62",
+   "score": 70.47
+  },
+  {
+   "rank": 3,
+   "id": "mlb:10",
+   "team": "New York Yankees",
+   "record": "93-68",
+   "score": 61.39
+  },
+  {
+   "rank": 4,
+   "id": "mlb:16",
+   "team": "Chicago Cubs",
+   "record": "89-73",
+   "score": 60.56
+  },
+  {
+   "rank": 5,
+   "id": "mlb:15",
+   "team": "Atlanta Braves",
+   "record": "94-68",
+   "score": 60.23
+  },
+  {
+   "rank": 6,
+   "id": "mlb:30",
+   "team": "Tampa Bay Rays",
+   "record": "98-64",
+   "score": 59.66
+  },
+  {
+   "rank": 7,
+   "id": "mlb:25",
+   "team": "San Diego Padres",
+   "record": "91-71",
+   "score": 58.89
+  },
+  {
+   "rank": 8,
+   "id": "mlb:4",
+   "team": "Chicago White Sox",
+   "record": "84-78",
+   "score": 56.51
+  },
+  {
+   "rank": 9,
+   "id": "mlb:2",
+   "team": "Boston Red Sox",
+   "record": "87-75",
+   "score": 56.1
+  },
+  {
+   "rank": 10,
+   "id": "mlb:5",
+   "team": "Cleveland Guardians",
+   "record": "85-77",
+   "score": 55.5
+  },
+  {
+   "rank": 11,
+   "id": "mlb:23",
+   "team": "Pittsburgh Pirates",
+   "record": "82-80",
+   "score": 54.36
+  },
+  {
+   "rank": 12,
+   "id": "mlb:29",
+   "team": "Arizona Diamondbacks",
+   "record": "86-76",
+   "score": 53.17
+  },
+  {
+   "rank": 13,
+   "id": "mlb:22",
+   "team": "Philadelphia Phillies",
+   "record": "88-74",
+   "score": 51.57
+  },
+  {
+   "rank": 14,
+   "id": "mlb:6",
+   "team": "Detroit Tigers",
+   "record": "76-86",
+   "score": 51.35
+  },
+  {
+   "rank": 15,
+   "id": "mlb:20",
+   "team": "Washington Nationals",
+   "record": "77-85",
+   "score": 50.46
+  },
+  {
+   "rank": 16,
+   "id": "mlb:28",
+   "team": "Miami Marlins",
+   "record": "80-82",
+   "score": 49.89
+  },
+  {
+   "rank": 17,
+   "id": "mlb:1",
+   "team": "Baltimore Orioles",
+   "record": "79-82",
+   "score": 49.63
+  },
+  {
+   "rank": 18,
+   "id": "mlb:18",
+   "team": "Houston Astros",
+   "record": "81-81",
+   "score": 48.19
+  },
+  {
+   "rank": 19,
+   "id": "mlb:9",
+   "team": "Minnesota Twins",
+   "record": "77-85",
+   "score": 46.84
+  },
+  {
+   "rank": 20,
+   "id": "mlb:12",
+   "team": "Seattle Mariners",
+   "record": "76-86",
+   "score": 46.56
+  },
+  {
+   "rank": 21,
+   "id": "mlb:21",
+   "team": "New York Mets",
+   "record": "74-88",
+   "score": 46.21
+  },
+  {
+   "rank": 22,
+   "id": "mlb:13",
+   "team": "Texas Rangers",
+   "record": "80-82",
+   "score": 45.87
+  },
+  {
+   "rank": 23,
+   "id": "mlb:14",
+   "team": "Toronto Blue Jays",
+   "record": "79-83",
+   "score": 45.59
+  },
+  {
+   "rank": 24,
+   "id": "mlb:24",
+   "team": "St. Louis Cardinals",
+   "record": "77-85",
+   "score": 43.48
+  },
+  {
+   "rank": 25,
+   "id": "mlb:17",
+   "team": "Cincinnati Reds",
+   "record": "75-87",
+   "score": 38.02
+  },
+  {
+   "rank": 26,
+   "id": "mlb:3",
+   "team": "Los Angeles Angels",
+   "record": "62-100",
+   "score": 37.9
+  },
+  {
+   "rank": 27,
+   "id": "mlb:26",
+   "team": "San Francisco Giants",
+   "record": "65-97",
+   "score": 36.59
+  },
+  {
+   "rank": 28,
+   "id": "mlb:7",
+   "team": "Kansas City Royals",
+   "record": "69-93",
+   "score": 36.08
+  },
+  {
+   "rank": 29,
+   "id": "mlb:11",
+   "team": "Athletics",
+   "record": "64-98",
+   "score": 29.25
+  },
+  {
+   "rank": 30,
+   "id": "mlb:27",
+   "team": "Colorado Rockies",
+   "record": "58-104",
+   "score": 28.91
+  }
+ ]
+}

@@ -80,6 +80,17 @@ Rules implemented (2026-27 CFP, per collegefootballplayoff.com): ACC, Big 12, Bi
 
 Test with a mocked CFP payload: `BRACKETS_MOCK_CFP=tests/fixtures/mock-cfp.json PORT=8798 node server/index.js` (shows a TEST DATA banner; never set this in production).
 
+## Rankings & Brackets (v1.2.0 "Bracket Buzzer")
+
+Hub: `#/rankings/lists`. Per sport: `#/rankings/list/<sport>` (Top list) and `#/rankings/playoffs/<sport>` (bracket / championship). Sports: `nfl nba wnba mcbb wcbb mlb cbase softball gymnastics`. API: `GET /api/lists`, `/api/lists/:sport`, `/api/playoffs/:sport` (unknown sport → 400).
+
+- **NFL / NBA / WNBA / MLB lists** are "JT Power Rankings" from ESPN standings: `score = 100 × (0.50·A + 0.35·B + 0.15·C)` where A = shrunk win %, B = shrunk point/run differential per game, C = last-10 form (see `server/rank-lists.js`; per-league `k` and scale are listed there and in the in-app method card). Snapshots are written to `data/lists/<sport>/YYYY-MM-DD.json` and `latest.json`; movement compares with the previous snapshot.
+- **College lists** show the official poll (AP/Coaches, D1Baseball, ESPN.com/USA Softball, Road to Nationals) until a JT list exists: drop `data/jt-lists/<sport>/latest.json` (`{title,date,source,ranks:[{rank,team,reason}]}`) to replace it.
+- **Brackets:** pro playoffs are built from ESPN (`server/postseason.js`); NCAA tournaments and the college baseball postseason come from NCAA.com (`server/ncaa.js`); gymnastics has no bracket and shows the championship view.
+- States: `preseason`, `early`, `ready`, `final`, `offseason`, `loading`, `unavailable` (lists); `complete`, `live`, `projected`, `preseason`, `none` (brackets).
+- Env: `LISTS_DATA_DIR` (snapshot dir), `LISTS_NO_WRITE=1` (don't write snapshots), `JT_LISTS_DIR`, `NCAA_API_BASE` (default `https://ncaa-api.henrygd.me`), `RTN_API_BASE` (Road to Nationals).
+- Tests: `npm test` runs all 8 suites; `scripts/qa-v18.sh` runs the browser QA (390px) and writes `qa-results.json` + `screenshots/v18/`; `node scripts/qa-report-v18.js <commit>` writes `QA-REPORT-bracket-buzzer.md`.
+
 ## Tests and screenshots
 
 ```bash

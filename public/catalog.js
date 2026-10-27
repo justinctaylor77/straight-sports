@@ -47,6 +47,10 @@ export const CATALOG = {
     own: '\\b(Liga MX|soccer|futbol)\\b', news: { ap: 'Liga MX', must: '\\b(Liga MX)\\b' } },
   cbase:  { group: 'Baseball', name: 'College Baseball', short: 'CBASE', emoji: '⚾', kind: 'team', family: 'baseball', path: 'baseball/college-baseball', espn: 'college-baseball', daily: true, tab4: 'Standings', what: 'teams', accent: '#f97316', blurb: 'D-I scores and box scores (spring)',
     own: '\\b(baseball|College World Series)\\b', news: { ap: 'college baseball', must: '\\b(baseball|College World Series)\\b' } },
+  softball: { group: 'Baseball', name: 'College Softball', short: 'Softball', emoji: '🥎', kind: 'news', family: 'baseball', tab4: 'News', what: 'teams', accent: '#fb923c', blurb: 'Headlines, poll and Women’s College World Series (no free scores feed)',
+    own: '\\b(softball|WCWS|Women.s College World Series)\\b', news: { ap: 'college softball', must: '\\b(softball|WCWS|Women.s College World Series)\\b' } },
+  gymnastics: { group: 'Gymnastics', name: 'College Gymnastics', short: 'Gym', emoji: '🤸', kind: 'news', family: 'gymnastics', tab4: 'News', what: 'teams', accent: '#c084fc', blurb: 'Headlines, rankings and NCAA championship results (no free scores feed)',
+    own: '\\b(gymnastics|gymnast|NCAA gymnastics)\\b', news: { guardian: 'sport/gymnastics', ap: 'college gymnastics', must: '\\b(gymnastics|gymnast)\\b' } },
   ufc:    { group: 'Combat', name: 'UFC / MMA', short: 'UFC', emoji: '🥊', kind: 'event', family: 'mma', path: 'mma/ufc', espn: 'mma', tab4: 'Schedule', what: 'fighters', accent: '#ef4444', blurb: 'Fight cards and results',
     own: '\\b(UFC|MMA|mixed martial arts)\\b', news: { cbs: 'mma', yahoo: 'mma', ap: 'UFC', must: '\\b(UFC|MMA|mixed martial arts)\\b' } },
   boxing: { group: 'Combat', name: 'Boxing', short: 'Boxing', emoji: '🥊', kind: 'news', family: 'boxing', tab4: 'News', what: 'fighters', accent: '#f59e0b', blurb: 'Headlines only (no free scores feed)',
@@ -59,4 +63,4 @@ export const CATALOG = {
     own: '\\b(IndyCar|Indy 500|Indianapolis 500)\\b', news: { yahoo: 'motorsports', ap: 'IndyCar', must: '\\b(IndyCar|Indy ?500|Indianapolis 500)\\b' } },
 };
 export const CORE = ['cfb', 'nfl', 'mlb', 'golf', 'tennis'];
-export const GROUPS = ['Football', 'Baseball', 'Basketball', 'Hockey', 'Soccer', 'Golf', 'Tennis', 'Combat', 'Racing'];
+export const GROUPS = ['Football', 'Baseball', 'Basketball', 'Hockey', 'Soccer', 'Golf', 'Tennis', 'Gymnastics', 'Combat', 'Racing'];

@@ -83,6 +83,11 @@ function boxing() {
   return `<rect x="40" y="220" width="320" height="320" class="fat"/>${[240, 262, 284].map((o, i) => `<rect x="${200 - o / 1.6}" y="${380 - o / 1.6}" width="${o * 1.25}" height="${o * 1.25}" class="${i ? 'thin' : ''}"/>`).join('')}
     ${[[40, 220], [360, 220], [40, 540], [360, 540]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="12" class="solid"/>`).join('')}`;
 }
+function gymnastics() {
+  return `<rect x="30" y="250" width="340" height="300" class="fat"/><rect x="60" y="280" width="280" height="240" class="thin"/>
+    <rect x="70" y="395" width="260" height="14" class="solid"/><line x1="100" y1="409" x2="100" y2="470" class="fat"/><line x1="300" y1="409" x2="300" y2="470" class="fat"/>
+    <circle cx="200" cy="330" r="26" class="thin"/><circle cx="200" cy="330" r="6" class="solid"/>`;
+}
 function racing() {
   let s = '';
   for (let r = 0; r < 6; r++) for (let c = 0; c < 10; c++) if ((r + c) % 2) s += `<rect x="${c * 40}" y="${40 + r * 30}" width="40" height="30" class="solid"/>`;
@@ -90,7 +95,7 @@ function racing() {
   for (let i = 0; i < 14; i++) s += `<line x1="0" y1="${300 + i * 36}" x2="400" y2="${260 + i * 36}" class="thin" opacity=".35"/>`;
   return s;
 }
-const ART = { football, baseball, golf, tennis, basketball, hockey, soccer, mma, boxing, racing };
+const ART = { football, baseball, golf, tennis, basketball, hockey, soccer, mma, boxing, gymnastics, racing };
 const artSVG = (sp) => `<svg class="bd-art" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${(ART[FAMILY(sp)] || football)()}</svg>`;
 
 // ---- layer builders ----

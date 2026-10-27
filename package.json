@@ -1,11 +1,12 @@
 {
   "name": "straight-sports",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Old School Sports: customizable, low-bias scores, Gamecasts and straight news for college football, NFL, MLB, golf and tennis (PWA)",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
+    "test": "for f in tests/*.test.js tests/*.test.mjs; do node $f || exit 1; done",
     "screenshots": "node scripts/screenshots-v3.js"
   },
   "engines": {
