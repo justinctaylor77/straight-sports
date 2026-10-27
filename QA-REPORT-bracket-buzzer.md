@@ -179,3 +179,50 @@ Evidence screenshots are local-only files under `screenshots/v18/` (gitignored).
 - Final run: **89/89 pass** on the committed code.
 
 **Not tested / limits:** real iOS Safari (Chromium mobile emulation only); behaviour after Render's free-plan cold start on the new endpoints; the live site (nothing deployed). NCAA.com proxy availability on the day of release is outside our control.
+
+## Live verification (Tue Oct 27, 2026, ~4:20 PM MT)
+
+**Released.** Pushed `e5dfdc6` and `168fb5e` to `origin/main`; Render deploy **`dep-dbgi6fu1egvs73b0ebq0`** (triggered 4:18 PM MT, status `live` at 4:19 PM MT) at https://straight-sports.onrender.com. Live checks: **35 PASS / 0 FAIL of 35** (`scripts/live-v18.js`, Chromium 390×844 @2x, dark, real site). Screenshots (local, gitignored): `screenshots/v18/live-*.png`.
+
+| ID | Check | Result | Detail | Evidence |
+|---|---|---|---|---|
+| LV-01 | /sw.js version | **PASS** | VERSION=ss-v24 | — |
+| LV-02 | /api/lists indexes 9 sports | **PASS** | HTTP 200; nfl,nba,wnba,mcbb,wcbb,mlb,cbase,softball,gymnastics | — |
+| LV-03 | /api/playoffs/mlb works (real postseason) | **PASS** | HTTP 200; state=live; MLB postseason in progress | — |
+| LV-04 | /api/brackets works (JT/AP/CFP) | **PASS** | HTTP 200; jt seeds 12, ap 12, cfp present true | — |
+| LV-05 | /api/jt-top25 still carries legacy `bracket` | **PASS** | HTTP 200; bracket seeds=12 | — |
+| LV-06 | All 9 /api/lists/<sport> return 200 with rows and honest state | **PASS** | nfl:ready nba:early wnba:final mcbb:preseason wcbb:preseason mlb:final cbase:offseason softball:offseason gymnastics:offseason | — |
+| LV-07 | All 9 /api/playoffs/<sport> return 200 with a labelled state | **PASS** | nfl:projected nba:projected wnba:complete mcbb:complete wcbb:complete mlb:live cbase:complete softball:complete gymnastics:complete | — |
+| LV-08 | Oct 25/27 snapshots seeded movement after deploy (NBA/WNBA/MLB compare with the Oct 25 baseline; NFL waits for its 6-day minimum) | **PASS** | nba prev=2026-10-25, 30 rows with movement (28 non-zero); wnba prev=2026-10-25; mlb prev=2026-10-25; nfl prev=null (expected: first live NFL movement on/after Oct 31) | — |
+| LV-09 | Hub renders 9 sports + College Football at 390px | **PASS** | 10 cards; scrollWidth 390 | `screenshots/v18/live-hub.png` |
+| LV-L-nfl | Top list for nfl renders at 390px, no error card, no h-scroll | **PASS** | 32 rows; 2888 chars; scrollWidth 390 | `screenshots/v18/live-list-nfl.png` |
+| LV-B-nfl | Bracket / championship for nfl renders at 390px, no error card, no h-scroll | **PASS** | 0 rows; 1627 chars; scrollWidth 390 | `screenshots/v18/live-playoffs-nfl.png` |
+| LV-L-nba | Top list for nba renders at 390px, no error card, no h-scroll | **PASS** | 30 rows; 3373 chars; scrollWidth 390 | `screenshots/v18/live-list-nba.png` |
+| LV-B-nba | Bracket / championship for nba renders at 390px, no error card, no h-scroll | **PASS** | 0 rows; 2089 chars; scrollWidth 390 | `screenshots/v18/live-playoffs-nba.png` |
+| LV-L-wnba | Top list for wnba renders at 390px, no error card, no h-scroll | **PASS** | 15 rows; 2356 chars; scrollWidth 390 | `screenshots/v18/live-list-wnba.png` |
+| LV-B-wnba | Bracket / championship for wnba renders at 390px, no error card, no h-scroll | **PASS** | 0 rows; 1284 chars; scrollWidth 390 | `screenshots/v18/live-playoffs-wnba.png` |
+| LV-L-mcbb | Top list for mcbb renders at 390px, no error card, no h-scroll | **PASS** | 25 rows; 1668 chars; scrollWidth 390 | `screenshots/v18/live-list-mcbb.png` |
+| LV-B-mcbb | Bracket / championship for mcbb renders at 390px, no error card, no h-scroll | **PASS** | 10 rows; 2101 chars; scrollWidth 390 | `screenshots/v18/live-playoffs-mcbb.png` |
+| LV-L-wcbb | Top list for wcbb renders at 390px, no error card, no h-scroll | **PASS** | 25 rows; 1657 chars; scrollWidth 390 | `screenshots/v18/live-list-wcbb.png` |
+| LV-B-wcbb | Bracket / championship for wcbb renders at 390px, no error card, no h-scroll | **PASS** | 10 rows; 2082 chars; scrollWidth 390 | `screenshots/v18/live-playoffs-wcbb.png` |
+| LV-L-mlb | Top list for mlb renders at 390px, no error card, no h-scroll | **PASS** | 30 rows; 3360 chars; scrollWidth 390 | `screenshots/v18/live-list-mlb.png` |
+| LV-B-mlb | Bracket / championship for mlb renders at 390px, no error card, no h-scroll | **PASS** | 0 rows; 1586 chars; scrollWidth 390 | `screenshots/v18/live-playoffs-mlb.png` |
+| LV-L-cbase | Top list for cbase renders at 390px, no error card, no h-scroll | **PASS** | 25 rows; 1538 chars; scrollWidth 390 | `screenshots/v18/live-list-cbase.png` |
+| LV-B-cbase | Bracket / championship for cbase renders at 390px, no error card, no h-scroll | **PASS** | 10 rows; 2513 chars; scrollWidth 390 | `screenshots/v18/live-playoffs-cbase.png` |
+| LV-L-softball | Top list for softball renders at 390px, no error card, no h-scroll | **PASS** | 24 rows; 1750 chars; scrollWidth 390 | `screenshots/v18/live-list-softball.png` |
+| LV-B-softball | Bracket / championship for softball renders at 390px, no error card, no h-scroll | **PASS** | 10 rows; 2606 chars; scrollWidth 390 | `screenshots/v18/live-playoffs-softball.png` |
+| LV-L-gymnastics | Top list for gymnastics renders at 390px, no error card, no h-scroll | **PASS** | 36 rows; 2500 chars; scrollWidth 390 | `screenshots/v18/live-list-gymnastics.png` |
+| LV-B-gymnastics | Bracket / championship for gymnastics renders at 390px, no error card, no h-scroll | **PASS** | 0 rows; 1826 chars; scrollWidth 390 | `screenshots/v18/live-playoffs-gymnastics.png` |
+| LV-10 | No console/page errors or failed app requests across all 18 pages + hub | **PASS** | none | — |
+| LV-11 | MLB view shows the World Series and a series score / champion | **PASS** | MLB CHAMPIONSHIP & PLAYOFF BRACKET 🏈 NFL ⚾ MLB 🏀 NBA 🏀 WNBA 🏀 NCAAM 🏀 NCAAW ⚾ CBASE 🥎 Softball 🤸 Gym Top list Bracket MLB MLB POSTSEASON IN PROGRESS LIVE Source: ESPN standings & scoreboard · checked Oct 27, 2026  | `screenshots/v18/live-mlb-detail.png` |
+| LV-12 | NBA list shows movement from the seeded snapshot | **PASS** | movement markers in page: 28 arrows; 30 marker elements | `screenshots/v18/live-nba-movement.png` |
+| LV-13 | CFB bracket still works (JT/AP/CFP tabs) | **PASS** | jt 4266 chars; ap grid true; scrollWidth 390/390 | `screenshots/v18/live-cfb-bracket.png` |
+| LV-14 | CFB JT Top 25 still renders | **PASS** | 25 rows | `screenshots/v18/live-cfb-jt25.png` |
+| LV-15 | Console clean on hub/CFB checks too | **PASS** | none | — |
+| LV-16 | Fresh profile: Scores shows all sports | **PASS** | 27 chips: cfb,nfl,mlb,golf,tennis,nba,wnba,mcbb,wcbb,nhl,mls,nwsl,epl,laliga… | `screenshots/v18/live-fresh-scores.png` |
+| LV-17 | Fresh profile: all 9 sports in the list picker; no console errors | **PASS** | chips nfl,nba,wnba,mcbb,wcbb,mlb,cbase,softball,gymnastics; clean | `screenshots/v18/live-fresh-nba-list.png` |
+
+**Notes**
+- Snapshot seeding confirmed: the live NBA list says "Movement compares with the Oct 25, 2026 snapshot" and shows ▲/▼ on 28 of 30 teams (the other 2 unchanged); WNBA and MLB compare with the Oct 25 baseline and show no change (final regular-season orders). NFL shows no movement yet by design (needs a snapshot at least 6 days old; the first NFL movement can appear from about Oct 31). Render's disk is ephemeral, so new daily snapshots written live are lost on the next deploy/restart; the committed Oct 25/27 files re-seed the baseline.
+- MLB was live at check time: Brewers lead the Rays 3-0, Game 4 tonight 8:00 PM EDT (6:00 PM MT).
+- No secrets were printed or committed. `run.json` stays untracked.
