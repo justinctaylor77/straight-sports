@@ -6,6 +6,7 @@ const WEB_SITE = 'https://site.web.api.espn.com/apis/site/v2/sports';
 
 const { CATALOG } = require('./catalog');
 const PW = require('./playwho');
+const BP = require('./bigplay');
 const makeNcaaPbp = require('./ncaa-pbp');
 // One registry (public/catalog.js) drives every sport; golf/tennis keep their tour lists.
 const SPORTS = {};
@@ -250,7 +251,8 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       }));
     }
     let story = []; try { const gh = {}; story = PW.golfStory({ players: t.players, cards, holes: t.holes, round: t.round }).slice(0, 12); if (!story.length) story = PW.golfLeaders(t.players, t.state); } catch (e) { story = []; }
-    return { sport: 'golf', kind: 'golf', ...t, cards, story, fetchedAt: new Date().toISOString() };
+    let big = []; try { big = BP.golfBig(t.players, cards, t.holes).slice(0, 40); } catch (e) { big = []; }
+    return { sport: 'golf', kind: 'golf', ...t, cards, story, big, fetchedAt: new Date().toISOString() };
   }
 
   // ---------- tennis ----------
@@ -403,6 +405,10 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const heads = {}; const ctxP = { sport, roster: PW.buildRoster(d, sport), teamIds: [(home.team || {}).espnId, (away.team || {}).espnId].filter(Boolean) };
     const packX = (e) => ({ what: e.what, desc: e.desc, who: (e.who || []).map((w) => { if (w.id && w.headshot) heads[w.id] = w.headshot; const { headshot, ...r } = w; return r; }) });
     const exCache = new Map();
+    // big plays (v1.4.0): classified from ESPN's own fields over the chronological play list (see server/bigplay.js for thresholds)
+    const bigIds = { homeId: (home.team || {}).espnId, awayId: (away.team || {}).espnId, abbrs: Object.fromEntries(ctxP.roster.abbrOf) };
+    const rawFb = [...((d.drives && d.drives.previous) || []), ...((d.drives && d.drives.current) ? [d.drives.current] : [])].flatMap((x) => x.plays || []);
+    const bpFb = BP.classify('football', rawFb, bigIds);
     const exOf = (p) => { const k = p && p.id; if (k != null && exCache.has(k)) return exCache.get(k); const e = packX(PW.explainPlay('football', p, ctxP)); if (k != null) exCache.set(k, e); return e; };
     // scoring summary
     out.scoring = (d.scoringPlays || []).map((p) => ({ period: p.period && p.period.number, clock: p.clock && p.clock.displayValue, teamId: p.team && tid(sport, p.team.id),
@@ -411,17 +417,23 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const drv = (x, current) => ({
       id: x.id, current, teamId: x.team && tid(sport, x.team.id), abbr: x.team && x.team.abbreviation, description: x.description, result: x.displayResult || x.result || (current ? 'In progress' : ''),
       score: !!x.isScore, start: x.start && x.start.text, period: x.start && x.start.period && x.start.period.number, clock: x.start && x.start.clock && x.start.clock.displayValue,
-      plays: (x.plays || []).map((p) => ({ id: p.id, text: p.text, clock: p.clock && p.clock.displayValue, period: p.period && p.period.number, dd: p.start && p.start.downDistanceText, score: !!p.scoringPlay, type: p.type && p.type.text, ...exOf(p),
+      plays: (x.plays || []).map((p) => ({ id: p.id, text: p.text, clock: p.clock && p.clock.displayValue, period: p.period && p.period.number, dd: p.start && p.start.downDistanceText, score: !!p.scoringPlay, type: p.type && p.type.text, ...exOf(p), bp: bpFb.get(String(p.id)),
         // field graphic data: yardLine runs 0-100 from the HOME team's own goal line (ESPN convention)
         tm: p.start && p.start.team && p.start.team.id ? tid(sport, p.start.team.id) : null, s: p.start && p.start.yardLine, e: p.end && p.end.yardLine, yds: p.statYardage, pen: !!p.isPenalty, to: !!p.isTurnover, dn: p.start && p.start.down, ds: p.start && p.start.distance })),
     });
     const drives = [...((d.drives && d.drives.previous) || []).map((x) => drv(x, false))];
     if (d.drives && d.drives.current) { const cur = drv(d.drives.current, state === 'in'); if (!drives.some((x) => x.id === cur.id)) drives.push(cur); else if (state === 'in') drives[drives.findIndex((x) => x.id === cur.id)] = cur; }
     out.drives = drives.reverse();
+    out.big = BP.summarize(rawFb.filter((p) => bpFb.has(String(p.id))).map((p) => ({ id: String(p.id), bp: bpFb.get(String(p.id)), when: BP.whenOf('football', sport, p.period && p.period.number, p.clock, null), ...exOf(p) })));
     // ESPN sometimes has no plays for college games: fall back to NCAA.com play-by-play (names as printed there)
     if (!out.drives.length && state !== 'pre' && sport === 'cfb') {
       const nb = await NCAAPBP.playByPlay('cfb', h.date, { home: home.team, away: away.team }).catch(() => null);
-      if (nb) { out.drives = NCAAPBP.footballDrives(nb.rows, { sport, empty: PW.buildRoster({}, sport) }, packX); out.playSource = 'NCAA.com'; }
+      if (nb) { out.drives = NCAAPBP.footballDrives(nb.rows, { sport, empty: PW.buildRoster({}, sport) }, packX); out.playSource = 'NCAA.com';
+        // NCAA.com has no scoring flags: only plays whose printed text plainly states a touchdown / 50+ yard field goal / interception are flagged
+        const chrono = out.drives.slice().reverse().flatMap((dr) => dr.plays);
+        chrono.forEach((p) => { const b = BP.fromText('football', p.text); if (b) p.bp = b; });
+        out.big = BP.summarize(chrono.filter((p) => p.bp).map((p) => ({ id: String(p.id), bp: p.bp, when: `${p.period ? `Q${p.period}` : ''} ${p.clock || ''}`.trim(), what: p.what, desc: p.desc, who: p.who })));
+      }
     }
     // attach who/what to the scoring summary rows via the matching drive play (same id)
     (d.scoringPlays || []).forEach((sp, i) => { const hit = exCache.get(sp.id); if (hit && hit.who.length) Object.assign(out.scoring[i], { what: hit.what, desc: hit.desc, who: hit.who }); });
@@ -511,20 +523,32 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     const heads = {}; const ctxB = { sport, roster: PW.buildRoster(d, sport) };
     const packX = (e) => ({ what: e.what, desc: e.desc, who: (e.who || []).map((w) => { if (w.id && w.headshot) heads[w.id] = w.headshot; const { headshot, ...r } = w; return r; }) });
     const exB = (p) => packX(PW.explainPlay('baseball', p, ctxB));
+    const bpBase = BP.classify('baseball', d.plays || [], { homeId: home.team && home.team.espnId, awayId: away.team && away.team.espnId });
+    const bigB = [];
     for (const p of d.plays || []) {
       const label = p.period && `${p.period.type} ${p.period.displayValue ? p.period.displayValue.replace(' Inning', '') : p.period.number}`;
       if (!cur || cur.label !== label) { cur = { label, items: [] }; halves.push(cur); }
       const t = p.type && p.type.type || '';
       if (!p.text || /^(start|end)-/.test(t) || /^Pitch \d+/.test(p.text) || t === 'play-result' && false) continue;
       if (/^(ball|strike|foul|ball---|strike-)/.test(t) && !/play-result/.test(t)) continue;
-      cur.items.push({ text: p.text, score: !!p.scoringPlay, away: p.awayScore, home: p.homeScore, outs: p.outs, ...exB(p) });
+      const it = { id: p.id != null ? String(p.id) : undefined, text: p.text, score: !!p.scoringPlay, away: p.awayScore, home: p.homeScore, outs: p.outs, ...exB(p) };
+      const bb = bpBase.get(String(p.id)); if (bb) { it.bp = bb; bigB.push({ id: String(p.id), bp: bb, when: label, what: it.what, desc: it.desc, who: it.who }); }
+      cur.items.push(it);
     }
     out.plays = halves.filter((x) => x.items.length).reverse().map((x) => ({ ...x, items: x.items.reverse() }));
+    out.big = BP.summarize(bigB);
     if (!(d.plays || []).length && state !== 'pre' && sport === 'cbase') {
       const nb = await NCAAPBP.playByPlay('cbase', h.date, { home: home.team, away: away.team }).catch(() => null);
       if (nb) {
         const byInn = new Map();
-        for (const r of NCAAPBP.flatPlays('cbase', nb.rows)) { const k = r.periodLabel || `Inning ${r.period}`; if (!byInn.has(k)) byInn.set(k, { label: k, items: [] }); byInn.get(k).items.push({ text: r.text, score: false, away: r.away, home: r.home, outs: null, what: r.what, desc: r.desc, who: r.who }); }
+        const flat = NCAAPBP.flatPlays('cbase', nb.rows); const bigN = [];
+        flat.forEach((r, i) => {
+          const k = r.periodLabel || `Inning ${r.period}`; if (!byInn.has(k)) byInn.set(k, { label: k, items: [] });
+          const id = `ncaa${flat.length - 1 - i}`; const bb = BP.fromText('baseball', r.text); // NCAA.com: text-only (no score value / lead info)
+          const it = { id, text: r.text, score: false, away: r.away, home: r.home, outs: null, what: r.what, desc: r.desc, who: r.who }; if (bb) { it.bp = bb; bigN.unshift({ id, bp: bb, when: k, what: r.what, desc: r.desc, who: r.who }); }
+          byInn.get(k).items.push(it);
+        });
+        out.big = BP.summarize(bigN);
         out.plays = [...byInn.values()]; out.playSource = 'NCAA.com';
       }
     }
@@ -735,7 +759,9 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       players: (r.roster || []).filter((p) => p.athlete).map((p) => ({ id: ath(sport, p.athlete), name: p.athlete.displayName, jersey: p.jersey, pos: p.position && p.position.abbreviation, starter: !!p.starter, subbedIn: !!p.subbedIn, headshot: p.athlete.headshot && p.athlete.headshot.href })) })).filter((r) => r.players.length);
     const heads = {}; const ctxG = { sport, roster: PW.buildRoster(d, sport), teamIds: [home.team.espnId, away.team.espnId] };
     const packX = (e) => ({ what: e.what, desc: e.desc, who: (e.who || []).map((w) => { if (w.id && w.headshot) heads[w.id] = w.headshot; const { headshot, ...r } = w; return r; }) });
-    const play = (p) => ({ ...packX(PW.explainPlay(sp.family, p, ctxG)), text: p.text || (p.type && p.type.text) || '', clock: p.clock && p.clock.displayValue, period: p.period && p.period.number, periodLabel: p.period && p.period.displayValue,
+    const ctxBig = { homeId: home.team.espnId, awayId: away.team.espnId, regPeriods: BP.regPeriods(sport) };
+    const rawG = sp.family === 'soccer' ? (d.keyEvents || []) : (d.plays || []); const bpG = BP.classify(sp.family, rawG, ctxBig);
+    const play = (p) => ({ id: p.id != null ? String(p.id) : undefined, bp: bpG.get(String(p.id)), ...packX(PW.explainPlay(sp.family, p, ctxG)), text: p.text || (p.type && p.type.text) || '', clock: p.clock && p.clock.displayValue, period: p.period && p.period.number, periodLabel: p.period && p.period.displayValue,
       score: !!p.scoringPlay, away: p.awayScore, home: p.homeScore, type: p.type && p.type.text, teamId: p.team && p.team.id ? tid(sport, p.team.id) : null,
       ath: (p.participants || []).map((x) => ath(sport, x.athlete)).filter(Boolean) });
     if (sp.family === 'soccer') out.plays = (d.keyEvents || []).map(play).filter((p) => p.text).reverse();
@@ -744,6 +770,9 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       const nb = await NCAAPBP.playByPlay(sport, h.date, { home: home.team, away: away.team }).catch(() => null);
       if (nb) { out.plays = NCAAPBP.flatPlays(sport, nb.rows).slice(0, 120); out.playSource = 'NCAA.com'; }
     }
+    if (out.playSource === 'NCAA.com') out.plays.forEach((p, i, a) => { p.id = `ncaa${a.length - 1 - i}`; const b = BP.fromText(sp.family, p.text); if (b) p.bp = b; });
+    out.big = BP.summarize(rawG.filter((p) => bpG.has(String(p.id))).map((p) => { const x = play(p); return { id: x.id, bp: x.bp, when: BP.whenOf(sp.family, sport, p.period && (p.period.number != null ? p.period.number : p.period), p.clock, null), what: x.what, desc: x.desc, who: x.who }; }));
+    if (out.playSource === 'NCAA.com') out.big = BP.summarize(out.plays.filter((p) => p.bp).reverse().map((p) => ({ id: p.id, bp: p.bp, when: `${p.periodLabel || ''} ${p.clock || ''}`.trim(), what: p.what, desc: p.desc, who: p.who })));
     out.scoring = sp.family === 'soccer' ? out.plays.filter((p) => p.score).reverse() : (d.scoringPlays || []).map(play).filter((p) => p.text);
     if (!out.scoring.length && sp.family === 'hockey') out.scoring = (d.plays || []).filter((p) => p.scoringPlay).map(play);
     out.leaders = (d.leaders || []).map((tm) => ({ teamId: tm.team && tid(sport, tm.team.id), abbr: tm.team && tm.team.abbreviation,
