@@ -22,7 +22,7 @@ const RTN_BASE = (process.env.RTN_API_BASE || 'https://www.roadtonationals.com/a
 const PRO = ['nfl', 'nba', 'wnba', 'mlb'];
 const POLL_SPORTS = ['mcbb', 'wcbb'];
 const NCAA_SPORTS = { cbase: { slug: 'baseball' }, softball: { slug: 'softball' } };
-const ALL = ['nfl', 'nba', 'wnba', 'mcbb', 'wcbb', 'mlb', 'cbase', 'softball', 'gymnastics'];
+const ALL = ['nfl', 'nba', 'wnba', 'mcbb', 'wcbb', 'mlb', 'cbase', 'softball', 'ausl', 'gymnastics'];
 
 const etDate = (d = new Date()) => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 const etYear = () => +etDate().slice(0, 4);
@@ -329,6 +329,7 @@ module.exports = function makeFeeds({ cached, fetchJSON, SP }) {
   }
   function list(sport) {
     if (!ALL.includes(sport)) { const e = new Error('unknown list sport'); e.status = 400; throw e; }
+    if (sport === 'ausl') return cached('lists:list:ausl', 10 * 60e3, async () => finish(await SP.AUSL.hubList()));
     return cached(`lists:list:${sport}`, PRO.includes(sport) ? 10 * 60e3 : 30 * 60e3, async () => {
       if (PRO.includes(sport)) { const drop = await dropIn(sport); return finish(drop ? await dropPayload(sport, drop) : await proList(sport)); }
       return finish(sport === 'gymnastics' ? await gymList() : await pollList(sport));
@@ -336,10 +337,11 @@ module.exports = function makeFeeds({ cached, fetchJSON, SP }) {
   }
   function playoffs(sport) {
     if (!ALL.includes(sport)) { const e = new Error('unknown playoffs sport'); e.status = 400; throw e; }
+    if (sport === 'ausl') return cached('lists:po:ausl', 2 * 60e3, async () => finish(await SP.AUSL.hubBracket()));
     return cached(`lists:po:${sport}`, 2 * 60e3, async () => finish(PRO.includes(sport) ? await proPlayoffs(sport) : sport === 'gymnastics' ? await gymPlayoffs() : await collegePlayoffs(sport)));
   }
   function index() {
-    return { sports: ALL.map((id) => ({ id, name: id === 'gymnastics' ? 'College Gymnastics' : SP.SPORTS[id].name, short: SP.SPORTS[id].short, emoji: SP.SPORTS[id].emoji, listKind: PRO.includes(id) ? 'computed' : 'poll', list: { title: PRO.includes(id) ? 'JT Power Rankings' : id === 'gymnastics' ? 'Team ranking' : 'Top 25 poll' }, bracket: { shape: id === 'gymnastics' ? 'championship' : id === 'cbase' || id === 'softball' ? 'double' : 'single' } })) };
+    return { sports: ALL.map((id) => ({ id, name: id === 'gymnastics' ? 'College Gymnastics' : SP.SPORTS[id].name, short: SP.SPORTS[id].short, emoji: SP.SPORTS[id].emoji, listKind: id === 'ausl' ? 'standings' : PRO.includes(id) ? 'computed' : 'poll', list: { title: id === 'ausl' ? 'Standings' : PRO.includes(id) ? 'JT Power Rankings' : id === 'gymnastics' ? 'Team ranking' : 'Top 25 poll' }, bracket: { shape: id === 'gymnastics' ? 'championship' : id === 'cbase' || id === 'softball' ? 'double' : 'single' } })) };
   }
   return { list, playoffs, index, ALL, etDate, internals: { proRows, postEvents, ncaaGet, rtnGet, dropIn, pollList, collegePlayoffs } };
 };

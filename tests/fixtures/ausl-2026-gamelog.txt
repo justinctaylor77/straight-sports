@@ -1,0 +1,598 @@
+<!-- Excerpt of https://en.wikipedia.org/wiki/2026_AUSL_season (game log), CC BY-SA 4.0, authors per the article history. Saved for unit tests on Oct 28, 2026. -->
+{{Game log section start|hide=y|style=background:#00000; color:white |title=June| Date | Time (CT) | Visitor | Result | Home | TV | Location }}
+|-
+| rowspan=3 | June 9
+| 4:00 PM
+| Cascade
+| 1–4
+| Blaze
+| CBSSN
+| Smith Family Stadium
+|-
+| 6:00 PM
+| Volts
+| 5–13 <sup>(6)</sup>
+| Spark
+| ESPN2
+| Tom Heath Field
+|-
+| 8:00 PM
+| Bandits
+| 2–5
+| Talons
+| ESPN2
+| Dumke Family Stadium
+|-
+| rowspan=3 | June 10
+| 5:00 PM
+| Volts
+| 5–8
+| Spark
+| MLB.TV
+| Tom Heath Field
+|-
+| 7:00 PM
+| Cascade
+| 2–11 <sup>(5)</sup>
+| Blaze
+| ESPN2
+| Smith Family Stadium
+|-
+| 9:00 PM
+| Bandits
+| 0–1
+| Talons
+| ESPNU
+| Dumke Family Stadium
+|-
+| rowspan=3 | June 11
+| 4:00 PM
+| Cascade
+| 12–4 <sup>(5)</sup>
+| Blaze
+| CBSSN
+| Smith Family Stadium
+|-
+| 6:00 PM
+| Volts
+| 4–5
+| Spark
+| MLB.TV
+| Tom Heath Field
+|-
+| 8:00 PM
+| Bandits
+| 8–9 <sup>(8)</sup>
+| Talons
+| ESPNU
+| Dumke Family Stadium
+|-
+| rowspan=2 | June 13
+| 1:00 PM
+| Spark
+| 9-1 <sup>(5)</sup>
+| Bandits
+| ESPN2
+| [[Parkway Bank Sports Complex]]
+|-
+| 3:00 PM
+| Cascade
+| 3-1
+| Talons
+| CBSSN
+| Dumke Family Stadium
+|-
+| rowspan=3 | June 14
+| 11:00 PM
+| Volts
+| 1-9 <sup>(6)</sup>
+| Blaze
+| ESPN2
+| Smith Family Stadium
+|-
+| 1:00 PM
+| Spark
+| 3-11 <sup>(6)</sup>
+| Bandits
+| ESPN2
+| Parkway Bank Sports Complex
+|-
+| 7:00 PM
+| Cascade
+| 2-1
+| Talons
+| MLB Network
+| Dumke Family Stadium
+|-
+| rowspan=2 | June 15
+| 6:00 PM
+| Volts
+| 5-6 <sup>(9)</sup>
+| Blaze
+| ESPN2
+| Smith Family Stadium
+|-
+| 8:30 PM
+| Cascade
+| 3-2
+| Talons
+| ESPN2
+| Dumke Family Stadium
+|-
+| June 16
+| 6:00 PM
+| Spark
+| 4-5
+| Bandits
+| ESPNU
+| Parkway Bank Sports Complex
+|-
+| June 17
+| 5:00 PM
+| Blaze
+| 3–4
+| Bandits
+| CBSSN
+| Parkway Bank Sports Complex
+|-
+| rowspan=2 | June 18
+| 6:00 PM
+| Talons
+| 4–3
+| Volts
+| ESPN
+| [[Dell Diamond]]
+|-
+| 8:00 PM
+| Spark
+| 0–3
+| Cascade
+| ESPN
+| [[Hillsboro Ballpark]]
+|-
+| rowspan=2 | June 19
+| 6:00 PM
+| Talons
+| 6–1
+| Volts
+| MLB.TV
+| Dell Diamond
+|-
+| 8:00 PM
+| Spark
+| 6–1
+| Cascade
+| ESPN2
+| Hillsboro Ballpark
+|-
+| rowspan=2 | June 20
+| 11:00 AM
+| Blaze
+| 8–0 <sup>(5)</sup>
+| Bandits
+| ESPN
+| Parkway Bank Sports Complex
+|-
+| 7:00 PM
+| Talons
+| 8–0
+| Volts
+| MLB.TV
+| Dell Diamond
+|-
+| June 21
+| 11:30 AM
+| Spark
+| 4–3
+| Cascade
+| ESPN
+| Hillsboro Ballpark
+|-
+| rowspan=2| June 22
+| 12 PM
+| Blaze
+| 1–5
+| Bandits
+| {{efn|Because of weather, this game was postponed from June 21. It was set to air on MLB Network, but that was scrapped for the rescheduled date.|group="n"}}
+| Parkway Bank Sports Complex
+|-
+| 7:00 PM
+| Spark
+| 1–5
+| Talons
+| ESPN2
+| Dumke Family Stadium
+|-
+| rowspan=2| June 23
+| 6:00 PM
+| Bandits
+| 2–6
+| Volts
+| ESPNU
+| Dell Diamond
+|-
+| 8:00 PM
+| Spark
+| 3–6
+| Talons
+| CBSSN
+| Dumke Family Stadium
+|-
+| June 24
+| 7:00 PM
+| Bandits
+| 4–6
+| Volts
+| CBSSN
+| Dell Diamond
+|-
+| June 25
+| 6:00 PM
+| Talons
+| 3–2 <sup>(6)</sup>
+| Blaze
+| ESPN
+| [[Durham Bulls Athletic Park]]
+|-
+| rowspan=2 | June 26
+| 5:00 PM
+| Talons
+| 3–0
+| Blaze
+| CBSSN
+| Durham Bulls Athletic Park
+|-
+| 7:00 PM
+| Cascade
+| 5–1
+| Volts
+| ESPNU
+| Dell Diamond
+|-
+| rowspan=3 | June 27
+| 1:00 PM
+| Talons
+| 1–6
+| Blaze
+| ESPN
+| Durham Bulls Athletic Park
+|-
+| 4:00 PM
+| Bandits
+| 14–0 <sup>(5)</sup>
+| Spark
+| CBSSN
+| Tom Heath Field
+|-
+| 7:00 PM
+| Cascade
+| 6–3
+| Volts
+| MLB.TV
+| Dell Diamond
+|-
+| rowspan=2 | June 28
+| 12:00 PM
+| Cascade
+| 5–2
+| Volts
+| ESPN
+| Dell Diamond
+|-
+| 7:00 PM
+| Bandits
+| 8–6
+| Spark
+| MLB Network
+| Tom Heath Field
+|-
+| June 29
+| 6:00 PM
+| Blaze
+| 5–4
+| Spark
+| ESPN2
+| Tom Heath Field
+|-
+| rowspan=2 | June 30
+| 6:00 PM
+| Cascade
+| 3–13 <sup>(5)</sup>
+| Bandits
+| ESPNU
+| Parkway Bank Sports Complex
+|-
+| 8:00 PM
+| Volts
+| 2–5
+| Talons
+| CBSSN
+| Dumke Family Stadium
+{{Game log section end}}
+{{Game log section start|hide=y|style=background:#00000; color:white |title=July| Date | Time (CT) | Visitor | Result | Home | TV | Location }}
+|-
+| rowspan=2 | July 1
+| 6:00 PM
+| Blaze
+| 3–9
+| Spark
+| ESPN2
+| Tom Heath Field
+|-
+| 8:00 PM
+| Volts
+| 4–8
+| Talons
+| MLB.TV
+| Dumke Family Stadium
+|-
+| July 2
+| 6:00 PM
+| Cascade
+| 3–11 <sup>(5)</sup>
+| Bandits
+| ESPN
+| Parkway Bank Sports Complex
+|-
+| July 3
+| 8:00 PM
+| Blaze
+| 4–2
+| Talons
+| MLB.TV
+| Dumke Family Stadium
+|-
+| rowspan=3|July 4
+| 3:30 PM
+| Volts
+| 2–3 <sup>(8)</sup>
+| Bandits
+| CBSSN
+| Parkway Bank Sports Complex
+|-
+| 6:00 PM
+| Cascade
+| 3–12 <sup>(5)</sup>
+| Spark
+| ESPNU
+| Tom Heath Field
+|-
+| 8:00 PM
+| Blaze
+| 4–5
+| Talons
+| CBSSN
+| Dumke Family Stadium
+|-
+| rowspan=2|July 5
+| 12:00 PM
+| Cascade
+| 8–4
+| Spark
+| ESPN2
+| Tom Heath Field
+|-
+| 7:00 PM
+| Volts
+| 1–2
+| Bandits
+| MLB Network
+| Parkway Bank Sports Complex
+|-
+| July 6
+| 6:00 PM
+| Volts
+| 5–7
+| Bandits
+| ESPNU
+| Parkway Bank Sports Complex
+|-
+| July 7
+| 7:00 PM
+| Blaze
+| 2–4
+| Cascade
+| ESPN2
+| Hillsboro Ballpark
+|-
+| July 8
+| 7:00 PM
+| Blaze
+| 1–2 <sup>(8)</sup>
+| Cascade
+| CBSSN
+| Hillsboro Ballpark
+|-
+| July 9
+| 7:00 PM
+| Talons
+| 3–4
+| Spark
+| ESPNU
+| Tom Heath Field
+|-
+| rowspan=2|July 10
+| 6:00 PM
+| Blaze
+| 0–1 <sup>(8)</sup>
+| Volts
+| ESPNU
+| Dell Diamond
+|-
+| 8:30 PM
+| Bandits
+| 8–6
+| Cascade
+| CBSSN
+| Hillsboro Ballpark
+|-
+| rowspan=3|July 11
+| 1:00 PM
+| Blaze
+| 3–4
+| Volts
+| ESPN
+| Dell Diamond
+|-
+| 4:00 PM
+| Bandits
+| 2–0
+| Cascade
+| CBSSN
+| Hillsboro Ballpark
+|-
+| 7:00 PM
+| Talons
+| 5–4
+| Spark
+| MLB.TV
+| Tom Heath Field
+|-
+| rowspan=2|July 12
+| 2:00 PM
+| Bandits
+| 4–5
+| Cascade
+| ESPN2
+| Hillsboro Ballpark
+|-
+| 7:00 PM
+| Talons
+| 2–4
+| Spark
+| MLB Network
+| Tom Heath Field
+|-
+| July 13
+| 6:00 PM
+| Blaze
+| 0–8 <sup>(8)</sup>
+| Volts
+| ESPN2
+| Dell Diamond
+|-
+| July 14
+| 6:00 PM
+| Spark
+| 7–2
+| Volts
+| ESPN2
+| Dell Diamond
+|-
+| rowspan=3|July 15
+| 5:00 PM
+| Bandits
+| 7–6 <sup>(8)</sup>
+| Blaze
+| MLB.TV
+| Smith Family Stadium
+|-
+| 7:00 PM
+| Spark
+| 7–2
+| Volts
+| ESPNU
+| Dell Diamond
+|-
+| 9:00 PM
+| Talons
+| 2–10 <sup>(5)</sup>
+| Cascade
+| CBSSN
+| Hillsboro Ballpark
+|-
+| rowspan=2|July 16
+| 6:00 PM
+| Bandits
+| 15–7 <sup>(6)</sup>
+| Blaze
+| CBSSN
+| Smith Family Stadium
+|-
+| 9:00 PM
+| Talons
+| 4–3
+| Cascade
+| MLB.TV
+| Hillsboro Ballpark
+|-
+| July 17
+| 7:00 PM
+| Volts
+| 7–2
+| Cascade
+| ESPN2
+| Hillsboro Ballpark
+|-
+| rowspan=3|July 18
+| 3:00 PM
+| Talons
+| 1–2 <sup>(8)</sup>
+| Bandits
+| ESPN2
+| Parkway Bank Sports Complex
+|-
+| 5:00 PM
+| Spark
+| 12–4 <sup>(8)</sup>
+| Blaze
+| ESPNU
+| Smith Family Stadium
+|-
+| 9:00 PM
+| Volts
+| 1–10 <sup>(5)</sup>
+| Cascade
+| CBSSN
+| Hillsboro Ballpark
+|-
+| rowspan=2|July 19
+| 11:00 PM
+| Spark
+| 6–5
+| Blaze
+| ESPN
+| Smith Family Stadium
+|-
+| 7:00 PM
+| Talons
+| 3–1
+| Bandits
+| MLB Network
+| Parkway Bank Sports Complex
+|-
+| July 20
+| 6:00 PM
+| Spark
+| 1–11 <sup>(5)</sup>
+| Blaze
+| ESPN2
+| Smith Family Stadium
+{{Game log section end}}
+{{Game log section start|hide=y|style=background:#00000; color:white |title=Postseason | Date | Time (CT) | Visitor | Result | Home | TV | Location }}
+|-
+| July 23 (Play-in)
+| 8:00 PM
+| Cascade
+| 5–6 <sup>(11)</sup>
+| Bandits
+| ESPN
+| [[Davis Diamond]]
+|-
+| July 25 (Championship Game 1)
+| 12:00 PM
+| Bandits
+| 1–2
+| Talons
+| ABC
+| Davis Diamond
+|-
+| July 26 (Championship Game 2)
+| 1:00 PM
+| Talons
+| 6–1
+| Bandits
+| ESPN
+| Davis Diamond
+{{Game log section end}}
+{{Game log end}}

@@ -2,7 +2,7 @@
 // Used by app.js and unit-tested in tests/picker.test.mjs.
 
 // League order in the picker: pro leagues first, then college, then everything else the catalog adds later (catalog order).
-export const LEAGUE_ORDER = ['nfl', 'mlb', 'nba', 'wnba', 'nhl', 'mls', 'nwsl', 'epl', 'laliga', 'bund', 'seriea', 'ligue1', 'ucl', 'ligamx', 'cfb', 'mcbb', 'wcbb', 'cbase'];
+export const LEAGUE_ORDER = ['nfl', 'mlb', 'nba', 'wnba', 'nhl', 'mls', 'nwsl', 'epl', 'laliga', 'bund', 'seriea', 'ligue1', 'ucl', 'ligamx', 'cfb', 'mcbb', 'wcbb', 'cbase', 'ausl'];
 export const leagueLabel = (sp, sports) => (sports[sp] || {}).name || sp;
 
 // "Location Nickname": "Boston Red Sox", "Utah Utes", "BYU Cougars". ESPN's team name is already location-first;

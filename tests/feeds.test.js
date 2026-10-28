@@ -7,7 +7,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'feeds-')); process.env.JT_LIS
 
 const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 const daysAgo = (n) => new Date(Date.now() - n * 86400e3).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-const SPORTS = { gymnastics: { path: 'gymnastics', espn: 'gymnastics', name: 'College Gymnastics', short: 'Gym', emoji: 'x' }, nfl: { path: 'football/nfl', espn: 'nfl', name: 'NFL' }, nba: { path: 'basketball/nba', espn: 'nba', name: 'NBA' }, wnba: { path: 'basketball/wnba', espn: 'wnba', name: 'WNBA' }, mlb: { path: 'baseball/mlb', espn: 'mlb', name: 'MLB' },
+const SPORTS = { gymnastics: { path: 'gymnastics', espn: 'gymnastics', name: 'College Gymnastics', short: 'Gym', emoji: 'x' }, nfl: { path: 'football/nfl', espn: 'nfl', name: 'NFL' }, nba: { path: 'basketball/nba', espn: 'nba', name: 'NBA' }, wnba: { path: 'basketball/wnba', espn: 'wnba', name: 'WNBA' }, mlb: { path: 'baseball/mlb', espn: 'mlb', name: 'MLB' }, ausl: { provider: 'ausl', name: 'AUSL Pro Softball', short: 'AUSL', emoji: 'x' },
   mcbb: { path: 'basketball/mens-college-basketball', espn: 'mens-college-basketball', name: 'Men’s College Basketball' }, wcbb: { path: 'basketball/womens-college-basketball', espn: 'womens-college-basketball', name: 'Women’s College Basketball' },
   cbase: { path: 'baseball/college-baseball', espn: 'college-baseball', name: 'College Baseball' }, softball: { path: 'baseball/college-softball', espn: 'college-softball', name: 'College Softball' } };
 const normTeam = (t, sport) => ({ id: `${sport}:${t.id}`, espnId: String(t.id), name: t.displayName || `Team ${t.id}`, short: t.shortDisplayName || `T${t.id}`, abbr: t.abbreviation || `T${t.id}`, logo: '', logoDark: '', color: '112233' });
@@ -92,7 +92,7 @@ t('Utah / BYU / Big 12 tagging is display-only (rows keep their order)', async (
   const f = makeFeeds({ cached: (_k, _t, fn) => fn(), fetchJSON: async () => ({}), SP: { ...SP, getTeams: async () => ({ teams: [{ id: 'mcbb:254', espnId: '254', name: 'Utah Utes', short: 'Utah', abbr: 'UTAH', logo: 'x', logoDark: 'x', color: 'cc0000' }, { id: 'mcbb:1', espnId: '1', name: 'Alpha Aces', short: 'Alpha', abbr: 'ALP', logo: 'x', logoDark: 'x', color: '0' }] }) } });
   const d = await f.list('mcbb'); assert.deepStrictEqual(d.rows.map((r) => r.rank), [1, 2]);
 });
-t('index lists all nine sports', () => { const f = mk(async () => ({})); const ix = f.index(); assert.strictEqual(ix.sports.length, 9); assert.deepStrictEqual(ix.sports.map((s) => s.id).sort(), ['cbase', 'gymnastics', 'mcbb', 'mlb', 'nba', 'nfl', 'softball', 'wcbb', 'wnba']); });
+t('index lists all ten sports', () => { const f = mk(async () => ({})); const ix = f.index(); assert.strictEqual(ix.sports.length, 10); assert.deepStrictEqual(ix.sports.map((s) => s.id).sort(), ['ausl', 'cbase', 'gymnastics', 'mcbb', 'mlb', 'nba', 'nfl', 'softball', 'wcbb', 'wnba']); });
 
 (async () => {
   for (const [name, fn] of tests) { try { await fn(); n++; } catch (e) { console.error('FAIL:', name); console.error(e); process.exitCode = 1; break; } }

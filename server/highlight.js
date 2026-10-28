@@ -10,7 +10,7 @@ const BIG12 = {
 };
 const LOOKUP = new Map(); for (const [k, v] of Object.entries(BIG12)) for (const x of v) LOOKUP.set(n(x), k);
 // -> { big12: 'Utah', spot: 'utah'|'byu'|null } or null
-const PRO_ID = /^(nfl|nba|wnba|mlb):/; // pro franchises share place names with Big 12 schools (Bengals/Cincinnati, Jazz/Utah) and are never flagged
+const PRO_ID = /^(nfl|nba|wnba|mlb|ausl):/; // pro franchises share place names with Big 12 schools (Bengals/Cincinnati, Jazz/Utah) and are never flagged
 function flagsFor(team) {
   if (!team || PRO_ID.test(String(team.id || ''))) return null;
   for (const c of [team.short, team.name, team.display, team.location]) { const k = LOOKUP.get(n(c)); if (k) return { big12: k, spot: k === 'Utah' ? 'utah' : k === 'BYU' ? 'byu' : null }; }

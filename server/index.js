@@ -133,7 +133,7 @@ app.get('/api/game/:sport/:id', wrap((req) => { const s = sportOf(req); if (!s) 
 app.get('/api/team/:id', wrap((req) => SP.teamPage(req.params.id).then((d) => { const m = String(req.params.id).match(/^([a-z0-9]+):/); return WATCH.attach(m ? m[1] : 'cfb', d); })));
 const TICKETS = require('./tickets')({ cached, fetchJSON });
 const PEOPLE = require('./people')({ cached, fetchJSON, SP, TICKETS });
-app.get('/api/schedule/team/:id', wrap((req) => PEOPLE.teamSchedule(req.params.id).then((d) => WATCH.attach(d.sport, d))));
+app.get('/api/schedule/team/:id', wrap((req) => (/^ausl:/.test(req.params.id) ? SP.AUSL.teamSchedule(req.params.id) : PEOPLE.teamSchedule(req.params.id)).then((d) => WATCH.attach(d.sport, d))));
 app.get('/api/tickets/status', wrap(() => TICKETS.status()));
 app.get('/api/player/:id', wrap((req) => PEOPLE.player(req.params.id)));
 app.get('/api/watch', wrap(async (req) => { const s = sportOf(req); if (!s) throw bad('unknown sport'); return { sport: s, games: await WATCH.forSport(s) }; }));
@@ -198,6 +198,7 @@ function teamQuery(t) {
   // e.g. "BYU Cougars" football  OR  "Utah State" Aggies football; pros: "Chicago Bears"
   const sport = t.sport || 'cfb';
   if (COLLEGE.has(sport)) return `"${t.location}" ${t.mascot} ${sport === 'wcbb' ? "women's basketball" : famWord(sport)} when:7d`;
+  if (sport === 'ausl') return `"${t.name}" AUSL softball when:30d`;
   return `"${t.name}" when:7d`;
 }
 // NBA/WNBA stories never leak into other sports' feeds (they only appear in the opt-in NBA/WNBA feeds).

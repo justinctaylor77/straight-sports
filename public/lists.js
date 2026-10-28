@@ -2,8 +2,8 @@
 // Data comes from /api/lists/:sport and /api/playoffs/:sport (server/feeds.js). Nothing here invents data: every
 // number, seed and score is rendered from the payload, and every state (loading, error, offseason, preseason,
 // not available) has its own message. Pure render helpers are exported for the tests; createLists() wires the DOM.
-export const FEED = ['nfl', 'nba', 'wnba', 'mcbb', 'wcbb', 'mlb', 'cbase', 'softball', 'gymnastics'];
-const KIND = { computed: 'Computed by JT formula', poll: 'Official poll', jt: 'JT’s own list' };
+export const FEED = ['nfl', 'nba', 'wnba', 'mcbb', 'wcbb', 'mlb', 'cbase', 'softball', 'ausl', 'gymnastics'];
+const KIND = { computed: 'Computed by JT formula', poll: 'Official poll', jt: 'JT’s own list', standings: 'Computed standings' };
 const STATE = { ready: 'In season', early: 'Early season', final: 'Final', preseason: 'Preseason', offseason: 'Offseason', live: 'Live', projected: 'Projected', complete: 'Complete', announced: 'Announced', none: 'Not yet announced', unavailable: 'Not available' };
 const TIMEOUT = 25000;
 
@@ -23,7 +23,7 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
   const bigTag = (t) => (t && t.hl && t.hl.big12 ? '<span class="lb-b12" title="Big 12">Big 12</span>' : '');
   const spotTag = (t) => (t && t.hl && t.hl.spot ? `<span class="lb-spot">${t.hl.spot === 'utah' ? 'Utah' : 'BYU'}</span>` : '');
   const mine = (t, sport) => (t && t.id && t.sport === sport && myTeamIds().has(t.id) ? 'mine' : '');
-  const linkable = (sport) => ['nfl', 'nba', 'wnba', 'mlb', 'mcbb'].includes(sport);
+  const linkable = (sport) => ['nfl', 'nba', 'wnba', 'mlb', 'mcbb', 'ausl'].includes(sport);
   const tagsOf = (d) => `<span class="gk-tag live">${esc(STATE[d.state] || d.state)}</span><span class="gk-tag grok">${esc(KIND[d.kind] || d.kind || '')}</span>`;
   const srcLine = (d, extra = '') => `<p class="faint small lb-src">Source: ${d.source && d.source.url ? `<a href="${esc(d.source.url)}" target="_blank" rel="noopener">${esc(d.source.name)}</a>` : esc(d.source ? d.source.name : '')}${d.asOfLabel ? ` · ${esc(d.asOfLabel)}` : d.asOf ? ` · ${esc(fmtDay(d.asOf))}` : ''}${extra}</p>`;
   const notes = (d) => (d.notes || []).map((n) => `<div class="notice lb-note">${esc(n)}</div>`).join('');
@@ -31,6 +31,7 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
   function sub(r, d) {
     if (d.kind === 'computed') return `<span><b>${r.score != null ? Number(r.score).toFixed(1) : '–'}</b> pts</span>`;
     if (d.sport === 'gymnastics') return r.avg != null ? `<span>Avg <b>${Number(r.avg).toFixed(3)}</b></span>${r.high != null ? `<span>High <b>${Number(r.high).toFixed(3)}</b></span>` : ''}` : '';
+    if (r.detail) return `<span>${esc(r.detail)}</span>`;
     if (r.points != null) return `<span><b>${r.points}</b> pts${r.fpv ? ` (${r.fpv})` : ''}</span>`;
     return '';
   }
@@ -121,9 +122,9 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
   function champCard(d) {
     const c = d.champion; if (!c) return '';
     const t = c.team || c; const ru = c.runnerUp || d.runnerUp;
-    return `<div class="card gk-hero lb-champ" style="--tc:#${esc(t.color || '888')}"><div class="gk-kicker">${c.year ? `${esc(c.year)} ` : ''}national champion</div>
+    return `<div class="card gk-hero lb-champ" style="--tc:#${esc(t.color || '888')}"><div class="gk-kicker">${c.label ? esc(c.label) : `${c.year ? `${esc(c.year)} ` : ''}national champion`}</div>
       <div class="lb-champrow"><img src="${esc(logo(t))}" alt="" /><div><div class="gk-title">${esc(t.short || t.name)}</div>
-      <div class="gk-method">${[ru ? `Beat ${esc(ru.short || ru.name)}` : '', c.score != null ? `${esc(c.score)}` : '', c.site ? esc(c.site) : '', c.coach ? `Coach ${esc(c.coach)}` : ''].filter(Boolean).join(' · ')}</div></div></div></div>`;
+      <div class="gk-method">${[c.note ? esc(c.note) : ru ? `Beat ${esc(ru.short || ru.name)}` : '', c.score != null ? `${esc(c.score)}` : '', c.site ? esc(c.site) : '', c.coach ? `Coach ${esc(c.coach)}` : ''].filter(Boolean).join(' · ')}</div></div></div></div>`;
   }
   function gymBody(d) {
     return `${champCard(d)}
@@ -135,12 +136,12 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
     const hero = `<div class="card gk-hero lb-hero"><div class="gk-kicker">${esc(d.name)}</div><div class="gk-title lb-h1">${esc(d.headline || '')}</div>
       <div class="gk-src"><span class="gk-tag live">${esc(STATE[d.state] || d.state)}</span>${d.bracket && d.bracket.real === false ? '' : ''}${d.year ? `<span class="gk-tag">${esc(d.year)}</span>` : ''}</div>
       ${srcLine({ ...d, asOfLabel: d.asOf ? `checked ${fmtDay(d.asOf)}` : '' })}</div>${notes(d)}`;
-    const foot = `<div class="card br-foot lb-format"><h3>Format</h3><ul class="gk-how-list">${(d.format || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
+    const foot = `<div class="card br-foot lb-format"><h3>Format</h3><ul class="gk-how-list">${(d.format || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>${(d.links || []).length ? `<p class="faint small">More: ${d.links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)}</a>`).join(' · ')}</p>` : ''}</div>`;
     if (d.kind === 'championship') return hero + gymBody(d) ;
     if (d.stages && d.stages.length) return hero + champCard({ champion: d.champion && { team: d.champion }, runnerUp: d.runnerUp }) + stagesBody(d, ui.stage) + pollMini(d.poll, d) + foot;
     if (d.bracket && (d.bracket.groups || []).length) {
       const tabs = bracketTabs(d.bracket); const cur = tabs.find((t) => t.id === ui.group) || tabs[0];
-      const ch = d.bracket.champion ? champCard({ champion: { team: d.bracket.champion } }) : '';
+      const ch = d.bracket.champion ? champCard({ champion: { team: d.bracket.champion, label: d.champLabel, note: d.champNote } }) : '';
       return hero + ch + (tabs.length > 1 ? `<div class="gk-sub"><div class="seg" role="tablist">${tabs.map((t) => `<button role="tab" data-lbgroup="${esc(t.id)}" aria-selected="${t === cur}" class="${t === cur ? 'on' : ''}">${esc(t.name)}</button>`).join('')}</div></div>` : '') +
         bracketGrid(cur.rounds, d.sport) + seedsCards(d.bracket) + pollMini(d.poll, d) + foot;
     }
@@ -194,7 +195,7 @@ export function createLists(ctx) {
     setBar('Rankings & Brackets', { back: '#/rankings' });
     const li = {
       nfl: ['JT Power Rankings', '14-team projected bracket'], nba: ['JT Power Rankings', 'Play-in + 16-team bracket'], wnba: ['JT Power Rankings', 'Postseason bracket'], mlb: ['JT Power Rankings', '12-team postseason'],
-      mcbb: ['AP Top 25', '68-team NCAA tournament'], wcbb: ['AP Top 25', '68-team NCAA tournament'], cbase: ['D1Baseball Top 25', 'Regionals → College World Series'], softball: ['Top 25 poll', 'Regionals → Women’s College World Series'], gymnastics: ['Team ranking', 'Regionals → national championship'],
+      mcbb: ['AP Top 25', '68-team NCAA tournament'], wcbb: ['AP Top 25', '68-team NCAA tournament'], cbase: ['D1Baseball Top 25', 'Regionals → College World Series'], softball: ['Top 25 poll', 'Regionals → Women’s College World Series'], ausl: ['Standings', 'Play-in → AUSL Championship'], gymnastics: ['Team ranking', 'Regionals → national championship'],
     };
     const cards = pickerOrder(S).map((id) => `<div class="card lb-card"><div class="lb-ch"><span class="lb-em">${esc((SPORTS[id] || {}).emoji || '')}</span><b>${esc(name(id))}</b></div>
       <div class="lb-cl"><a class="btn small" href="#/rankings/list/${id}">${esc(li[id][0])} ›</a><a class="btn small" href="#/rankings/playoffs/${id}">${esc(li[id][1])} ›</a></div></div>`).join('');

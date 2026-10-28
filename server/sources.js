@@ -86,6 +86,7 @@ const catalogSources = (sp, c) => {
     out.push({ id: `${sp}-ap`, name: 'AP', kind: 'Wire service', defaultOn: true, url: gnews(`site:apnews.com ${n.ap} when:4d`), via: 'Google News', must });
     out.push({ id: `${sp}-reuters`, name: 'Reuters', kind: 'Wire service', defaultOn: true, url: gnews(`site:reuters.com ${n.ap} when:7d`), via: 'Google News', must });
   }
+  for (const x of n.extra || []) out.push({ id: `${sp}-${x.id}`, name: x.name, kind: 'League & partner sites', defaultOn: true, url: gnews(`site:${x.site} ${x.q} when:30d`), via: 'Google News', must });
   if (n.cbs) out.push({ id: `${sp}-cbs`, name: 'CBS Sports', kind: 'National', defaultOn: true, url: `https://www.cbssports.com/rss/headlines/${n.cbs}/`, must });
   if (n.yahoo) out.push({ id: `${sp}-yahoo`, name: 'Yahoo Sports', kind: 'National', defaultOn: true, url: `https://sports.yahoo.com/${n.yahoo}/rss.xml`, must });
   if (n.nyt) out.push({ id: `${sp}-nyt`, name: 'New York Times', kind: 'National', defaultOn: true, url: `https://rss.nytimes.com/services/xml/rss/nyt/${n.nyt}.xml`, must });

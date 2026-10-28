@@ -46,8 +46,8 @@ export function scheduleSections(events, teamId, sport, ctx, { limitUp = 0, limi
   const more = (k, shown, n) => (n > shown ? `<button class="btn small ghost more" data-more="${k}">Show all ${n} ›</button>` : '');
   return `${today.length ? `<h2>${hasLive ? '<span class="livet">●</span> Live & today' : 'Today'}</h2><div class="sx-list">${today.map((e) => schedItem(e, teamId, sport, ctx)).join('')}</div>` : ''}
     <h2>Upcoming <span class="count">${nUp} · times in ${esc(tz())}</span></h2>
-    <div class="sx-list">${up.map((e) => schedItem(e, teamId, sport, ctx)).join('') || '<div class="card empty">No more games on ESPN’s schedule this season.</div>'}</div>${more('up', up.length, nUp)}
-    <h2>Results <span class="count">${nPast || rec.W + rec.L + rec.T ? `${rec.W}–${rec.L}${rec.T ? `–${rec.T}` : ''}` : ''}</span></h2>
+    <div class="sx-list">${up.map((e) => schedItem(e, teamId, sport, ctx)).join('') || `<div class="card empty">${sport === 'ausl' ? 'No upcoming games: the season is over and the next schedule isn’t published in a source we can verify yet.' : 'No more games on ESPN’s schedule this season.'}</div>`}</div>${more('up', up.length, nUp)}
+    <h2>Results <span class="count">${nPast || rec.W + rec.L + rec.T ? `${rec.W}–${rec.L}${rec.T ? `–${rec.T}` : ''}${sport === 'ausl' ? ' incl. playoffs' : ''}` : ''}</span></h2>
     <div class="card panel">${past.map((e) => schedItem(e, teamId, sport, ctx)).join('') || '<div class="empty">No games played yet.</div>'}</div>${more('past', past.length, nPast)}`;
 }
 
@@ -57,7 +57,7 @@ export function scheduleView(d, ctx) {
       <div><h1>${esc(t.name)}</h1><div class="muted">${[d.season && `${d.season} schedule`, t.record, t.standing].filter(Boolean).map(esc).join(' · ')}</div></div>
       <div class="actions"><a class="btn" href="#/team/${esc(t.id)}">Team page</a>${ctx.followBtn(t)}</div></div>
     ${scheduleSections(d.events, t.id, d.sport, ctx)}
-    <p class="faint small">Schedule, scores and TV from ESPN. Ticket links go to the game’s SeatGeek event page${d.ticketsPriced ? '; prices appear when SeatGeek publishes them' : ''}.</p>`;
+    <p class="faint small">${d.attribution ? esc(d.attribution) : `Schedule, scores and TV from ESPN. Ticket links go to the game’s SeatGeek event page${d.ticketsPriced ? '; prices appear when SeatGeek publishes them' : ''}.`}</p>`;
 }
 
 // ---------- player stats ----------

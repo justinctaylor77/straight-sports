@@ -4,8 +4,8 @@
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ord = (n) => (n == null ? '' : `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)]}`);
 const fmtWhen = (iso) => { const d = new Date(iso); return `${d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`; };
-import { playBlock, latestBanner, whoChips, playText } from './whoplay.js?v=25';
-import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=25';
+import { playBlock, latestBanner, whoChips, playText } from './whoplay.js?v=26';
+import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=26';
 const hex = (c, fb) => (c && /^[0-9a-f]{6}$/i.test(c) ? `#${c}` : fb);
 
 export const castState = { tab: 'summary', player: null, sport: null, id: null, fp: null, fd: null, ab: null, sf: 'all' };
@@ -74,7 +74,7 @@ function statCompare(d, ctx) {
 }
 const tabs = (list) => `<div class="toolbar sticky gc-tabs"><div class="seg" role="tablist">${list.map(([k, l]) => `<button data-gctab="${k}" class="${castState.tab === k ? 'on' : ''}" role="tab" aria-selected="${castState.tab === k}">${l}</button>`).join('')}</div></div>`;
 const srcNote = (d) => (d.playSource === 'NCAA.com' ? ' Play-by-play: NCAA.com (ESPN has none for this game).' : '');
-const footer = (d, extra = '') => `${d.state !== 'pre' && castState.tab === 'summary' ? venueCard(d) + officialsCard(d) : ''}<p class="faint small gc-foot">${d.state === 'in' ? 'Updates automatically about every 10 seconds while this screen is open. ' : ''}Data: ESPN public feeds.${srcNote(d)}${extra ? ` ${extra}` : ''} ${d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener noreferrer">Open on ESPN ↗</a>` : ''}</p>`;
+const footer = (d, extra = '') => `${d.state !== 'pre' && castState.tab === 'summary' ? venueCard(d) + officialsCard(d) : ''}<p class="faint small gc-foot">${d.state === 'in' ? 'Updates automatically about every 10 seconds while this screen is open. ' : ''}Data: ${d.attribution ? esc(d.attribution) : 'ESPN public feeds.'}${srcNote(d)}${extra ? ` ${extra}` : ''} ${d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener noreferrer">${d.limited ? 'Open on theausl.com' : 'Open on ESPN'} ↗</a>` : ''}</p>`;
 const nf = (n) => Number(n).toLocaleString('en-US');
 // Venue facts: name/city/surface/attendance come from ESPN; capacity and year built from Wikipedia/Wikidata (server-verified).
 // Unknown capacity / year show N/A; attendance and sellout % are only shown once ESPN reports attendance (live or final).
@@ -346,7 +346,15 @@ function yourPlayers(d, ctx) {
   return `<h2>Your players</h2><div class="card panel">${rows.map(({ t, g, r }) => `<div class="yp"><img src="${esc(r.headshot || '')}" alt="" width="40" height="40" class="hs" loading="lazy" /><div><b>${esc(r.full || r.name)}</b> <span class="faint small">${esc(t.abbr)}${r.pos ? ` · ${esc(r.pos)}` : ''}</span>
     <div class="ypl">${g.labels.map((l, i) => `<span><small>${esc(l)}</small>${esc(r.stats[i] ?? '')}</span>`).join('')}</div></div></div>`).join('')}</div>`;
 }
+// A game whose provider has results but no play-by-play or box score (AUSL): say so plainly, show only what is real, link to the official page.
+function limitedCast(d, ctx) {
+  const L = d.limited; const row = (k, v) => (v ? `<div class="r"><span>${esc(k)}</span><b>${esc(v)}</b></div>` : '');
+  const facts = [row('Venue', d.venue), row('TV', d.broadcast), row('Round', d.note), row('Status', d.detail)].join('');
+  return header(d, ctx) + `<div class="card gc-limited" role="note"><h3>${esc(L.title)}</h3><p>${esc(L.text)}</p>${L.link && L.link.url ? `<a class="btn" href="${esc(L.link.url)}" target="_blank" rel="noopener noreferrer">${esc(L.link.label)} ↗</a>` : ''}</div>`
+    + (facts ? `<div class="stat-groups"><div class="card"><h4>Game info</h4>${facts}</div></div>` : '') + footer(d);
+}
 function genericCast(d, ctx) {
+  if (d.limited) return limitedCast(d, ctx);
   const fam = d.family; let body = '';
   const soccer = fam === 'soccer';
   if (d.state === 'pre') body = preGame(d) + (soccer ? lineups(d, ctx) : '') + `<p class="muted small">Live score, ${soccer ? 'key events, lineups' : 'play-by-play, box score'} and team stats appear here once the game starts.</p>`;

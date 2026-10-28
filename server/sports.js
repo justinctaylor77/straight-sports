@@ -13,6 +13,8 @@ for (const [id, c] of Object.entries(CATALOG)) SPORTS[id] = { id, ...c, leagues:
 const CORE_TEAM = ['cfb', 'nfl', 'mlb'];
 
 module.exports = function makeSports({ cached, cache, fetchJSON }) {
+  const AUSL = require('./ausl')({ cached }); // provider: 'ausl' (see catalog.js): Wikipedia game log + MLB Stats API
+  const viaAusl = (sport) => !!(SPORTS[sport] && SPORTS[sport].provider === 'ausl');
   const VENUES = require('./venues')({ cached });
   const NCAAPBP = makeNcaaPbp({ cached, fetchJSON });
   const OFFICIALS = require('./officials')({ cached, fetchJSON });
@@ -91,6 +93,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
   }
   async function getTeams(sport) {
     const sp = SPORTS[sport];
+    if (viaAusl(sport)) return AUSL.getTeams();
     if (!CORE_TEAM.includes(sport)) return genericTeams(sport);
     return cached(`teams:${sport}`, 6 * 3600e3, async () => {
       const url = sport === 'cfb' ? `${WEB}/${sp.path}/standings?group=80` : `${WEB}/${sp.path}/standings?level=3`;
@@ -129,6 +132,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
   const ymd = (d) => d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }).replace(/-/g, '');
   async function teamScoreboard(sport, q = {}) {
     const sp = SPORTS[sport];
+    if (viaAusl(sport)) return AUSL.board();
     if (!CORE_TEAM.includes(sport)) return dailyBoard(sport, q);
     let qs = '';
     if (sport === 'cfb') qs = `groups=80&limit=400${q.week ? `&week=${encodeURIComponent(q.week)}` : ''}${q.seasontype ? `&seasontype=${encodeURIComponent(q.seasontype)}` : ''}`;
@@ -335,6 +339,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
 
   // ---------- standings (NFL / MLB) ----------
   async function standings(sport) {
+    if (viaAusl(sport)) return AUSL.standings();
     if (!CORE_TEAM.includes(sport)) return genericStandings(sport);
     return cached(`standings:${sport}`, 30 * 60e3, async () => {
       const d = await fetchJSON(`${WEB}/${SPORTS[sport].path}/standings?level=3`);
@@ -557,6 +562,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
   }
 
   async function gamecast(sport, id) {
+    if (viaAusl(sport)) return AUSL.cast(String(id).replace(/\D/g, ''));
     const key = `cast:${sport}:${id}`;
     const prev = cache.get(key);
     const live = prev && prev.value && prev.value.state === 'in';
@@ -576,7 +582,9 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
   // ---------- team page (all team sports) ----------
   async function teamPage(rawId) {
     const m = String(rawId).match(/^(?:([a-z0-9]+):)?(\d+)$/); if (!m) throw new Error('bad team id');
-    const sport = m[1] || 'cfb'; if (!SPORTS[sport] || SPORTS[sport].kind !== 'team') throw new Error('bad team id'); const id = m[2]; const base = `${SITE}/${SPORTS[sport].path}`;
+    const sport = m[1] || 'cfb'; if (!SPORTS[sport] || SPORTS[sport].kind !== 'team') throw new Error('bad team id'); const id = m[2];
+    if (viaAusl(sport)) return AUSL.teamPage(`${sport}:${id}`);
+    const base = `${SITE}/${SPORTS[sport].path}`;
     return cached(`team:${sport}:${id}`, 5 * 60e3, async () => {
       const seasontype = sport === 'mlb' ? '' : '';
       const [info, sched, sched3] = await Promise.all([
@@ -801,7 +809,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
 
   // ---------- rosters & athlete search (player follows for every sport) ----------
   async function roster(sport, espnId) {
-    const sp = SPORTS[sport]; if (!sp || sp.kind !== 'team') return [];
+    const sp = SPORTS[sport]; if (!sp || sp.kind !== 'team' || viaAusl(sport)) return []; // AUSL players have no player pages, so the picker doesn't list them
     return cached(`roster:${sport}:${espnId}`, 6 * 3600e3, async () => {
       const d = await fetchJSON(`${SITE}/${sp.path}/teams/${espnId}/roster`);
       let list = []; const a0 = d.athletes || [];
@@ -811,6 +819,7 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
     });
   }
   async function athleteSearch(sport, q) {
+    if (viaAusl(sport)) return []; // no AUSL player pages; the search box finds teams only
     const sp = SPORTS[sport]; q = String(q || '').trim().slice(0, 60);
     if (!sp || q.length < 2) return [];
     const [fam, league] = sp.path ? sp.path.split('/') : [sport, sport];
@@ -863,6 +872,6 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       return { sport, cols: COLS.map(([l]) => l), groups, season: d.seasons && d.seasons[0] && d.seasons[0].displayName };
     });
   }
-  return { SPORTS, getTeams, eventBoard, roster, athleteSearch, polls, eventPlayers, teamScoreboard, golfBoard, tennisBoard, tennisRankings, players, standings, gamecast, teamPage, normTeam, normEvent };
+  return { SPORTS, AUSL, getTeams, eventBoard, roster, athleteSearch, polls, eventPlayers, teamScoreboard, golfBoard, tennisBoard, tennisRankings, players, standings, gamecast, teamPage, normTeam, normEvent };
 };
 module.exports.SPORTS = SPORTS;

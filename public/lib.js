@@ -106,7 +106,7 @@ export const MUTE_WORDS = {
   laliga: ['LaLiga', 'La Liga', 'soccer'], bund: ['Bundesliga', 'soccer'], seriea: ['Serie A', 'soccer'], ligue1: ['Ligue 1', 'soccer'],
   ucl: ['Champions League', 'soccer'], ligamx: ['Liga MX', 'soccer'], cbase: ['College World Series', 'baseball'], softball: ['softball', 'WCWS'],
   gymnastics: ['gymnastics', 'gymnast'], ufc: ['UFC', 'MMA', 'mixed martial arts'], boxing: ['boxing', 'boxer'], f1: ['F1', 'Formula 1', 'Formula One', 'Grand Prix'],
-  nascar: ['NASCAR'], indy: ['IndyCar', 'Indy 500'],
+  nascar: ['NASCAR'], indy: ['IndyCar', 'Indy 500'], ausl: ['AUSL', 'Athletes Unlimited', 'softball'],
 };
 const AMBIGUOUS = new Set(['playoff', 'bowl', 'masters', 'liv', 'bout', 'grand slam', 'us open', 'football', 'birdie', 'bogey', 'pitcher', 'inning', 'home run', 'quarterback', 'touchdown', 'heavyweight', 'welterweight', 'middleweight']);
 export function muteWordsFor(id) {

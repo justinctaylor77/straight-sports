@@ -6,15 +6,15 @@ let n = 0; const t = (name, fn) => { try { fn(); n++; } catch (e) { console.erro
 const R = makeRender({ logo: (x) => (x ? x.logo : ''), myTeamIds: () => new Set(['nfl:1']) });
 const team = (id, short, extra = {}) => ({ id, sport: id.split(':')[0], name: short, short, abbr: short, logo: `/l/${id}.png`, color: 'cc0000', ...extra });
 
-t('FEED is the nine sports', () => assert.deepEqual([...FEED].sort(), ['cbase', 'gymnastics', 'mcbb', 'mlb', 'nba', 'nfl', 'softball', 'wcbb', 'wnba']));
+t('FEED is the ten sports', () => assert.deepEqual([...FEED].sort(), ['ausl', 'cbase', 'gymnastics', 'mcbb', 'mlb', 'nba', 'nfl', 'softball', 'wcbb', 'wnba']));
 t('parseHash: hub, list, playoffs, existing CFB routes untouched', () => {
   assert.deepEqual(parseHash('#/rankings/lists'), { page: 'lists', sport: '' }); assert.deepEqual(parseHash('#/rankings/list/nfl'), { page: 'list', sport: 'nfl' }); assert.deepEqual(parseHash('#/rankings/playoffs/mcbb'), { page: 'playoffs', sport: 'mcbb' });
   assert.equal(parseHash('#/rankings/bracket'), null); assert.equal(parseHash('#/rankings/grok'), null); assert.equal(parseHash('#/rankings'), null); assert.equal(parseHash(''), null); assert.equal(parseHash(undefined), null);
 });
 t('pickerOrder: current sport first, chosen sports next, then everything (no duplicates)', () => {
-  const o = pickerOrder({ sport: 'mlb', sportsChosen: true, sports: ['cfb', 'nfl', 'mlb'] }); assert.deepEqual(o.slice(0, 2), ['mlb', 'nfl']); assert.equal(o.length, 9); assert.equal(new Set(o).size, 9);
+  const o = pickerOrder({ sport: 'mlb', sportsChosen: true, sports: ['cfb', 'nfl', 'mlb'] }); assert.deepEqual(o.slice(0, 2), ['mlb', 'nfl']); assert.equal(o.length, 10); assert.equal(new Set(o).size, 10);
   const d = pickerOrder({ sport: 'cfb', sportsChosen: false, sports: ['cfb', 'nfl'] }); assert.deepEqual(d, FEED); // nothing chosen → catalog order, never hides a sport
-  assert.equal(pickerOrder({ sport: 'golf', sportsChosen: true, sports: ['golf'] }).length, 9);
+  assert.equal(pickerOrder({ sport: 'golf', sportsChosen: true, sports: ['golf'] }).length, 10);
 });
 t('esc escapes HTML and tolerates null', () => { assert.equal(esc('<img src=x onerror="a">&\''), '&lt;img src=x onerror=&quot;a&quot;&gt;&amp;&#39;'); assert.equal(esc(null), ''); assert.equal(esc(0), '0'); });
 t('moveChip', () => { assert.match(moveChip(3), /▲3/); assert.match(moveChip(-2), /▼2/); assert.match(moveChip(0), /mv eq/); assert.match(moveChip('new'), /NEW/); assert.equal(moveChip(null), ''); assert.equal(moveChip(undefined), ''); });

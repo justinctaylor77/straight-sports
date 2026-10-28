@@ -1,13 +1,13 @@
-import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=25';
+import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=26';
 import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=25';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=26';
 import * as GA from './anim.js?v=18';
 import * as BD from './backdrop.js';
 import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=19';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
-import { createLists, FEED as LIST_FEED } from './lists.js?v=25';
+import { createLists, FEED as LIST_FEED } from './lists.js?v=26';
 
 // ---------------- state ----------------
 let S = loadSettings();
@@ -438,13 +438,16 @@ async function viewScores(quick) {
     toolbar = `<select class="btn" id="week" aria-label="Week" data-cur="${cur}">${weekOpts}</select>`;
     sub = `${esc(curLabel.label || `Week ${sb.week}`)}${curLabel.detail ? ` · ${esc(curLabel.detail)}` : ''} · your local time`;
     if (sp === 'cfb') toolbar += `<div class="seg" role="tablist"><button data-mode="mine" class="${scoresMode === 'mine' ? 'on' : ''}">My teams</button><button data-mode="conf" class="${scoresMode === 'conf' ? 'on' : ''}">My confs</button><button data-mode="all" class="${scoresMode === 'all' ? 'on' : ''}">All FBS</button></div>`;
-  } else sub = `${sp === 'mlb' ? 'Last 7 days and the next 3' : 'Recent and upcoming days'} · your local time`;
+  } else sub = `${sb.notice ? 'Latest results' : sp === 'mlb' ? 'Last 7 days and the next 3' : 'Recent and upcoming days'} · your local time`;
+  const srcNote = (sb.notice ? `<div class="notice src-note" role="status">${esc(sb.notice)}${(sb.links || []).map((l) => ` <a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ›</a>`).join('')}</div>` : '');
+  const srcFoot = sb.attribution ? `<p class="faint small attrib">${esc(sb.attribution)}</p>` : '';
   view.innerHTML = LT('Scores', sub) + `
     ${toolbar ? `<div class="toolbar sticky">${toolbar}</div>` : ''}
+    ${srcNote}
     ${mutedCount ? `<div class="notice">${mutedCount} game${mutedCount > 1 ? 's' : ''} hidden (muted teams)</div>` : ''}
     <h2>★ Favorites <span class="count">${mine.length}</span></h2>
     ${mine.length ? `<div class="grid">${mine.map(gameCard).join('')}</div>` : `<div class="card empty">${followsIn(sp).length ? 'No games for your teams or players in this window.' : `You aren’t following any ${esc(SPORTS[sp].short)} teams or players yet. <a href="#/settings/teams">Pick some</a>.`}</div>`}
-    ${sp === 'cfb' && scoresMode === 'mine' ? '' : (sections.join('') || '<div class="empty">No other games.</div>')}`;
+    ${sp === 'cfb' && scoresMode === 'mine' ? '' : (sections.join('') || '<div class="empty">No other games.</div>')}${srcFoot}`;
   const w = $('#week'); if (w) w.onchange = (e) => { tick(); scoresWeek = e.target.value === w.dataset.cur ? '' : e.target.value; viewScores(); };
   view.querySelectorAll('[data-mode]').forEach((b) => (b.onclick = () => { tick(); scoresMode = b.dataset.mode; viewScores(true); }));
   scheduleRefresh(!scoresWeek && evs.some((e) => e.state === 'in'));
@@ -591,7 +594,7 @@ async function viewRankingsBase(quick) {
   const mf = muteFilter();
   if (d.cols && d.groups) {
     const lg = [...new Set(d.groups.map((g) => g.league || ''))];
-    view.innerHTML = LT('Standings', `${d.season ? `${esc(d.season)} · ` : ''}ESPN`) + (d.groups.length ? lg.map((L) => `${lg.length > 1 && L ? `<h2>${esc(L)}</h2>` : ''}<div class="st-grid">${d.groups.filter((g) => (g.league || '') === L).map((g) => genStandTable({ ...g, rows: g.rows.filter((r) => !mf.teamId(r.team.id)) }, d.cols)).join('')}</div>`).join('') : '<div class="card empty">Standings aren’t posted yet this season.</div>');
+    view.innerHTML = LT('Standings', `${d.season ? `${esc(d.season)} · ` : ''}${esc(d.source || 'ESPN')}`) + (d.groups.length ? lg.map((L) => `${lg.length > 1 && L ? `<h2>${esc(L)}</h2>` : ''}<div class="st-grid">${d.groups.filter((g) => (g.league || '') === L).map((g) => genStandTable({ ...g, rows: g.rows.filter((r) => !mf.teamId(r.team.id)) }, d.cols)).join('')}</div>`).join('') : '<div class="card empty">Standings aren’t posted yet this season.</div>') + (d.note ? `<p class="faint small">${esc(d.note)}${d.attribution ? ` ${esc(d.attribution)}` : ''}</p>` : '');
     return;
   }
   if (eventSport(sp)) {
@@ -885,7 +888,7 @@ async function viewTeam(id, forceTab) {
       ${t.oppg != null ? `<div class="card"><div class="v">${(+t.oppg).toFixed(1)}</div><div class="l">${UNIT(sp)} allowed / game</div></div>` : ''}
       ${meta.streak ? `<div class="card"><div class="v">${esc(meta.streak)}</div><div class="l">Streak</div></div>` : ''}</div>
     <h2>Season stats</h2><div class="stat-groups">${d.stats.map((g) => `<div class="card"><h4>${esc(g.name)}</h4>${g.items.map((s) => `<div class="r"><span>${esc(s.label)}</span><b>${esc(s.value)}</b></div>`).join('')}</div>`).join('') || `<div class="empty">${sp === 'mlb' ? 'Season stats aren’t in ESPN’s free MLB team feed.' : 'No season stats in ESPN’s free feed yet.'}</div>`}</div>`;
-  const rosterHTML = () => `<h2>Roster <span class="count">${roster.length} · ★ to follow a player</span></h2><div class="card panel roster">${roster.map((p) => `<div class="ro-row ${follows(p.id) ? 'mine' : ''}">${p.headshot ? `<img class="hs" src="${esc(p.headshot)}" alt="" loading="lazy" />` : '<span class="hs"></span>'}<a class="nm" href="#/player/${esc(p.id)}"><b>${esc(p.name)}</b> <span class="faint small">${esc([p.jersey ? '#' + p.jersey : '', p.pos].filter(Boolean).join(' · '))}</span></a><button class="pf ${follows(p.id) ? 'on' : ''}" data-pfollow="${esc(p.id)}" data-pname="${esc(p.name)}" data-pflag="${esc(p.headshot || '')}" data-pteam="${esc(t.id)}" data-ppos="${esc(p.pos || '')}" aria-pressed="${follows(p.id)}" aria-label="${follows(p.id) ? 'Unfollow' : 'Follow'} ${esc(p.name)}">${follows(p.id) ? '★' : '☆'}</button></div>`).join('')}</div>`;
+  const rosterHTML = () => `<h2>Roster <span class="count">${roster.length}${roster.every((p) => p.noPage) ? '' : ' · ★ to follow a player'}</span></h2><div class="card panel roster">${roster.map((p) => p.noPage ? `<div class="ro-row"><span class="hs"></span><span class="nm"><b>${esc(p.name)}</b> <span class="faint small">${esc([p.jersey ? '#' + p.jersey : '', p.pos].filter(Boolean).join(' · '))}</span></span></div>` : `<div class="ro-row ${follows(p.id) ? 'mine' : ''}">${p.headshot ? `<img class="hs" src="${esc(p.headshot)}" alt="" loading="lazy" />` : '<span class="hs"></span>'}<a class="nm" href="#/player/${esc(p.id)}"><b>${esc(p.name)}</b> <span class="faint small">${esc([p.jersey ? '#' + p.jersey : '', p.pos].filter(Boolean).join(' · '))}</span></a><button class="pf ${follows(p.id) ? 'on' : ''}" data-pfollow="${esc(p.id)}" data-pname="${esc(p.name)}" data-pflag="${esc(p.headshot || '')}" data-pteam="${esc(t.id)}" data-ppos="${esc(p.pos || '')}" aria-pressed="${follows(p.id)}" aria-label="${follows(p.id) ? 'Unfollow' : 'Follow'} ${esc(p.name)}">${follows(p.id) ? '★' : '☆'}</button></div>`).join('')}</div>${d.attribution ? `<p class="faint small attrib">${esc(d.attribution)}</p>` : ''}`;
   view.innerHTML = `<div class="team-page"><div class="card team-hero" style="--team:#${esc(t.color || '1f6f5c')}"><img src="${esc(logo(t))}" alt="" />
       <div><h1>${esc(t.name)}</h1><div class="muted">${[summary, t.standing, meta.conference].filter(Boolean).map(esc).join(' · ')}</div></div>
       <div class="actions"><button class="btn ${following ? 'primary' : ''}" id="fol">${following ? '✓ Following' : '+ Follow'}</button><button class="btn ${muted ? 'danger' : ''}" id="mut">${muted ? 'Muted' : 'Mute'}</button></div></div>
@@ -906,7 +909,7 @@ async function viewTeam(id, forceTab) {
     }
     const y = scrollY;
     $('#team-sched').innerHTML = `${scheduleSections(sd.events, t.id, sd.sport || sp, peopleCtx(), { limitUp: schedAll.up ? 0 : 12, limitPast: schedAll.past ? 0 : 12 })}
-      <p class="faint small">${sd.season ? `${esc(sd.season)} season · ` : ''}Schedule, scores and TV from ESPN. Ticket links go to the game’s SeatGeek page${sd.ticketsPriced ? '; prices appear when SeatGeek publishes them' : ''}.</p>`;
+      <p class="faint small">${sd.season ? `${esc(sd.season)} season · ` : ''}${sd.attribution ? esc(sd.attribution) : `Schedule, scores and TV from ESPN. Ticket links go to the game’s SeatGeek page${sd.ticketsPriced ? '; prices appear when SeatGeek publishes them' : ''}.`}</p>`;
     if (SILENT) scrollTo(0, y);
     $('#team-sched').querySelectorAll('[data-more]').forEach((b) => (b.onclick = () => { tick(); schedAll[b.dataset.more] = true; loadSched(); }));
     scheduleRefresh(sd.events.some((e) => e.state === 'in'), 30e3);
@@ -1050,7 +1053,7 @@ function partHTML(p) {
   switch (p) {
     case 'sportseg': return S.sports.length > 1 ? `<div class="chips sport-chips">${teamSportIds().length > 1 ? `<button class="chip lg ${allMode() ? 'on' : ''}" data-psport="all" aria-pressed="${allMode()}">🏟️ All leagues<span class="cnt">${S.follow.filter((id) => !isAthleteId(id) && teamSport(sportOfId(id))).length || ''}</span></button>` : ''}${S.sports.map((k) => `<button class="chip lg ${!allMode() && k === pSport() ? 'on' : ''}" data-psport="${k}">${SPORTS[k].emoji} ${esc(SPORTS[k].short)}<span class="cnt">${followsIn(k).length || ''}</span></button>`).join('')}</div>` : '';
     case 'sports': return (S.sportsChosen ? '<div class="sports-note"><button class="btn small" data-allsports="1">Show all sports</button></div>' : '<p class="sports-note faint small">Showing every sport until you pick some. Tap a sport to show only the ones you choose.</p>') + SPORT_GROUPS.map((g) => { const ks = SPORT_IDS.filter((k) => SPORTS[k].group === g); return ks.length ? `<div class="group-lbl tiles-lbl">${esc(g)}</div>${ks.map((k) => { const on = S.sports.includes(k); const v = SPORTS[k]; return `<button class="tile sport ${on ? 'on' : ''}" data-sport="${k}" aria-pressed="${on}" style="--sa:${v.accent}"><span class="em">${v.emoji}</span><span><b>${esc(v.name)}</b><small>${esc(v.blurb || '')}${v.kind === 'news' ? ' · headlines only' : ''}</small></span>${CHECK}</button>`; }).join('')}` : ''; }).join('');
-    case 'pmode': { const sp = pSport(); if (allMode() || !teamSport(sp)) return '';
+    case 'pmode': { const sp = pSport(); if (allMode() || !teamSport(sp) || sp === 'ausl') return '';
       return `<div class="seg pmode"><button data-pmode="teams" class="${pickMode === 'teams' ? 'on' : ''}" aria-pressed="${pickMode === 'teams'}">Teams</button><button data-pmode="players" class="${pickMode === 'players' ? 'on' : ''}" aria-pressed="${pickMode === 'players'}">Players</button></div>`; }
     case 'quicklbl': return (allMode() ? S.sports.includes('cfb') : pSport() === 'cfb') && TEAMS_BY.cfb && UTAH().length ? 'Popular in Utah' : '';
     case 'quick': if (!(allMode() ? S.sports.includes('cfb') : pSport() === 'cfb') || !TEAMS_BY.cfb) return ''; return UTAH().map((t) => `<button class="chip lg ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img src="${esc(logo(t))}" alt="" />${esc(fullName(t))}${f(t.id) ? ' ✓' : ''}</button>`).join('');
@@ -1062,7 +1065,7 @@ function partHTML(p) {
     case 'tsearch': { const sp = pSport();
       if (newsSport(sp)) return '';
       if (teamSport(sp) && !TEAMS_BY[sp]) { ensureTeams(sp).then(() => refreshParts(pickRoot())); }
-      if (teamSport(sp) && pickMode === 'players') {
+      if (teamSport(sp) && pickMode === 'players' && sp !== 'ausl') {
         const TL = (TEAMS_BY[sp] || []).filter((t) => !teamConf || t.conferenceId === teamConf);
         return `<input class="search" data-in="tsearch" type="search" placeholder="Search ${esc(SPORTS[sp].short)} players by name" value="${esc(teamQ)}" autocomplete="off" enterkeyhint="search" /><div class="pick-sel">${confSelect()}<select class="btn" data-in="bteam" aria-label="Team roster"><option value="">Browse a roster…</option>${TL.map((t) => `<option value="${t.id}" ${browseTeam === t.id ? 'selected' : ''}>${esc(t.short)}</option>`).join('')}</select></div>`;
       }
@@ -1073,7 +1076,7 @@ function partHTML(p) {
       const sp = pSport(); const q = teamQ.trim().toLowerCase();
       if (allMode()) return allGrid(f, q);
       if (newsSport(sp)) return `<div class="empty">${esc(SPORTS[sp].name)} is headlines-only, so there’s nobody to follow here. Its news uses every outlet you have on — mute names or keywords in Mute.</div>`;
-      if (teamSport(sp) && pickMode === 'players') {
+      if (teamSport(sp) && pickMode === 'players' && sp !== 'ausl') {
         const tname = (id) => (teamById(id) || {}).short || '';
         if (q.length >= 2) {
           const r = searchAthletes(sp, teamQ.trim());
@@ -1083,7 +1086,7 @@ function partHTML(p) {
         if (browseTeam) {
           const r = ROSTER.get(browseTeam); if (!r) { loadRoster(browseTeam); return '<div class="empty">Loading roster…</div>'; }
           if (r === 'loading') return '<div class="empty">Loading roster…</div>';
-          return r.map((p) => playerRow({ ...p, teamId: p.team }, esc([p.jersey ? `#${p.jersey}` : '', p.pos, tname(p.team)].filter(Boolean).join(' · ')))).join('') || '<div class="empty">No roster in ESPN’s feed.</div>';
+          return r.map((p) => playerRow({ ...p, teamId: p.team }, esc([p.jersey ? `#${p.jersey}` : '', p.pos, tname(p.team)].filter(Boolean).join(' · ')))).join('') || (sp === 'ausl' ? '<div class="empty">AUSL players don’t have followable pages (there is no licensed player-data feed). Follow the team instead; its roster is on the team page.</div>' : '<div class="empty">No roster in ESPN’s feed.</div>');
         }
         const mine = followsIn(sp).filter(isAthleteId).map(playerEnt).filter(Boolean);
         return `<div class="empty small">Search by name, or pick a ${sp === 'cfb' ? 'conference' : 'division'} and team to browse its roster. Followed players are pinned in scores, highlighted in Gamecast and boost the news.</div>${mine.map((p) => playerRow({ id: p.id, name: p.name, headshot: p.logo, teamId: p.team, pos: p.pos }, esc([p.pos, tname(p.team)].filter(Boolean).join(' · ')))).join('')}`;
@@ -1186,7 +1189,7 @@ function prefClick(e, root) {
     if (!on) ensureTeams(d.sport).then(() => refreshParts(root));
     syncSportUI();
   } else if (d.psport === 'all') { pickAll = true; pickMode = 'teams'; teamQ = ''; teamConf = ''; browseTeam = ''; Promise.all(teamSportIds().map(ensureTeams)).then(() => refreshParts(root)); }
-  else if (d.psport) { pickAll = false; pickSport = d.psport; teamQ = ''; teamConf = ''; browseTeam = ''; ensureTeams(d.psport).then(() => refreshParts(root)); }
+  else if (d.psport) { pickAll = false; pickSport = d.psport; if (d.psport === 'ausl') pickMode = 'teams'; teamQ = ''; teamConf = ''; browseTeam = ''; ensureTeams(d.psport).then(() => refreshParts(root)); }
   else if (d.lghead) { if (!pickOpen) pickOpen = new Set(); if (teamQ.trim()) { teamQ = ''; const i = $('[data-in="tsearch"]', root); if (i) i.value = ''; pickOpen.add(d.lghead); } else if (pickOpen.has(d.lghead)) pickOpen.delete(d.lghead); else pickOpen.add(d.lghead); }
   else if (d.pby) { pickBy = d.pby; }
   else if (d.pmode) { pickMode = d.pmode; teamQ = ''; browseTeam = ''; }
@@ -1317,7 +1320,7 @@ function viewSettingsSub(sub) {
     about: ['About & install', '', `<div class="card prose">
       <h3>Install it like an app</h3><p><b>iPhone:</b> Safari → Share → “Add to Home Screen”.<br/><b>Android / Chrome / Edge:</b> menu → “Install app”.</p>
       <h3>How “straight news” works</h3><p>Headlines are labeled automatically with keyword and URL rules (e.g. “column”, “hot take”, “predictions”, “odds”, question headlines). It’s a heuristic, not a bias rating — tap any story to see why it was labeled.</p>
-      <h3>Data</h3><p>Scores, schedules, leaderboards, rankings, standings and Gamecast data come from ESPN’s public JSON. Headlines come from RSS feeds (AP, Reuters, CBS, Yahoo, NYT, The Guardian, PGA Tour, LPGA, ATP, WTA, NCAA.com, Deseret News, Salt Lake Tribune, KSL and more) and Google News. Only the sports you pick are shown — NBA, WNBA and the rest of the catalog stay off unless you turn them on. No tracking, no ads; settings stay on this device.</p>
+      <h3>Data</h3><p>Scores, schedules, leaderboards, rankings, standings and Gamecast data come from ESPN’s public JSON. Headlines come from RSS feeds (AP, Reuters, CBS, Yahoo, NYT, The Guardian, PGA Tour, LPGA, ATP, WTA, NCAA.com, Deseret News, Salt Lake Tribune, KSL and more) and Google News. AUSL pro softball isn’t on ESPN: its results come from Wikipedia’s season game log (CC BY-SA 4.0) and its teams, rosters and logos from MLB’s Stats API, so it has results, standings and a championship view but no live scores or play-by-play. Only the sports you pick are shown — NBA, WNBA and the rest of the catalog stay off unless you turn them on. No tracking, no ads; settings stay on this device.</p>
       <h3>Gamecast limits</h3><p>Football: the field is schematic and win probability is ESPN’s model. Baseball: runners and the count are shown only while a game is live. Golf: hole-by-hole scorecards, no shot tracking or world ranking. Tennis: set scores and server only, no point-by-point or match stats. Basketball, hockey and soccer: box scores, lineups and play-by-play from ESPN. UFC: full fight cards with results by round. F1, NASCAR and IndyCar: session results and running order, no telemetry. Boxing: headlines only.</p></div>`],
   };
   const s = screens[sub]; if (!s) { location.hash = '#/settings'; return; }
@@ -1337,7 +1340,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=25" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=26" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
