@@ -1,0 +1,601 @@
+{
+ "at": "2026-10-28T20:45:38.287Z",
+ "base": "https://straight-sports.onrender.com",
+ "results": [
+  {
+   "sport": "nfl",
+   "game": "401873009",
+   "state": "post",
+   "label": "DAL @ PHI [week 7]",
+   "date": "2026-10-27T00:15Z",
+   "kind": "football",
+   "plays": 187,
+   "withWho": 154,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Kicker": 14,
+    "Returner": 10,
+    "Tackled by": 142,
+    "Rusher": 64,
+    "Passer": 65,
+    "Target": 62,
+    "Extra point": 6,
+    "Quarterback": 2,
+    "Sacked by": 2,
+    "Punter": 5,
+    "Intended for": 1,
+    "Interception": 1,
+    "Penalty on": 11,
+    "Downed by": 3
+   },
+   "sample": [
+    "Rush: Javonte Williams rush for 2 yards, tackled by Moro Ojomo and Jihaad Campbell [Rusher: Javonte Williams; Tackled by: Moro Ojomo; Tackled by: Jihaad Campbell]",
+    "Incomplete pass: Dak Prescott pass incomplete intended for CeeDee Lamb [Passer: Dak Prescott; Target: CeeDee Lamb]",
+    "Field goal good: Brandon Aubrey 55-yard field goal is good [Kicker: Brandon Aubrey]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "cfb",
+   "game": "401871072",
+   "state": "post",
+   "label": "SHSU @ MOST",
+   "date": "2026-10-28T00:00Z",
+   "kind": "football",
+   "plays": 161,
+   "withWho": 148,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Rusher": 57,
+    "Tackled by": 123,
+    "Kicker": 11,
+    "Passer": 58,
+    "Target": 58,
+    "QB hurried by": 7,
+    "Pass defended": 13,
+    "Extra point": 3,
+    "Penalty on": 13,
+    "Punter": 9,
+    "Fumbled by": 3,
+    "Forced by": 3,
+    "Recovered by": 3,
+    "Quarterback": 7,
+    "Sacked by": 7,
+    "Returner": 2
+   },
+   "sample": [
+    "Rush: Connor Lair rush for a loss of 3 yards, tackled by Brody Henderson [Rusher: Connor Lair; Tackled by: Brody Henderson]",
+    "Pass complete: Henry Belin IV pass complete to Jeron Askren for 5 yards, tackled by Ishmel Atkins [Passer: Henry Belin IV; Target: Jeron Askren; Tackled by: Ishmel Atkins]",
+    "Field goal missed: Yousef Obeid 50-yard field goal is no good [Kicker: Yousef Obeid]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "mlb",
+   "game": "401908045",
+   "state": "post",
+   "label": "MIL @ TB (World Series - Game 4)",
+   "date": "2026-10-28T00:00Z",
+   "kind": "baseball",
+   "plays": 123,
+   "withWho": 113,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Pitcher": 113,
+    "Batter": 90,
+    "Runner on 2nd": 8,
+    "Runner on 3rd": 5
+   },
+   "sample": [
+    "Walk: Yelich walked. (Christian Yelich batting against Griffin Jax) [Pitcher: Griffin Jax; Batter: Christian Yelich]",
+    "Fly Out: Bauers flied out to center. (Jake Bauers batting against Griffin Jax) [Pitcher: Griffin Jax; Batter: Jake Bauers]",
+    "Strikeout: Chourio struck out swinging. (Jackson Chourio batting against Griffin Jax) [Pitcher: Griffin Jax; Batter: Jackson Chourio]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "nba",
+   "game": "401909880",
+   "state": "post",
+   "label": "POR @ LAL",
+   "date": "2026-10-28T03:00Z",
+   "kind": "generic",
+   "plays": 199,
+   "withWho": 187,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Subbed in": 10,
+    "Subbed out": 10,
+    "Shooter": 154,
+    "Player": 5,
+    "Turnover": 1,
+    "Rebound": 11,
+    "Assist": 58,
+    "Foul on": 5,
+    "Block": 1,
+    "Shot blocked": 1
+   },
+   "sample": [
+    "Made jump shot: Ja Morant makes 11-foot driving floating jump shot [Shooter: Ja Morant]",
+    "Made layup: Matisse Thybulle makes running layup (Austin Reaves assists) [Shooter: Matisse Thybulle; Assist: Austin Reaves]",
+    "Made 3-pointer: Austin Reaves makes 23-foot three point jumper (Ziaire Williams assists) [Shooter: Austin Reaves; Assist: Ziaire Williams]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "wnba",
+   "game": "401918309",
+   "state": "post",
+   "label": "ATL @ GS (WNBA Finals - Game 5)",
+   "date": "2026-10-27T00:00Z",
+   "kind": "generic",
+   "plays": 128,
+   "withWho": 118,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Shooter": 77,
+    "Assist": 26,
+    "Turnover": 6,
+    "Steal": 6,
+    "Rebound": 13,
+    "Foul on": 12,
+    "Subbed in": 8,
+    "Subbed out": 8,
+    "Block": 1,
+    "Shot blocked": 1,
+    "Jump ball": 2,
+    "Gains possession": 1
+   },
+   "sample": [
+    "Made layup: Allisha Gray makes 6-foot layup (Jordin Canada assists) [Shooter: Allisha Gray; Assist: Jordin Canada]",
+    "Made layup: Veronica Burton makes 7-foot two point shot [Shooter: Veronica Burton]",
+    "Made layup: Kiah Stokes makes layup (Kaila Charles assists) [Shooter: Kiah Stokes; Assist: Kaila Charles]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "nhl",
+   "game": "401892595",
+   "state": "post",
+   "label": "BUF @ SJ",
+   "date": "2026-10-28T02:30Z",
+   "kind": "generic",
+   "plays": 81,
+   "withWho": 68,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Won faceoff": 12,
+    "Lost faceoff": 12,
+    "Goal": 2,
+    "Assist": 4,
+    "Hit by": 11,
+    "Hit on": 11,
+    "Shot": 33,
+    "Goalie": 23,
+    "Blocked by": 10,
+    "Giveaway": 8,
+    "Takeaway": 2
+   },
+   "sample": [
+    "Missed shot: Jack Quinn Snap Shot Above Crossbar [Shot: Jack Quinn; Goalie: Yaroslav Askarov]",
+    "Faceoff: Zack Ostapchuk faceoff won against Tage Thompson [Won faceoff: Zack Ostapchuk; Lost faceoff: Tage Thompson]",
+    "Goal: Olen Zellweger Goal (3) Snap Shot, assists: Konsta Helenius (2), Owen Power (8) [Goal: Olen Zellweger; Assist: Konsta Helenius; Assist: Owen Power]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "mls",
+   "game": "761904",
+   "state": "post",
+   "label": "LA @ LAFC",
+   "date": "2026-10-26T01:00Z",
+   "kind": "generic",
+   "plays": 28,
+   "withWho": 14,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Booked": 2,
+    "Comes on": 8,
+    "Goes off": 8,
+    "Scorer": 4,
+    "Assist": 1
+   },
+   "sample": [
+    "Goal: Goal! Los Angeles Football Club 0, LA Galaxy 2. Joseph Paintsil (LA Galaxy) left footed shot from very close range to the bottom left corner. [Scorer: Joseph Paintsil]",
+    "Substitution: Substitution, Los Angeles Football Club. Mathieu Choinière replaces Igor Jesus. [Comes on: Mathieu Choinière; Goes off: Igor Jesus]",
+    "Goal: Goal! Los Angeles Football Club 0, LA Galaxy 1. Joseph Paintsil (LA Galaxy) right footed shot from the centre of the box to the bottom left corner. Assisted by Robert Taylor following a fast break. [Scorer: Joseph Paintsil; Assist: Robert Taylor]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "epl",
+   "game": "401878764",
+   "state": "post",
+   "label": "LEE @ SUN",
+   "date": "2026-10-25T16:30Z",
+   "kind": "generic",
+   "plays": 27,
+   "withWho": 11,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Comes on": 8,
+    "Goes off": 8,
+    "Booked": 3
+   },
+   "sample": [
+    "Substitution: Substitution, Sunderland. Omar Alderete replaces Nordi Mukiele because of an injury. [Comes on: Omar Alderete; Goes off: Nordi Mukiele]",
+    "Yellow Card: Reinildo Mandava (Sunderland) is shown the yellow card for a bad foul. [Booked: Reinildo Mandava]",
+    "Yellow Card: Ethan Ampadu (Leeds United) is shown the yellow card for a bad foul. [Booked: Ethan Ampadu]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "nwsl",
+   "game": "401854094",
+   "state": "post",
+   "label": "BOS @ SD",
+   "date": "2026-10-25T23:00Z",
+   "kind": "generic",
+   "plays": 44,
+   "withWho": 16,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Booked": 2,
+    "Comes on": 10,
+    "Goes off": 10,
+    "Scorer": 3,
+    "Assist": 2,
+    "Own goal": 1
+   },
+   "sample": [
+    "Goal: Goal! San Diego Wave 0, Boston Legacy 1. Annie Karich (Boston Legacy) right footed shot from very close range to the bottom left corner following a corner. [Scorer: Annie Karich]",
+    "Substitution: Substitution, Boston Legacy. Aleigh Gambone replaces Barbara Olivieri. [Comes on: Aleigh Gambone; Goes off: Bárbara Olivieri]",
+    "Substitution: Substitution, Boston Legacy. Nicolette Hernández replaces Lilly Reale. [Comes on: Nicki Hernández; Goes off: Lilly Reale]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "laliga",
+   "game": "401882828",
+   "state": "post",
+   "label": "OSA @ SEV",
+   "date": "2026-10-26T20:00Z",
+   "kind": "generic",
+   "plays": 22,
+   "withWho": 14,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Comes on": 9,
+    "Goes off": 9,
+    "Scorer": 2,
+    "Assist": 2,
+    "Booked": 3
+   },
+   "sample": [
+    "Yellow Card: Isaac Romero (Sevilla) is shown the yellow card. [Booked: Isaac Romero]",
+    "Yellow Card: Alejandro Catena (Osasuna) is shown the yellow card for a bad foul. [Booked: Alejandro Catena]",
+    "Goal: Goal! Sevilla 1, Osasuna 0. Isaac Romero (Sevilla) left footed shot from outside the box to the bottom left corner. Assisted by Youssouf Fofana. [Scorer: Isaac Romero; Assist: Youssouf Fofana]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "bund",
+   "game": "401884759",
+   "state": "post",
+   "label": "MUN @ SCF",
+   "date": "2026-10-25T16:30Z",
+   "kind": "generic",
+   "plays": 33,
+   "withWho": 17,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Scorer": 3,
+    "Comes on": 9,
+    "Goes off": 9,
+    "Booked": 4,
+    "Own goal": 1,
+    "Assist": 2
+   },
+   "sample": [
+    "Goal: Goal! Freiburg 0, Bayern Munich 2. Serge Gnabry (Bayern Munich) right footed shot from a difficult angle on the left to the centre of the goal. Assisted by Nathaniel Brown with a through ball. [Scorer: Serge Gnabry; Assist: Nathaniel Brown]",
+    "Yellow Card: Lucas Höler (Freiburg) is shown the yellow card for a bad foul. [Booked: Lucas Höler]",
+    "Goal: Goal! Freiburg 0, Bayern Munich 1. Dayot Upamecano (Bayern Munich) right footed shot from the centre of the box to the centre of the goal. Assisted by Michael Olise with a through ball following a fast break. [Scorer: Dayot Upamecano; Assist: Michael Olise]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "seriea",
+   "game": "401874988",
+   "state": "in",
+   "label": "JUV @ GEN",
+   "date": "2026-10-28T19:45Z",
+   "kind": "generic",
+   "plays": 5,
+   "withWho": 3,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Comes on": 1,
+    "Goes off": 1,
+    "Scorer": 2,
+    "Assist": 1
+   },
+   "sample": [
+    "Substitution: Substitution, Genoa. Mario Mitaj replaces Mikael Ellertsson because of an injury. [Comes on: Mario Mitaj; Goes off: Mikael Ellertsson]",
+    "Goal: Goal! Genoa 2, Juventus 0. Tommaso Baldanzi (Genoa) right footed shot from the centre of the box to the bottom left corner. [Scorer: Tommaso Baldanzi]",
+    "Goal: Goal! Genoa 1, Juventus 0. Kingsley Ehizibue (Genoa) right footed shot from the right side of the box to the top right corner. Assisted by Tommaso Baldanzi with a cross. [Scorer: Kingsley Ehizibue; Assist: Tommaso Baldanzi]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "ligue1",
+   "game": "401876422",
+   "state": "post",
+   "label": "LYON @ PSG",
+   "date": "2026-10-26T19:30Z",
+   "kind": "generic",
+   "plays": 34,
+   "withWho": 14,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Comes on": 9,
+    "Goes off": 9,
+    "Scorer": 2,
+    "Assist": 2,
+    "Booked": 3
+   },
+   "sample": [
+    "Substitution: Substitution, Paris Saint Germain. Mika Godts replaces João Neves. [Comes on: Mika Godts; Goes off: João Neves]",
+    "Yellow Card: Maghnes Akliouche (Paris Saint Germain) is shown the yellow card for a bad foul. [Booked: Maghnes Akliouche]",
+    "Yellow Card: Vitinha (Paris Saint Germain) is shown the yellow card for a bad foul. [Booked: Vitinha]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "ucl",
+   "game": "401915394",
+   "state": "post",
+   "label": "VFK @ AVL",
+   "date": "2026-10-21T19:00Z",
+   "kind": "generic",
+   "plays": 26,
+   "withWho": 14,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Comes on": 10,
+    "Goes off": 10,
+    "Scorer": 3,
+    "Assist": 2,
+    "Own goal": 1
+   },
+   "sample": [
+    "Own Goal: Own Goal by Henrik Heggheim, Viking. Aston Villa 3, Viking 0. [Own goal: Henrik Heggheim]",
+    "Penalty - Scored: Goal! Aston Villa 2, Viking 0. Emiliano Buendía (Aston Villa) converts the penalty with a right footed shot to the bottom right corner. [Scorer: Emiliano Buendía]",
+    "Goal - Header: Goal! Aston Villa 1, Viking 0. Ross Barkley (Aston Villa) header from the left side of the six yard box to the top left corner. Assisted by Ibrahim Mbaye with a cross following a corner. [Scorer: Ross Barkley; Assist: Ibrahim Mbaye]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "ligamx",
+   "game": "401876920",
+   "state": "post",
+   "label": "SAN @ TIJ",
+   "date": "2026-10-26T03:10Z",
+   "kind": "generic",
+   "plays": 46,
+   "withWho": 21,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Booked": 6,
+    "Comes on": 10,
+    "Goes off": 10,
+    "Scorer": 5,
+    "Assist": 3
+   },
+   "sample": [
+    "Yellow Card: Francisco González (Club Tijuana) is shown the yellow card for a bad foul. [Booked: Francisco González]",
+    "Goal: Goal! Club Tijuana 2, Santos Laguna 0. Ignacio Rivero (Club Tijuana) right footed shot from very close range to the high centre of the goal following a corner. [Scorer: Ignacio Rivero]",
+    "Goal: Goal! Club Tijuana 1, Santos Laguna 0. Francisco González (Club Tijuana) left footed shot from the centre of the box to the bottom left corner. Assisted by Adonis Preciado. [Scorer: Francisco González; Assist: Adonis Preciado]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "cbase",
+   "game": "401874453",
+   "state": "post",
+   "label": "OU @ UNC (Men's College World Series Championship Final - Game 3)",
+   "date": "2026-06-22T23:00Z",
+   "kind": "baseball",
+   "plays": 226,
+   "withWho": 187,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Pitcher": 187,
+    "Batter": 172,
+    "Runner on 2nd": 14,
+    "Runner on 3rd": 11
+   },
+   "sample": [
+    "At-bat starts: J. Rose pitches to C. Johnson [Pitcher: Jackson Rose; Batter: Camden Johnson]",
+    "Strikeout: J. Walk struck out swinging. [Pitcher: Jackson Rose; Batter: Jason Walk]",
+    "At-bat starts: J. Rose pitches to J. Walk [Pitcher: Jackson Rose; Batter: Jason Walk]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "mcbb",
+   "status": "NO-GAME",
+   "note": "nothing live or final in the current feed (off-season / between events)"
+  },
+  {
+   "sport": "wcbb",
+   "status": "NO-GAME",
+   "note": "nothing live or final in the current feed (off-season / between events)"
+  },
+  {
+   "sport": "golf",
+   "game": "lpga-401835173",
+   "state": "post",
+   "label": "BMW Ladies Championship (last completed LPGA event)",
+   "date": "2026-10-22T07:00Z",
+   "kind": "golf",
+   "plays": 5,
+   "withWho": 5,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Player": 5
+   },
+   "sample": [
+    "Final standing: Haeran Ryu (T2) finished -16; rounds 67, 64, 68, 73 [Player: Haeran Ryu]",
+    "Final standing: Minsol Kim (T4) finished -15; rounds 70, 66, 70, 67 [Player: Minsol Kim]",
+    "Final standing: Hyo Joo Kim (T4) finished -15; rounds 69, 69, 67, 68 [Player: Hyo Joo Kim]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "tennis",
+   "game": "wta-185826",
+   "state": "in",
+   "label": "Miriam Bulgaru / Polona Hercog v Victoria Rodriguez / Demi Tran (Queretaro Open)",
+   "date": "2026-10-28T20:05Z",
+   "kind": "tennis",
+   "plays": 1,
+   "withWho": 1,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Player": 2
+   },
+   "sample": [
+    "Set 1 in progress: Miriam Bulgaru / Polona Hercog vs Victoria Rodriguez / Demi Tran (Quarterfinal). Set 1: Miriam Bulgaru / Polona Hercog won 6-3. Miriam Bulgaru (ROM) & Polona Hercog (SLO) leads Victoria Rodriguez (MEX) & Demi Tran (NED) 6-3 [Player: Miriam Bulgaru / Polona Hercog; Player: Victoria Rodriguez / Demi Tran]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "ufc",
+   "game": "600061267",
+   "state": "post",
+   "label": "UFC 333: Volkanovski vs. Evloev",
+   "date": "2026-10-24T14:00Z",
+   "kind": "event",
+   "plays": 14,
+   "withWho": 14,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Winner": 14,
+    "Opponent": 14
+   },
+   "sample": [
+    "Result: Daniel Santos defeated Bolaji Oki, round 3 at 5:00 [Opponent: Bolaji Oki; Winner: Daniel Santos]",
+    "Result: Kody Steele defeated Noah Gugnon, round 1 at 3:54 [Winner: Kody Steele; Opponent: Noah Gugnon]",
+    "Result: Iasmin Lucindo defeated Nicolle Caliari, round 3 at 5:00 [Winner: Iasmin Lucindo; Opponent: Nicolle Caliari]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "f1",
+   "game": "600057446",
+   "state": "post",
+   "label": "MSC Cruises United States Grand Prix",
+   "date": "2026-10-23T17:30Z",
+   "kind": "event",
+   "plays": 5,
+   "withWho": 5,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "P1": 4,
+    "P2": 5,
+    "P3": 5,
+    "Winner": 1
+   },
+   "sample": [
+    "Result: 1. Lewis Hamilton, 2. Max Verstappen, 3. Charles Leclerc [P1: Lewis Hamilton; P2: Max Verstappen; P3: Charles Leclerc]",
+    "Result: 1. Kimi Antonelli, 2. Max Verstappen, 3. Isack Hadjar [P1: Kimi Antonelli; P2: Max Verstappen; P3: Isack Hadjar]",
+    "Result: 1. Kimi Antonelli, 2. Charles Leclerc, 3. Max Verstappen [Winner: Kimi Antonelli; P2: Charles Leclerc; P3: Max Verstappen]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "nascar",
+   "game": "202610250041",
+   "state": "post",
+   "label": "NASCAR Cup Series at Talladega",
+   "date": "2026-10-25T18:00Z",
+   "kind": "event",
+   "plays": 1,
+   "withWho": 1,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Winner": 1,
+    "P2": 1,
+    "P3": 1
+   },
+   "sample": [
+    "Result: 1. Kyle Larson, 2. William Byron, 3. Ricky Stenhouse Jr. [Winner: Kyle Larson; P2: William Byron; P3: Ricky Stenhouse Jr.]"
+   ],
+   "status": "PASS"
+  },
+  {
+   "sport": "indy",
+   "game": "202609061784",
+   "state": "post",
+   "label": "Grand Prix of Monterey",
+   "date": "2026-09-06T18:30Z",
+   "kind": "event",
+   "plays": 1,
+   "withWho": 1,
+   "blank": 0,
+   "noWhat": 0,
+   "source": "ESPN",
+   "roles": {
+    "Winner": 1,
+    "P2": 1,
+    "P3": 1
+   },
+   "sample": [
+    "Result: 1. Scott McLaughlin, 2. Kyle Kirkwood, 3. Alexander Rossi [Winner: Scott McLaughlin; P2: Kyle Kirkwood; P3: Alexander Rossi]"
+   ],
+   "status": "PASS"
+  }
+ ]
+}

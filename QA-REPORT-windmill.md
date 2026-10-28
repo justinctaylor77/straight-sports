@@ -231,3 +231,69 @@ Evidence screenshots are local-only files under `screenshots/v20/` (gitignored).
 **Process note:** during the final-run window I briefly ran `git stash` by mistake and restored it immediately (`git stash pop`); nothing was lost, and the QA run that overlapped it was discarded and re-run from scratch.
 
 **Not tested / limits:** real iOS Safari; Render free-plan cold start; the live site (nothing deployed); in-season AUSL behaviour against live data (the league is in the offseason; in-season states are fixture-tested only, from the real 2026 game log); account sync (not built). AUSL has no live scores or play-by-play in any legal free source. Final run: **139/139 pass** on the committed code.
+
+## Live verification (production, after deploy)
+
+- **Pushed:** `origin/main` = `d6ad759` (code commit 0ef0a22 + QA/docs d6ad759), Wed Oct 28, 2026, about 2:42 PM MT.
+- **Deploy:** `dep-dbh5sg142hec73c1mvn0` (trigger: API, commit d6ad759), started 2:42:40 PM MT, build finished 2:43:20 PM MT, status `live` at 2:43:45 PM MT. `/sw.js` served `ss-v26`; no cold-start errors were hit.
+- **Run:** `node scripts/live-verify-v20.js` against https://straight-sports.onrender.com, Chromium 390x844 @2x touch emulation (not real iOS Safari), finished Oct 28, 2026, 2:48 PM MT. Raw results: `live-verify-v20.json`, `live-prod-v20.json`. Screenshots (local-only, gitignored): `screenshots/v20/live-*.png`.
+- **Result: 55 PASS / 0 FAIL of 55 live checks.**
+- **Notes:** LV-AU-23..25 (mute-unselected) feed three test headlines to the real production client through a request override, so the check is deterministic; the filter itself is the live production code. AUSL has only 2 real news items today (offseason). The AUSL Gamecast shows the honest "Play-by-play isn't available" state by design. This live run covered who/what in the Gamecast UI for NFL, CFB, MLB, NBA and NHL, plus the API smoke for all sports; the QA run above is where men's/women's college basketball had no game (NO-GAME).
+
+| ID | Check | Actual | Result | Screenshot |
+|---|---|---|---|---|
+| LV-01 | /sw.js version is ss-v26 | VERSION=ss-v26 | **PASS** | — |
+| LV-02 | index.html loads app.js?v=26 | app.js?v=26 | **PASS** | — |
+| LV-03 | Regression: all 10 /api/lists/<sport> and /api/playoffs/<sport> return 200 | lists 200,200,200,200,200,200,200,200,200,200; playoffs 200,200,200,200,200,200,200,200,200,200 | **PASS** | — |
+| LV-04 | Regression: /api/brackets (JT/AP/CFP) works | HTTP 200 | **PASS** | — |
+| LV-05 | Regression: /api/jt-top25 still carries the legacy `bracket` field | HTTP 200 | **PASS** | — |
+| LV-GC-nfl | NFL live API: every play has a description; players with roles | PASS; 187 plays, 154 with players, blank 0; roles Kicker, Returner, Tackled by, Rusher, Passer | **PASS** | — |
+| LV-GC-cfb | CFB live API: every play has a description; players with roles | PASS; 161 plays, 148 with players, blank 0; roles Rusher, Tackled by, Kicker, Passer, Target | **PASS** | — |
+| LV-GC-mlb | MLB live API: every play has a description; players with roles | PASS; 123 plays, 113 with players, blank 0; roles Pitcher, Batter, Runner on 2nd, Runner on 3rd | **PASS** | — |
+| LV-GC-nba | NBA live API: every play has a description; players with roles | PASS; 199 plays, 187 with players, blank 0; roles Subbed in, Subbed out, Shooter, Player, Turnover | **PASS** | — |
+| LV-GC-nhl | NHL live API: every play has a description; players with roles | PASS; 81 plays, 68 with players, blank 0; roles Won faceoff, Lost faceoff, Goal, Assist, Hit by | **PASS** | — |
+| LV-AU-01 | API: AUSL in the catalog as a team sport; /api/teams returns the six franchises, location-first, https logos | AUSL Pro Softball; Carolina Blaze, Chicago Bandits, Oklahoma City Spark, Portland Cascade, Texas Volts, Utah Talons | **PASS** | — |
+| LV-AU-02 | API: scoreboard = last 8 real finals, honest offseason notice, attribution + league link | 8 events; newest UTA @ CHI 6-1; season 2026/complete | **PASS** | — |
+| LV-AU-03 | API: standings six rows, wins = losses in total, labelled computed | 6 rows; W 75 / L 75; first Utah Talons | **PASS** | — |
+| LV-AU-04 | API: Talons team (16-9, 27 games, roster), game is "limited" with no invented plays | rec 16-9; 27 games; roster 19; limited=true; plays 0 | **PASS** | — |
+| LV-AU-05 | API: hub index has AUSL (10 sports); list = standings; bracket complete, Utah Talons champion 2–0 | list standings; bracket complete: 2026 AUSL champion: Utah Talons; hub 10 | **PASS** | — |
+| LV-AU-06 | API: AUSL news is real (every item has title + link) or an honest empty list | 2 items; ausl-ap:ok ausl-reuters:ok ausl-site:ok ausl-mlb:ok | **PASS** | — |
+| LV-AU-07 | Fresh profile (all-sports default): AUSL is in the Scores sport chips | 28 chips: 🏈 CFB 🏈 NFL ⚾ MLB ⛳ GOLF 🎾 TENNIS 🏀 NBA 🏀 WNBA 🏀 NCAAM 🏀 NCAAW 🏒 NHL ⚽ MLS ⚽ NWSL ⚽ EPL ⚽ LALIGA ⚽ BUN ⚽ SERIEA ⚽ L1 ⚽ UCL ⚽ LIGAMX ⚾ CBASE 🥎 SOFTBALL  | **PASS** | `screenshots/v20/live-ausl-fresh-scores-chips.png` |
+| LV-AU-08 | Scores for AUSL (fresh profile, 390px): offseason banner, 8 finals, champion game first, attribution, no horizontal scroll | 8 games; banner true; scrollWidth 390 | **PASS** | `screenshots/v20/live-ausl-scores.png` |
+| LV-AU-09 | Fresh profile: team picker has an AUSL group (all-sports mode) | TEAMS & PLAYERS THEIR GAMES AND NEWS ALWAYS COME FIRST. 🏟️ All leagues 🏈 CFB 🏈 NFL ⚾ MLB ⛳ Golf 🎾 Tennis 🏀 NBA 🏀 WNBA 🏀 NCAAM 🏀 NCAAW 🏒 NHL ⚽ MLS ⚽ NWS | **PASS** | `screenshots/v20/live-ausl-fresh-picker.png` |
+| LV-AU-10 | Fresh-profile pages: no console/page errors | no console/page errors, no failed app requests | **PASS** | — |
+| LV-AU-11 | Standings (390px): six teams in record order, labelled computed/not official, Wikipedia credit | idx 287,310,334,357,381,402; scrollWidth 390 | **PASS** | `screenshots/v20/live-ausl-standings.png` |
+| LV-AU-12 | Team page (Utah Talons): 16-9, Follow, Schedule/Stats/News/Roster tabs, "incl. playoffs", credits Wikipedia/MLB Stats API | rec true; playoffs label true; scrollWidth 390 | **PASS** | `screenshots/v20/live-ausl-team.png` |
+| LV-AU-13 | Team News tab: stories or a friendly empty message (never blank) | SL · AUSL + Follow Mute Schedule Stats News Roster LATEST NEWS AUSL champ Talons celebrated ahead of WS G4: 'It's such an honor' MLB.com 20h ago via Google News | **PASS** | `screenshots/v20/live-ausl-team-news.png` |
+| LV-AU-14 | News (AUSL picked): real AUSL stories or an honest empty message, no horizontal scroll | 0 external links; AUSL NEWS MANY OUTLETS, SIDE BY SIDE · YOUR MUTES APPLIED EVERYWHERE My teams All AUSL Straight only LATEST 2 headlines  | **PASS** | `screenshots/v20/live-ausl-news.png` |
+| LV-AU-15 | Bracket Buzzer hub: AUSL Pro Softball card with Standings + Play-in → AUSL Championship buttons | card true; scrollWidth 390 | **PASS** | `screenshots/v20/live-ausl-hub.png` |
+| LV-AU-16 | Top list: computed standings, method + caveats + source links | 1368 chars; scrollWidth 390 | **PASS** | `screenshots/v20/live-ausl-list.png` |
+| LV-AU-17 | Championship bracket: "2026 AUSL champion: Utah Talons", Beat Chicago Bandits 2–0, play-in, short dates | AUSL PRO SOFTBALL \| CHAMPIONSHIP & PLAYOFF BRACKET \| 🥎 AUSL \| 🏈 NFL \| 🏀 NBA \| 🏀 WNBA \| 🏀 NCAAM \| 🏀 NCAAW \| ⚾ MLB \| ⚾ CBASE \| 🥎 Softball \| 🤸 Gy | **PASS** | `screenshots/v20/live-ausl-bracket.png` |
+| LV-AU-18 | Gamecast (AUSL Championship Game 2): Talons 6–1 Bandits Final, venue, honest "Play-by-play isn't available" notice + theausl.com link, no invented plays | notice true; theausl.com links 2; scrollWidth 390 | **PASS** | `screenshots/v20/live-ausl-gamecast.png` |
+| LV-AU-19 | All AUSL screens (standings, team, news, hub, list, bracket, gamecast): no horizontal scroll | standings:390 team:390 news:390 hub:390 list:390 bracket:390 gamecast:390 | **PASS** | — |
+| LV-AU-20 | AUSL screens: no console/page errors, no failed app requests | no console/page errors, no failed app requests | **PASS** | — |
+| LV-AU-21 | Picker (AUSL picked): AUSL league with six location-first teams A–Z, no Players toggle | chip=true; found 6/6; sorted true; players toggle false | **PASS** | `screenshots/v20/live-ausl-picker.png` |
+| LV-AU-22 | Picker page: 390px, no console errors | scrollWidth 390; no console/page errors, no failed app requests | **PASS** | — |
+| LV-AU-23 | Mute: NFL only + mute-unselected → AUSL headlines hidden, NFL stays | AUSL visible 0/2; NFL true | **PASS** | `screenshots/v20/live-ausl-mute-23.png` |
+| LV-AU-24 | Mute: NFL + AUSL picked + mute-unselected → AUSL headlines visible | AUSL visible 2/2; NFL true | **PASS** | `screenshots/v20/live-ausl-mute-24.png` |
+| LV-AU-25 | Mute: Mute box unticked → AUSL headlines visible even though not picked | AUSL visible 2/2; NFL true | **PASS** | `screenshots/v20/live-ausl-mute-25.png` |
+| LV-AU-26 | Settings › Mute shows the mute-unselected checkbox enabled with sports picked (AUSL counted among the muted) | MUTE MUTED THINGS ARE REMOVED EVERYWHERE, IN EVERY SPORT: SCORES, LEADERBOARDS, RANKINGS, NEWS AND STORY GROUPS. Mute every sport I haven’t  | **PASS** | — |
+| LV-07 | Fresh profile still shows every sport (all-sports note) | SPORTS PICK THE SPORTS YOU WANT. SWITCH BETWEEN THEM WITH THE CHIPS AT THE TOP OF EACH TAB. Showing  | **PASS** | `screenshots/v20/live-fresh-sports.png` |
+| LV-08 | Fresh profile: Mute checkbox disabled with "Pick favorite sports first" | {"dis":true,"chk":false,"sub":"Pick favorite sports first"} | **PASS** | `screenshots/v20/live-mute-disabled.png` |
+| LV-09 | Fresh profile: 390px, no horizontal scroll, no console errors | scrollWidth 390; no console/page errors, no failed app requests | **PASS** | — |
+| LV-10 | Settings fix: a Sources switch toggles and saves on each tap | before {"box":true}, tap1 {"stored":false,"box":false}, tap2 {"stored":true,"box":true} | **PASS** | `screenshots/v20/live-switch-sources.png` |
+| LV-11 | Mute checkbox enabled when sports are picked, with the one-line explanation | {"dis":false,"chk":false,"sub":"Hides every sport you didn’t pick, even ones added later. Untick to bring them back."} | **PASS** | `screenshots/v20/live-mute-enabled.png` |
+| LV-12 | Ticking it saves muteUnselected and shows the "Muting N sports" note; unticking restores (own mute list untouched) | ticked {"chk":true,"saved":true,"note":"Muting 27 sports: news and games outside NFL are hidden."}; unticked {"chk":false,"saved":false} | **PASS** | `screenshots/v20/live-mute-ticked.png` |
+| LV-13 | Mute page: 390px, no horizontal scroll, no console errors | scrollWidth 390; no console/page errors, no failed app requests | **PASS** | — |
+| LV-14 | Picker is broken out by league (5 collapsible groups for the 5 picked sports) | nfl,mlb,nba,nhl,cfb | **PASS** | `screenshots/v20/live-picker-groups.png` |
+| LV-15 | MLB group: 30 teams, location-first names ("Boston Red Sox"), sorted A–Z | 30 teams; first: Arizona Diamondbacks, Athletics, Atlanta Braves; sorted=true | **PASS** | `screenshots/v20/live-picker-mlb.png` |
+| LV-16 | Search still works ("boston" finds Boston teams) | Boston Red Sox, Boston Celtics, Boston Bruins, Boston College Eagles | **PASS** | `screenshots/v20/live-picker-search.png` |
+| LV-17 | Teams page: 390px, no horizontal scroll, no console errors | scrollWidth 390; no console/page errors, no failed app requests | **PASS** | — |
+| LV-UI-nfl | NFL Gamecast shows what happened and who was involved (390px) | 12 play sentences, 28 player chips (Passer, Target, Tackled by, Kicker), scrollWidth 390; e.g. "Tanner McKee pass complete to Elijah Mitchell for no gain, tackled by Justin Barron and Juanyeh Thom" | **PASS** | `screenshots/v20/live-gc-nfl.png` |
+| LV-UI-cfb | CFB Gamecast shows what happened and who was involved (390px) | 7 play sentences, 10 player chips (Passer, Target, Extra point, Kicker), scrollWidth 390; e.g. "(00:31) Kneel down by #2 H.Belin IV at MSU08 for loss of 2 yards" | **PASS** | `screenshots/v20/live-gc-cfb.png` |
+| LV-UI-mlb | MLB Gamecast shows what happened and who was involved (390px) | 9 play sentences, 25 player chips (Pitcher, Batter, Runner on 2nd, Runner on 3rd), scrollWidth 390; e.g. "Williamson singled to right, Fortes scored, Simpson to second, DeLuca to third. (Ben Williamson batt" | **PASS** | `screenshots/v20/live-gc-mlb.png` |
+| LV-UI-nba | NBA Gamecast shows what happened and who was involved (390px) | 2 play sentences, 1 player chips (Shooter), scrollWidth 390; e.g. "End of Game" | **PASS** | `screenshots/v20/live-gc-nba.png` |
+| LV-UI-nhl | NHL Gamecast shows what happened and who was involved (390px) | 4 play sentences, 9 player chips (Goal, Assist), scrollWidth 390; e.g. "Game End" | **PASS** | `screenshots/v20/live-gc-nhl.png` |
+| LV-GC-ERR | Gamecast pages: no console/page errors | no console/page errors, no failed app requests | **PASS** | — |
+| LV-REG | Regression: scores, news, Top 25, JT bracket, lists, brackets, settings render (390px, no horizontal scroll) | home:4016/390 scores:2078/390 news:11394/390 top25:1292/390 jt:1123/390 bracket:1123/390 lists:943/390 list-nfl:2896/390 playoffs-mlb:1594/390 settings:560/390 | **PASS** | `screenshots/v20/live-reg-scores.png` |
+| LV-REG-ERR | Regression pages: no console/page errors | no console/page errors, no failed app requests | **PASS** | — |

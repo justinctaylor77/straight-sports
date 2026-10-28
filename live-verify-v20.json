@@ -1,0 +1,391 @@
+{
+ "at": "2026-10-28T20:48:55.594Z",
+ "base": "https://straight-sports.onrender.com",
+ "results": [
+  {
+   "id": "LV-01",
+   "desc": "/sw.js version is ss-v26",
+   "status": "PASS",
+   "actual": "VERSION=ss-v26",
+   "evidence": ""
+  },
+  {
+   "id": "LV-02",
+   "desc": "index.html loads app.js?v=26",
+   "status": "PASS",
+   "actual": "app.js?v=26",
+   "evidence": ""
+  },
+  {
+   "id": "LV-03",
+   "desc": "Regression: all 10 /api/lists/<sport> and /api/playoffs/<sport> return 200",
+   "status": "PASS",
+   "actual": "lists 200,200,200,200,200,200,200,200,200,200; playoffs 200,200,200,200,200,200,200,200,200,200",
+   "evidence": ""
+  },
+  {
+   "id": "LV-04",
+   "desc": "Regression: /api/brackets (JT/AP/CFP) works",
+   "status": "PASS",
+   "actual": "HTTP 200",
+   "evidence": ""
+  },
+  {
+   "id": "LV-05",
+   "desc": "Regression: /api/jt-top25 still carries the legacy `bracket` field",
+   "status": "PASS",
+   "actual": "HTTP 200",
+   "evidence": ""
+  },
+  {
+   "id": "LV-GC-nfl",
+   "desc": "NFL live API: every play has a description; players with roles",
+   "status": "PASS",
+   "actual": "PASS; 187 plays, 154 with players, blank 0; roles Kicker, Returner, Tackled by, Rusher, Passer",
+   "evidence": ""
+  },
+  {
+   "id": "LV-GC-cfb",
+   "desc": "CFB live API: every play has a description; players with roles",
+   "status": "PASS",
+   "actual": "PASS; 161 plays, 148 with players, blank 0; roles Rusher, Tackled by, Kicker, Passer, Target",
+   "evidence": ""
+  },
+  {
+   "id": "LV-GC-mlb",
+   "desc": "MLB live API: every play has a description; players with roles",
+   "status": "PASS",
+   "actual": "PASS; 123 plays, 113 with players, blank 0; roles Pitcher, Batter, Runner on 2nd, Runner on 3rd",
+   "evidence": ""
+  },
+  {
+   "id": "LV-GC-nba",
+   "desc": "NBA live API: every play has a description; players with roles",
+   "status": "PASS",
+   "actual": "PASS; 199 plays, 187 with players, blank 0; roles Subbed in, Subbed out, Shooter, Player, Turnover",
+   "evidence": ""
+  },
+  {
+   "id": "LV-GC-nhl",
+   "desc": "NHL live API: every play has a description; players with roles",
+   "status": "PASS",
+   "actual": "PASS; 81 plays, 68 with players, blank 0; roles Won faceoff, Lost faceoff, Goal, Assist, Hit by",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-01",
+   "desc": "API: AUSL in the catalog as a team sport; /api/teams returns the six franchises, location-first, https logos",
+   "status": "PASS",
+   "actual": "AUSL Pro Softball; Carolina Blaze, Chicago Bandits, Oklahoma City Spark, Portland Cascade, Texas Volts, Utah Talons",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-02",
+   "desc": "API: scoreboard = last 8 real finals, honest offseason notice, attribution + league link",
+   "status": "PASS",
+   "actual": "8 events; newest UTA @ CHI 6-1; season 2026/complete",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-03",
+   "desc": "API: standings six rows, wins = losses in total, labelled computed",
+   "status": "PASS",
+   "actual": "6 rows; W 75 / L 75; first Utah Talons",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-04",
+   "desc": "API: Talons team (16-9, 27 games, roster), game is \"limited\" with no invented plays",
+   "status": "PASS",
+   "actual": "rec 16-9; 27 games; roster 19; limited=true; plays 0",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-05",
+   "desc": "API: hub index has AUSL (10 sports); list = standings; bracket complete, Utah Talons champion 2–0",
+   "status": "PASS",
+   "actual": "list standings; bracket complete: 2026 AUSL champion: Utah Talons; hub 10",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-06",
+   "desc": "API: AUSL news is real (every item has title + link) or an honest empty list",
+   "status": "PASS",
+   "actual": "2 items; ausl-ap:ok ausl-reuters:ok ausl-site:ok ausl-mlb:ok",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-07",
+   "desc": "Fresh profile (all-sports default): AUSL is in the Scores sport chips",
+   "status": "PASS",
+   "actual": "28 chips: 🏈 CFB 🏈 NFL ⚾ MLB ⛳ GOLF 🎾 TENNIS 🏀 NBA 🏀 WNBA 🏀 NCAAM 🏀 NCAAW 🏒 NHL ⚽ MLS ⚽ NWSL ⚽ EPL ⚽ LALIGA ⚽ BUN ⚽ SERIEA ⚽ L1 ⚽ UCL ⚽ LIGAMX ⚾ CBASE 🥎 SOFTBALL ",
+   "evidence": "screenshots/v19/live-ausl-fresh-scores-chips.png"
+  },
+  {
+   "id": "LV-AU-08",
+   "desc": "Scores for AUSL (fresh profile, 390px): offseason banner, 8 finals, champion game first, attribution, no horizontal scroll",
+   "status": "PASS",
+   "actual": "8 games; banner true; scrollWidth 390",
+   "evidence": "screenshots/v19/live-ausl-scores.png"
+  },
+  {
+   "id": "LV-AU-09",
+   "desc": "Fresh profile: team picker has an AUSL group (all-sports mode)",
+   "status": "PASS",
+   "actual": "TEAMS & PLAYERS THEIR GAMES AND NEWS ALWAYS COME FIRST. 🏟️ All leagues 🏈 CFB 🏈 NFL ⚾ MLB ⛳ Golf 🎾 Tennis 🏀 NBA 🏀 WNBA 🏀 NCAAM 🏀 NCAAW 🏒 NHL ⚽ MLS ⚽ NWS",
+   "evidence": "screenshots/v19/live-ausl-fresh-picker.png"
+  },
+  {
+   "id": "LV-AU-10",
+   "desc": "Fresh-profile pages: no console/page errors",
+   "status": "PASS",
+   "actual": "no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-11",
+   "desc": "Standings (390px): six teams in record order, labelled computed/not official, Wikipedia credit",
+   "status": "PASS",
+   "actual": "idx 287,310,334,357,381,402; scrollWidth 390",
+   "evidence": "screenshots/v19/live-ausl-standings.png"
+  },
+  {
+   "id": "LV-AU-12",
+   "desc": "Team page (Utah Talons): 16-9, Follow, Schedule/Stats/News/Roster tabs, \"incl. playoffs\", credits Wikipedia/MLB Stats API",
+   "status": "PASS",
+   "actual": "rec true; playoffs label true; scrollWidth 390",
+   "evidence": "screenshots/v19/live-ausl-team.png"
+  },
+  {
+   "id": "LV-AU-13",
+   "desc": "Team News tab: stories or a friendly empty message (never blank)",
+   "status": "PASS",
+   "actual": "SL · AUSL + Follow Mute Schedule Stats News Roster LATEST NEWS AUSL champ Talons celebrated ahead of WS G4: 'It's such an honor' MLB.com 20h ago via Google News",
+   "evidence": "screenshots/v19/live-ausl-team-news.png"
+  },
+  {
+   "id": "LV-AU-14",
+   "desc": "News (AUSL picked): real AUSL stories or an honest empty message, no horizontal scroll",
+   "status": "PASS",
+   "actual": "0 external links; AUSL NEWS MANY OUTLETS, SIDE BY SIDE · YOUR MUTES APPLIED EVERYWHERE My teams All AUSL Straight only LATEST 2 headlines ",
+   "evidence": "screenshots/v19/live-ausl-news.png"
+  },
+  {
+   "id": "LV-AU-15",
+   "desc": "Bracket Buzzer hub: AUSL Pro Softball card with Standings + Play-in → AUSL Championship buttons",
+   "status": "PASS",
+   "actual": "card true; scrollWidth 390",
+   "evidence": "screenshots/v19/live-ausl-hub.png"
+  },
+  {
+   "id": "LV-AU-16",
+   "desc": "Top list: computed standings, method + caveats + source links",
+   "status": "PASS",
+   "actual": "1368 chars; scrollWidth 390",
+   "evidence": "screenshots/v19/live-ausl-list.png"
+  },
+  {
+   "id": "LV-AU-17",
+   "desc": "Championship bracket: \"2026 AUSL champion: Utah Talons\", Beat Chicago Bandits 2–0, play-in, short dates",
+   "status": "PASS",
+   "actual": "AUSL PRO SOFTBALL | CHAMPIONSHIP & PLAYOFF BRACKET | 🥎 AUSL | 🏈 NFL | 🏀 NBA | 🏀 WNBA | 🏀 NCAAM | 🏀 NCAAW | ⚾ MLB | ⚾ CBASE | 🥎 Softball | 🤸 Gy",
+   "evidence": "screenshots/v19/live-ausl-bracket.png"
+  },
+  {
+   "id": "LV-AU-18",
+   "desc": "Gamecast (AUSL Championship Game 2): Talons 6–1 Bandits Final, venue, honest \"Play-by-play isn't available\" notice + theausl.com link, no invented plays",
+   "status": "PASS",
+   "actual": "notice true; theausl.com links 2; scrollWidth 390",
+   "evidence": "screenshots/v19/live-ausl-gamecast.png"
+  },
+  {
+   "id": "LV-AU-19",
+   "desc": "All AUSL screens (standings, team, news, hub, list, bracket, gamecast): no horizontal scroll",
+   "status": "PASS",
+   "actual": "standings:390 team:390 news:390 hub:390 list:390 bracket:390 gamecast:390",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-20",
+   "desc": "AUSL screens: no console/page errors, no failed app requests",
+   "status": "PASS",
+   "actual": "no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-21",
+   "desc": "Picker (AUSL picked): AUSL league with six location-first teams A–Z, no Players toggle",
+   "status": "PASS",
+   "actual": "chip=true; found 6/6; sorted true; players toggle false",
+   "evidence": "screenshots/v19/live-ausl-picker.png"
+  },
+  {
+   "id": "LV-AU-22",
+   "desc": "Picker page: 390px, no console errors",
+   "status": "PASS",
+   "actual": "scrollWidth 390; no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-AU-23",
+   "desc": "Mute: NFL only + mute-unselected → AUSL headlines hidden, NFL stays",
+   "status": "PASS",
+   "actual": "AUSL visible 0/2; NFL true",
+   "evidence": "screenshots/v19/live-ausl-mute-23.png"
+  },
+  {
+   "id": "LV-AU-24",
+   "desc": "Mute: NFL + AUSL picked + mute-unselected → AUSL headlines visible",
+   "status": "PASS",
+   "actual": "AUSL visible 2/2; NFL true",
+   "evidence": "screenshots/v19/live-ausl-mute-24.png"
+  },
+  {
+   "id": "LV-AU-25",
+   "desc": "Mute: Mute box unticked → AUSL headlines visible even though not picked",
+   "status": "PASS",
+   "actual": "AUSL visible 2/2; NFL true",
+   "evidence": "screenshots/v19/live-ausl-mute-25.png"
+  },
+  {
+   "id": "LV-AU-26",
+   "desc": "Settings › Mute shows the mute-unselected checkbox enabled with sports picked (AUSL counted among the muted)",
+   "status": "PASS",
+   "actual": "MUTE MUTED THINGS ARE REMOVED EVERYWHERE, IN EVERY SPORT: SCORES, LEADERBOARDS, RANKINGS, NEWS AND STORY GROUPS. Mute every sport I haven’t ",
+   "evidence": ""
+  },
+  {
+   "id": "LV-07",
+   "desc": "Fresh profile still shows every sport (all-sports note)",
+   "status": "PASS",
+   "actual": "SPORTS PICK THE SPORTS YOU WANT. SWITCH BETWEEN THEM WITH THE CHIPS AT THE TOP OF EACH TAB. Showing ",
+   "evidence": "screenshots/v19/live-fresh-sports.png"
+  },
+  {
+   "id": "LV-08",
+   "desc": "Fresh profile: Mute checkbox disabled with \"Pick favorite sports first\"",
+   "status": "PASS",
+   "actual": "{\"dis\":true,\"chk\":false,\"sub\":\"Pick favorite sports first\"}",
+   "evidence": "screenshots/v19/live-mute-disabled.png"
+  },
+  {
+   "id": "LV-09",
+   "desc": "Fresh profile: 390px, no horizontal scroll, no console errors",
+   "status": "PASS",
+   "actual": "scrollWidth 390; no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-10",
+   "desc": "Settings fix: a Sources switch toggles and saves on each tap",
+   "status": "PASS",
+   "actual": "before {\"box\":true}, tap1 {\"stored\":false,\"box\":false}, tap2 {\"stored\":true,\"box\":true}",
+   "evidence": "screenshots/v19/live-switch-sources.png"
+  },
+  {
+   "id": "LV-11",
+   "desc": "Mute checkbox enabled when sports are picked, with the one-line explanation",
+   "status": "PASS",
+   "actual": "{\"dis\":false,\"chk\":false,\"sub\":\"Hides every sport you didn’t pick, even ones added later. Untick to bring them back.\"}",
+   "evidence": "screenshots/v19/live-mute-enabled.png"
+  },
+  {
+   "id": "LV-12",
+   "desc": "Ticking it saves muteUnselected and shows the \"Muting N sports\" note; unticking restores (own mute list untouched)",
+   "status": "PASS",
+   "actual": "ticked {\"chk\":true,\"saved\":true,\"note\":\"Muting 27 sports: news and games outside NFL are hidden.\"}; unticked {\"chk\":false,\"saved\":false}",
+   "evidence": "screenshots/v19/live-mute-ticked.png"
+  },
+  {
+   "id": "LV-13",
+   "desc": "Mute page: 390px, no horizontal scroll, no console errors",
+   "status": "PASS",
+   "actual": "scrollWidth 390; no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-14",
+   "desc": "Picker is broken out by league (5 collapsible groups for the 5 picked sports)",
+   "status": "PASS",
+   "actual": "nfl,mlb,nba,nhl,cfb",
+   "evidence": "screenshots/v19/live-picker-groups.png"
+  },
+  {
+   "id": "LV-15",
+   "desc": "MLB group: 30 teams, location-first names (\"Boston Red Sox\"), sorted A–Z",
+   "status": "PASS",
+   "actual": "30 teams; first: Arizona Diamondbacks, Athletics, Atlanta Braves; sorted=true",
+   "evidence": "screenshots/v19/live-picker-mlb.png"
+  },
+  {
+   "id": "LV-16",
+   "desc": "Search still works (\"boston\" finds Boston teams)",
+   "status": "PASS",
+   "actual": "Boston Red Sox, Boston Celtics, Boston Bruins, Boston College Eagles",
+   "evidence": "screenshots/v19/live-picker-search.png"
+  },
+  {
+   "id": "LV-17",
+   "desc": "Teams page: 390px, no horizontal scroll, no console errors",
+   "status": "PASS",
+   "actual": "scrollWidth 390; no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-UI-nfl",
+   "desc": "NFL Gamecast shows what happened and who was involved (390px)",
+   "status": "PASS",
+   "actual": "12 play sentences, 28 player chips (Passer, Target, Tackled by, Kicker), scrollWidth 390; e.g. \"Tanner McKee pass complete to Elijah Mitchell for no gain, tackled by Justin Barron and Juanyeh Thom\"",
+   "evidence": "screenshots/v19/live-gc-nfl.png"
+  },
+  {
+   "id": "LV-UI-cfb",
+   "desc": "CFB Gamecast shows what happened and who was involved (390px)",
+   "status": "PASS",
+   "actual": "7 play sentences, 10 player chips (Passer, Target, Extra point, Kicker), scrollWidth 390; e.g. \"(00:31) Kneel down by #2 H.Belin IV at MSU08 for loss of 2 yards\"",
+   "evidence": "screenshots/v19/live-gc-cfb.png"
+  },
+  {
+   "id": "LV-UI-mlb",
+   "desc": "MLB Gamecast shows what happened and who was involved (390px)",
+   "status": "PASS",
+   "actual": "9 play sentences, 25 player chips (Pitcher, Batter, Runner on 2nd, Runner on 3rd), scrollWidth 390; e.g. \"Williamson singled to right, Fortes scored, Simpson to second, DeLuca to third. (Ben Williamson batt\"",
+   "evidence": "screenshots/v19/live-gc-mlb.png"
+  },
+  {
+   "id": "LV-UI-nba",
+   "desc": "NBA Gamecast shows what happened and who was involved (390px)",
+   "status": "PASS",
+   "actual": "2 play sentences, 1 player chips (Shooter), scrollWidth 390; e.g. \"End of Game\"",
+   "evidence": "screenshots/v19/live-gc-nba.png"
+  },
+  {
+   "id": "LV-UI-nhl",
+   "desc": "NHL Gamecast shows what happened and who was involved (390px)",
+   "status": "PASS",
+   "actual": "4 play sentences, 9 player chips (Goal, Assist), scrollWidth 390; e.g. \"Game End\"",
+   "evidence": "screenshots/v19/live-gc-nhl.png"
+  },
+  {
+   "id": "LV-GC-ERR",
+   "desc": "Gamecast pages: no console/page errors",
+   "status": "PASS",
+   "actual": "no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-REG",
+   "desc": "Regression: scores, news, Top 25, JT bracket, lists, brackets, settings render (390px, no horizontal scroll)",
+   "status": "PASS",
+   "actual": "home:4016/390 scores:2078/390 news:11394/390 top25:1292/390 jt:1123/390 bracket:1123/390 lists:943/390 list-nfl:2896/390 playoffs-mlb:1594/390 settings:560/390",
+   "evidence": "screenshots/v20/live-reg-scores.png"
+  },
+  {
+   "id": "LV-REG-ERR",
+   "desc": "Regression pages: no console/page errors",
+   "status": "PASS",
+   "actual": "no console/page errors, no failed app requests",
+   "evidence": ""
+  }
+ ]
+}
