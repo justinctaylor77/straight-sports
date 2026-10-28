@@ -1,9 +1,10 @@
 import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=27';
-import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
+import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, migrate, onSettingsSaved, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
 import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=27';
 import * as GA from './anim.js?v=18';
 import * as BPL from './bigplay.js?v=27';
+import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=27';
 import * as BD from './backdrop.js';
 import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=19';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
@@ -1278,6 +1279,120 @@ const icon = (k, c) => `<span class="ic" style="--c:${c}"><svg viewBox="0 0 24 2
 const linkRow = (href, k, c, title, sub) => `<a class="row" href="${href}">${icon(k, c)}<span class="rt"><b>${title}</b><small>${esc(sub)}</small></span><span class="chev">›</span></a>`;
 const iconFlag = (flag, k, c, title, sub) => `<label class="row">${icon(k, c)}<span class="rt"><b>${title}</b><small>${sub}</small></span><span class="switch"><input type="checkbox" data-flag="${flag}" ${S[flag] ? 'checked' : ''} /></span></label>`;
 
+// ---------------- optional backup with a recovery code (v1.4.0) ----------------
+// Local storage stays the source of truth; the server copy is a backup that is only touched after the person turns it on.
+let SYNC_ST = null; let SYNC_ST_T = 0; // /api/sync/status, cached for a minute
+const SYNC = createSyncClient({
+  fetch: (u, i) => fetch(u, i), storage: localStorage, getSettings: () => S,
+  // swap the settings in place (other modules hold a reference to S), then repaint the bits that depend on them
+  applySettings(next) { const m = migrate(next); for (const k of Object.keys(S)) delete S[k]; Object.assign(S, m); saveSettings(S); applyTheme(); renderSideTeams(); },
+  onChange() { const c = $('#acct-card'); if (c) c.innerHTML = acctCardInner(); },
+});
+onSettingsSaved(() => SYNC.markDirty());
+async function syncStatus(force) {
+  if (!force && SYNC_ST && Date.now() - SYNC_ST_T < 60000) return SYNC_ST;
+  const s = await SYNC.serverStatus(); SYNC_ST = s; SYNC_ST_T = s.offline ? 0 : Date.now(); return s;
+}
+let lastSyncTry = 0;
+function syncSoon(force) {
+  if (!SYNC.linked() || (!force && Date.now() - lastSyncTry < 30000)) return;
+  lastSyncTry = Date.now();
+  SYNC.sync().then((r) => { if (r && r.pulled) { syncSportUI(); route(true); } if (r && r.error === 'backup-missing') toast('Your backup was deleted on another device. This device keeps its settings.'); });
+}
+addEventListener('online', () => syncSoon(true));
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncSoon(); });
+const syncMsg = (e) => ({ offline: 'You’re offline. Try again when you’re connected.', busy: 'Too many tries from this network. Wait a few minutes and try again.', unavailable: 'Backup isn’t available right now. Your settings are still saved on this device.', 'not-found': 'No backup found for that code.' }[e] || 'Something went wrong. Try again.');
+const acctShown = () => SYNC.linked() || !!(SYNC_ST && SYNC_ST.enabled);
+function acctCardInner() {
+  const st = SYNC.state();
+  if (!st) return `<div class="acct-intro"><b>Keep my favorites if I clear my browser</b><small>Optional. A recovery code backs up your teams, mutes and settings. No email, no password.</small></div>
+      <button class="row" data-acct="create"><span class="rt"><b>Create my recovery code</b></span><span class="chev">›</span></button>
+      <a class="row" href="#/settings/restore"><span class="rt"><b>I already have a code</b></span><span class="chev">›</span></a>`;
+  const l = SYNC.last; const iso = st.syncedAt ? new Date(st.syncedAt).toISOString() : '';
+  const line = st.dirty ? (l.status === 'offline' ? 'Offline. Changes will save when you’re back online' : l.status === 'error' ? 'Couldn’t reach the backup. Will retry' : 'Saving…') : (iso ? `Saved ${timeAgo(iso)}` : 'Saved');
+  return `<div class="row acct-state"><span class="rt"><b>Backed up</b><small data-acct-line>${esc(line)}</small></span><span class="acct-on" aria-label="Backup is on">● On</span></div>
+      <button class="row" data-acct="show"><span class="rt"><b>Show my recovery code</b></span><span class="chev">›</span></button>
+      <button class="row" data-acct="sync"><span class="rt"><b>Sync now</b></span><span class="chev">›</span></button>
+      <button class="row danger" data-acct="off"><span class="rt"><b>Turn off &amp; delete my backup</b></span></button>`;
+}
+const acctCard = () => (acctShown() ? `<div class="group-lbl">Account · optional</div><div class="list card" id="acct-card">${acctCardInner()}</div>` : '');
+function openCodeSheet(code, fresh) {
+  const old = $('#sheet'); if (old) { old.remove(); document.body.classList.remove('modal-open'); }
+  const sh = document.createElement('div'); sh.id = 'sheet';
+  sh.innerHTML = `<div class="sheet-bg" ${fresh ? '' : 'data-close'}></div><div class="sheet" role="dialog" aria-modal="true" aria-label="Recovery code"><div class="grab"><span></span></div><button class="sheet-x" data-close aria-label="Close">✕</button><div class="sheet-body">
+    <h2 class="story-t">${fresh ? 'Save your recovery code' : 'Your recovery code'}</h2>
+    <p class="story-s">This code is the only way to get your favorites back on a new phone or after clearing your browser.</p>
+    <div class="acct-code selectable" data-acct-code>${esc(code)}</div>
+    <div class="acct-btns"><button class="btn" data-acct="copy">Copy</button><button class="btn" data-acct="txt">Save as .txt</button></div>
+    <div class="why"><b>There is no “forgot my code.”</b> We don’t have your email or anything else to look you up with. If you lose the code, the backup can’t be recovered. Anyone who has the code can replace your saved favorites, so keep it private.</div>
+    ${fresh ? '<label class="acct-ack"><input type="checkbox" data-acct-ack /> <span>I saved my code somewhere safe</span></label>' : ''}
+    <button class="btn primary xl" data-acct="done" ${fresh ? 'disabled' : ''}>Done</button></div></div>`;
+  document.body.appendChild(sh); document.body.classList.add('modal-open');
+  requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.add('open')));
+  history.pushState({ sheet: 1 }, '');
+  sh.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-close]')) { closeSheet(); return; }
+    const b = e.target.closest('[data-acct]'); if (!b) return; const a = b.dataset.acct;
+    if (a === 'done') { closeSheet(); return; }
+    if (a === 'copy') { try { await navigator.clipboard.writeText(code); b.textContent = 'Copied ✓'; } catch { const r = document.createRange(); r.selectNodeContents($('[data-acct-code]', sh)); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Selected: copy it'; } }
+    if (a === 'txt') {
+      const blob = new Blob([`Old School Sports recovery code\n\n${code}\n\nUse it in Settings > Account > "I already have a code" to restore your favorites.\nAnyone with this code can replace your saved favorites. Keep it private.\n`], { type: 'text/plain' });
+      const u = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = u; link.download = 'old-school-sports-recovery-code.txt'; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); b.textContent = 'Saved ✓';
+    }
+  });
+  sh.addEventListener('change', (e) => { if (e.target.matches('[data-acct-ack]')) $('[data-acct="done"]', sh).disabled = !e.target.checked; });
+  dragToClose($('.sheet', sh));
+}
+async function acctAction(a, btn) {
+  if (a === 'create') {
+    btn.disabled = true; const t = btn.querySelector('b'); const was = t.textContent; t.textContent = 'Creating…';
+    const r = await SYNC.create(); btn.disabled = false; t.textContent = was;
+    if (!r.ok) { toast(syncMsg(r.error)); return; }
+    SYNC_ST = { enabled: true, ready: true }; SYNC_ST_T = Date.now(); viewSettings(); openCodeSheet(r.code, true);
+  }
+  if (a === 'show') { const st = SYNC.state(); if (st) openCodeSheet(st.code, false); }
+  if (a === 'sync') {
+    const line = $('[data-acct-line]'); if (line) line.textContent = 'Syncing…';
+    const r = await SYNC.sync(); if (r.error === 'backup-missing') { toast('That backup no longer exists. This device keeps its settings.'); viewSettings(); return; }
+    if (!r.ok) { toast(syncMsg(r.error)); viewSettings(); return; }
+    if (r.pulled) { syncSportUI(); toast('Updated from your backup'); } else toast('Up to date');
+    viewSettings();
+  }
+  if (a === 'off' && confirm('Delete your backup from the server? This device keeps its settings, but your recovery code will stop working.')) {
+    const r = await SYNC.turnOff(); if (!r.ok) { toast(syncMsg(r.error)); return; }
+    toast('Backup deleted'); viewSettings();
+  }
+}
+function restoreScreen() {
+  return `<div class="card prose acct-box" data-part="restore"><form class="acct-form" data-rform><label for="rcode" class="lbl">Recovery code</label>
+      <input id="rcode" name="code" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go" maxlength="24" />
+      <button class="btn primary xl" type="submit">Look up my backup</button></form>
+    <p class="small acct-msg" role="status" aria-live="polite" data-rmsg></p><div class="acct-found" data-rfound hidden></div></div>
+    <p class="faint small">Letters are not case sensitive, dashes are optional, and O counts as 0 and I or L count as 1.</p>`;
+}
+function bindRestore(root) {
+  const box = $('[data-part="restore"]', root); if (!box) return; let found = null;
+  const msg = $('[data-rmsg]', box); const out = $('[data-rfound]', box); const input = $('#rcode', box);
+  box.addEventListener('submit', async (e) => {
+    e.preventDefault(); out.hidden = true; found = null; const code = normalizeCode(input.value);
+    if (!code) { msg.textContent = 'That doesn’t look like a code. It’s 12 letters and numbers, like 7K2M-9QXD-4TRA.'; return; }
+    msg.textContent = 'Looking…'; const r = await SYNC.lookup(code);
+    if (!r.ok) { msg.textContent = r.error === 'not-found' ? 'No backup found for that code. Check for typos.' : syncMsg(r.error); return; }
+    found = code; msg.textContent = '';
+    const s = r.summary || {}; const when = r.updatedAt ? new Date(r.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    const parts = [s.sports === 'all' ? 'All sports' : `${s.sports} sport${s.sports === 1 ? '' : 's'}`, `${s.teams} team${s.teams === 1 ? '' : 's'}`, `${s.players} player${s.players === 1 ? '' : 's'}`, `${s.mutes} muted`];
+    out.innerHTML = `<div class="why"><b>Found a backup</b>${when ? `<br/>Last saved ${esc(when)}` : ''}<br/>${esc(parts.join(' · '))}</div>
+      <button class="btn primary xl" data-rdo="replace">Use the backup on this device</button><button class="btn xl" data-rdo="merge">Merge with what’s on this device</button>
+      <p class="faint small">“Use the backup” replaces your teams, mutes and settings here. “Merge” keeps both.</p>`; out.hidden = false;
+  });
+  out.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-rdo]'); if (!b || !found) return; out.querySelectorAll('button').forEach((x) => { x.disabled = true; });
+    const r = await SYNC.restore(found, b.dataset.rdo);
+    if (!r.ok) { out.querySelectorAll('button').forEach((x) => { x.disabled = false; }); msg.textContent = syncMsg(r.error); return; }
+    SYNC_ST = { enabled: true, ready: true }; SYNC_ST_T = Date.now(); toast(b.dataset.rdo === 'merge' ? 'Merged with your backup' : 'Restored from your backup'); location.hash = '#/settings';
+  });
+}
+
 function viewSettings(sub) {
   if (sub) return viewSettingsSub(sub);
   setBar('Settings');
@@ -1285,8 +1400,8 @@ function viewSettings(sub) {
   [...new Set(S.follow.map(sportOfId))].forEach((k) => { if (teamSport(k) && !TEAMS_BY[k]) ensureTeams(k).then(() => { if (location.hash === '#/settings') viewSettings(); }); });
   const confTxt = S.conferences.map((id) => CONFS.find((c) => c.id === id)?.short).filter(Boolean).join(', ') || 'All FBS';
   const mutes = activeMutes(); const mySrc = SOURCES.filter((s) => S.sports.includes(s.sport)); const onCount = mySrc.filter((s) => sourceOn(s.id)).length; const bl = S.blockOutlets || [];
-  view.innerHTML = LT('Settings', 'Saved on this device only') + `
-    <div class="group-lbl">Your feed</div><div class="list card">
+  view.innerHTML = LT('Settings', SYNC.linked() ? 'Saved on this device and backed up with your recovery code' : 'Saved on this device') + `
+    ${acctCard()}<div class="group-lbl">Your feed</div><div class="list card">
       ${linkRow('#/settings/sports', 'sports', 'var(--usa-red-b)', 'Sports', S.sports.map((k) => SPORTS[k].short).join(', '))}
       ${linkRow('#/settings/teams', 'team', 'var(--usa-blue-m)', 'Teams & players', teamsTxt)}
       ${S.sports.includes('cfb') ? linkRow('#/settings/conferences', 'conf', 'var(--usa-blue-m)', 'CFB conferences', confTxt) : ''}
@@ -1301,11 +1416,12 @@ function viewSettings(sub) {
       <button class="row" data-act="tour">${icon('spark', 'var(--usa-blue-m)')}<span class="rt"><b>Replay welcome tour</b><small>Step through setup again</small></span><span class="chev">›</span></button>
       ${linkRow('#/settings/about', 'info', 'var(--usa-blue-m)', 'About & install', 'How filtering works · data sources')}</div>
     <div class="list card" style="margin-top:22px"><button class="row danger" data-act="reset"><span class="rt"><b>Reset all settings</b></span></button></div>
-    <p class="faint small center">Old School Sports · no ads, no accounts</p>`;
+    <p class="faint small center">Old School Sports · no ads · no email or password</p>`;
   view.onclick = (e) => {
+    const ac = e.target.closest('[data-acct]'); if (ac) { tick(); acctAction(ac.dataset.acct, ac); return; }
     const b = e.target.closest('[data-act]'); if (!b) return; tick();
     if (b.dataset.act === 'tour') openOnboarding(1);
-    if (b.dataset.act === 'reset' && confirm('Reset all settings on this device?')) { S = structuredClone(DEFAULTS); save(); applyTheme(); syncSportUI(); openOnboarding(0); viewSettings(); }
+    if (b.dataset.act === 'reset' && confirm(SYNC.linked() ? 'Reset all settings on this device? Your backup is not changed, and this device stops syncing. You can restore with your code.' : 'Reset all settings on this device?')) { SYNC.forget(); S = structuredClone(DEFAULTS); save(); applyTheme(); syncSportUI(); openOnboarding(0); viewSettings(); }
   };
   view.onchange = (e) => prefChange(e, view);
 }
@@ -1314,11 +1430,12 @@ function viewSettingsSub(sub) {
   const screens = {
     sports: ['Sports', 'Pick the sports you want. Switch between them with the chips at the top of each tab.', P.sports()],
     teams: ['Teams & players', 'Their games and news always come first.', P.teams()],
-    watch: ['How you watch', 'Pick your live-TV and streaming services. Open any game to see its “Watch on …” buttons — yours come first and highlighted. Saved on this device only.', P.watch()],
+    watch: ['How you watch', 'Pick your live-TV and streaming services. Open any game to see its “Watch on …” buttons — yours come first and highlighted.', P.watch()],
     conferences: ['CFB conferences', 'Shown after your teams in Scores and News. Pick none to see all of FBS.', P.confs()],
     mute: ['Mute', 'Muted things are removed everywhere, in every sport: scores, leaderboards, rankings, news and story groups.', P.mute(true)],
     sources: ['News sources', 'Mix wire services, national, local and official team outlets.', `<div class="list card">${flagSwitch('straightOnly', 'Straight news only', 'Hide opinion, picks, betting & podcasts')}</div><div class="group-lbl">Outlets</div><div class="list card" data-part="sources"></div>${P.outlets()}`],
     appearance: ['Appearance', '', '<div class="list card" data-part="theme"></div>'],
+    restore: ['Restore my favorites', 'Type the recovery code you saved to bring your teams, mutes and settings back.', restoreScreen()],
     about: ['About & install', '', `<div class="card prose">
       <h3>Install it like an app</h3><p><b>iPhone:</b> Safari → Share → “Add to Home Screen”.<br/><b>Android / Chrome / Edge:</b> menu → “Install app”.</p>
       <h3>How “straight news” works</h3><p>Headlines are labeled automatically with keyword and URL rules (e.g. “column”, “hot take”, “predictions”, “odds”, question headlines). It’s a heuristic, not a bias rating — tap any story to see why it was labeled.</p>
@@ -1328,7 +1445,7 @@ function viewSettingsSub(sub) {
   const s = screens[sub]; if (!s) { location.hash = '#/settings'; return; }
   setBar(s[0], back);
   view.innerHTML = LT(s[0], s[1]) + `<div class="sub-screen">${s[2]}</div>`;
-  refreshParts(view); bindPrefs(view);
+  refreshParts(view); bindPrefs(view); if (sub === 'restore') bindRestore(view);
 }
 
 // ---------------- onboarding (paged, swipeable) ----------------
@@ -1530,18 +1647,27 @@ document.addEventListener('pointerdown', (e) => { if (e.target.closest('.nav a, 
 
 // ---------------- sport switcher + Gamecast interactions ----------------
 const SWITCH_TABS = ['home', 'scores', 'news', 'rankings'];
+// The sport the current page is actually about. Top lists and brackets (#/rankings/list|playoffs/<sport>) carry their own sport in the URL, which can differ
+// from the saved current sport (deep links, the Rankings hub, back/reload). The chip strip, accent, backdrop and title follow what is shown, never a stale sport.
+const LIST_HASH = /^#\/rankings\/(lists|list|playoffs)(?:\/([a-z0-9]+))?/;
+function shownSport(name) {
+  if (name === 'rankings') { const m = LIST_HASH.exec(location.hash || ''); if (m && m[2] && SPORTS[m[2]] && LIST_FEED.includes(m[2])) return m[2]; }
+  return S.sport;
+}
 function syncSportUI(name) {
   if (name == null) name = (location.hash || '#/home').split('/')[1] || 'home';
+  const cur = shownSport(name);
   const bar = $('#sportbar');
   const show = S.sports.length > 1 && SWITCH_TABS.includes(name);
   bar.hidden = !show; document.body.classList.toggle('has-sportbar', show);
-  bar.innerHTML = S.sports.map((k) => `<button class="chip ${k === S.sport ? 'on' : ''}" data-switch="${k}" aria-pressed="${k === S.sport}"><span aria-hidden="true">${SPORTS[k].emoji}</span>${esc(SPORTS[k].short)}</button>`).join('');
+  // a shown sport that is not one of the person's chips highlights nothing (never the wrong sport)
+  bar.innerHTML = S.sports.map((k) => `<button class="chip ${k === cur ? 'on' : ''}" data-switch="${k}" aria-pressed="${k === cur}"><span aria-hidden="true">${SPORTS[k].emoji}</span>${esc(SPORTS[k].short)}</button>`).join('');
   const on = bar.querySelector('.on'); if (show && on && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = Math.max(0, on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2);
-  const lbl = $('#tab4-label'); if (lbl) lbl.textContent = SPORTS[S.sport].tab4;
+  const lbl = $('#tab4-label'); if (lbl) lbl.textContent = SPORTS[cur].tab4;
   const de = document.documentElement; // non-core sports get their accent from the catalog
-  if (CORE.includes(S.sport)) { delete de.dataset.xa; de.style.removeProperty('--xa'); } else { de.dataset.xa = ''; de.style.setProperty('--xa', SPORTS[S.sport].accent || '#ff7a1a'); }
-  if (!['team', 'game', 'schedule', 'player'].includes(name)) BD.setSport(S.sport);
-  document.title = `Old School Sports · ${SPORTS[S.sport].short}`;
+  if (CORE.includes(cur)) { delete de.dataset.xa; de.style.removeProperty('--xa'); } else { de.dataset.xa = ''; de.style.setProperty('--xa', SPORTS[cur].accent || '#ff7a1a'); }
+  if (!['team', 'game', 'schedule', 'player'].includes(name)) BD.setSport(cur);
+  document.title = `Old School Sports · ${SPORTS[cur].short}`;
 }
 // "Play drive": steps the football play tracker through the drive, one play at a time, animating each; any manual tap stops it.
 let autoTimer = null;
@@ -1567,8 +1693,12 @@ function startAuto(card) {
 document.addEventListener('click', (e) => {
   const sw = e.target.closest('[data-switch]');
   if (sw) {
-    if (sw.dataset.switch === S.sport) return; tick();
-    S.sport = sw.dataset.switch; save(); mem.forEach((_, k) => k.startsWith('/api/news') && mem.delete(k));
+    const to = sw.dataset.switch; const nm = (location.hash || '#/home').split('/')[1] || 'home'; const shown = shownSport(nm);
+    if (to === shown && to === S.sport) return; tick();
+    S.sport = to; save(); mem.forEach((_, k) => k.startsWith('/api/news') && mem.delete(k));
+    // on a top-list / bracket page, a chip opens the same page for that sport (or that sport's Rankings tab if it has none)
+    const lp = nm === 'rankings' ? LIST_HASH.exec(location.hash || '') : null;
+    if (lp && lp[1] !== 'lists' && to !== shown) { syncSportUI(); location.hash = LIST_FEED.includes(to) ? `#/rankings/${lp[1]}/${to}` : '#/rankings'; return; }
     syncSportUI(); scrollTo(0, 0); route(true); return;
   }
   const inCast = (location.hash || '').startsWith('#/game/');
@@ -1671,6 +1801,7 @@ async function boot() {
   renderSideTeams();
   window.addEventListener('hashchange', () => route());
   route();
+  syncStatus().then(() => { if (location.hash === '#/settings') viewSettings(); }); syncSoon(true);
   setTimeout(() => { splash.classList.add('hide'); setTimeout(() => splash.remove(), 450); }, Math.max(0, 450 - (performance.now() - t0)));
 }
 boot();

@@ -81,6 +81,15 @@ Rules implemented (2026-27 CFP, per collegefootballplayoff.com): ACC, Big 12, Bi
 
 Test with a mocked CFP payload: `BRACKETS_MOCK_CFP=tests/fixtures/mock-cfp.json PORT=8798 node server/index.js` (shows a TEST DATA banner; never set this in production).
 
+## Big plays, account sync, tab/data fix (v1.4.0)
+
+- **Big-play animations:** `server/bigplay.js` classifies each play (`bp` on every play, plus a game-level `big` list) per sport; `public/bigplay.js` draws the pop-out overlay (CSS only, no audio, `prefers-reduced-motion` gets a static card). Thresholds per sport are in `CHANGELOG.md`. Unit tests use trimmed real ESPN payloads (`tests/fixtures/bigplay/`). Browser test hook: `window.__ssBP`.
+- **Account sync (optional, recovery code):** `server/sync.js` (router), `syncdata.js` (code format, allow-list, merge), `syncstore.js` (Postgres store + in-memory fake), `db.js` (Neon HTTPS adapter, lazy-required); client `public/sync.js` plus the Account card in Settings. Design and trade-offs: `PROPOSAL-account-sync.md` (Option B, implemented).
+  - Env: `NEON_DATABASE_URL` or `DATABASE_URL` (a `postgresql://` URL), `SYNC_PEPPER` (16+ random characters, never change it), optional `SYNC_SCHEMA`. Missing either one: the feature is hidden. Never commit these; set them in Render's environment.
+  - Local tests need no database: `npm test` uses the in-memory store. `tests/sync-neon.test.js` runs only when `NEON_DATABASE_URL` is set and uses a throwaway `sync_test_<random>` schema that it drops.
+- **Sport strip rule:** on `#/rankings/(lists|list|playoffs)/<sport>` the strip highlights `<sport>` (`shownSport()` in `public/app.js`); on every other page it highlights the saved sport. Regression cases are `TM-*` in `scripts/qa-v21.js`.
+- Browser QA: `bash scripts/qa-v21.sh` (390x844, `screenshots/v21/`).
+
 ## AUSL Pro Softball (v1.3.1 "Windmill")
 
 The Athletes Unlimited Softball League is not on ESPN, so `server/ausl.js` (CJS provider, wired in `server/sports.js` and `server/index.js`) builds it from public data, cached server-side:

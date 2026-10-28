@@ -2,6 +2,40 @@
 
 Releases get a vintage-sports nickname plus a version label (service-worker cache version in parentheses).
 
+## v1.4.0 (release name TBD) (ss-v27) — 2026-10-28
+
+Three things from Justin: big-play Gamecast animations, accounts that survive clearing the browser (recovery code on Neon Postgres), and a Rankings tab/data mismatch he reported from his iPhone. Not yet deployed.
+
+### Added
+- **Big-play Gamecast animations (every sport with play data).** A detection layer (`server/bigplay.js`) tags each play with a tier (`big` / `huge`) and a headline; the open Gamecast pops a callout card over the game with a short transform/opacity animation (about 2.6 s), animates the score, and flags the play in the list with a `★ HEADLINE` badge. No audio. With "reduce motion" on, a static card shows for about 3.6 s instead. Only plays that arrive while you are watching a live game animate; opening a game, or returning after more than 25 s away, only records what you have already seen. A play id never animates twice, and only the best new play per poll animates. Finished games get a "Big plays" chips card.
+  - Football: big = TD, 2-pt conversion, pass/run of 20-39 yd, interception, lost fumble, FG 50-59. Huge = TD of 40+ or any return TD, pass/run of 40+ yd ("BOMB!" / "BREAKAWAY!"), INT returned 40+, sack-fumble lost to the defense, safety, FG 60+.
+  - Baseball: big = HR, triple, hit driving in 3+, go-ahead or tying hit from the 7th. Huge = grand slam, walk-off, go-ahead or tying HR from the 7th.
+  - Basketball: big = made 3, dunk, and-one, buzzer-beater (1.0 s or less), go-ahead or tying basket in the last 2:00 of the final period or OT. Huge = 4-point play, game-winning or tying buzzer-beater, go-ahead or tying basket in the last 0:30.
+  - Hockey: big = goal (power-play and empty-net labelled). Huge = OT goal, short-handed goal, tying goal in the last 2:00 of the 3rd.
+  - Soccer: huge = goal, penalty or own goal. Big = red card, penalty missed or saved.
+  - Golf: big = eagle. Huge = albatross or hole-in-one (needs the hole's par; skipped otherwise). Tennis: none (the feed has no point data).
+  - Other ESPN sports: any scoring play is a generic big "SCORE!". NCAA.com fallbacks are text-only (no animation).
+- **Recovery-code account sync (optional).** Settings › Account: "Back up my settings" creates a 12-character code (`XXXX-XXXX-XXXX`, shown once; you must tick "I saved it" before Done). The same screen restores on another phone or after clearing the browser (replace or merge). No email, no password, no tracking. Synced: favorites (sports, teams, players), mute lists, sources, news switches, theme, "how you watch". Not synced: the onboarding flag, anything transient.
+  - The server keeps only an HMAC of the code (`SYNC_PEPPER` is the key), never the code itself, in a Neon Postgres table (idle profiles are purged after 12 months). Payload is allow-listed and capped at 32 KB.
+  - Local first: the app works exactly as before with no code. Changes upload 3 s after you stop editing; offline or when the database is down they are kept and retried (online, return to the app, next launch). Two devices that edit at once are merged (lists unioned, newer value wins for single settings).
+  - Endpoints (`/api/sync`): `GET /status`, `POST /` (create), `POST /lookup`, `GET|PUT|DELETE /profile` (`Authorization: Sync <code>`; `If-Match` revision). `no-store` everywhere; the service worker never caches them.
+  - Abuse limits (in memory, per server instance): 5 creates per hour per IP (+300 per hour overall), 10 lookups per minute per IP, 30 wrong codes per hour pauses code endpoints, 60 writes per minute.
+  - **Setup on Render:** set `NEON_DATABASE_URL` (or `DATABASE_URL`) and `SYNC_PEPPER` (any random string of 16+ characters; keep it forever, changing it orphans every code). Optional `SYNC_SCHEMA` (default `public`). Without both, the sync card is hidden and nothing else changes. Tables are created idempotently at start; if the database is unreachable the server still starts and `/api/sync` answers 503 until it recovers.
+  - Database access uses Neon's HTTPS driver (`@neondatabase/serverless`), not a raw TCP driver.
+- Tests: new `tests/bigplay.test.js` (real ESPN fixtures), `syncdata.test.js`, `sync.test.js`, `sync-neon.test.js` (random throwaway schema, dropped afterward), `sync-client.test.mjs`; browser QA `scripts/qa-v21.sh` (adds BP-*, TM-*, SY-* cases; creates and removes a throwaway Neon schema).
+
+### Fixed
+- **Tab/data mismatch on Rankings pages.** On Rankings › NFL › Bracket (and every Top list / Bracket page) the top sport strip highlighted the saved sport (for example CFB) while the page showed another sport (NFL). The strip, accent colour, tab label and browser title now follow the sport actually shown, including deep links, the Back button and reload. A shown sport with no chip highlights nothing. Tapping a chip on a list or bracket page opens the same page for that sport (or that sport's Rankings tab if it has no list).
+
+### Changed
+- Service worker `ss-v27`; `?v=27` on changed assets; package version 1.4.0; `trust proxy` is set to 1 so rate limits see the real client IP behind Render.
+- `blockOutlets` is included in the backup (beyond the proposal's list) so outlet blocks survive a restore.
+- Settings reset now also unlinks the backup on this device (the server copy remains until you turn the backup off).
+
+### Known limits
+- Big-play thresholds are heuristics from the ESPN play text; they will occasionally mis-tier a play. Golf eagles need par; tennis has no data; NCAA.com fallbacks do not animate. Busy basketball games can produce many callouts (a settings toggle is a possible follow-up). The play list only has the plays the feed returns.
+- A lost recovery code cannot be recovered (by design: no email). No QR or link hand-off between devices, and no "I have a code" step in onboarding; restore lives in Settings. Rate limits are per server instance. The first request after the Neon database sleeps can take a few seconds.
+
 ## v1.3.1 "Windmill" (ss-v26) — 2026-10-28
 
 One request from Justin: add pro softball. He wrote "Athletes Ultimate Softball"; the league is the **Athletes Unlimited Softball League (AUSL)** and is still branded that way, so the app calls it "AUSL Pro Softball". Not yet released (awaiting Justin's go-ahead). v1.4.0 stays reserved for the recovery-code account sync.

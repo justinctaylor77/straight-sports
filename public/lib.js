@@ -92,7 +92,8 @@ export function loadSettings() {
     return s;
   } catch { return structuredClone(DEFAULTS); }
 }
-export function saveSettings(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
+let afterSave = null; export const onSettingsSaved = (fn) => { afterSave = fn; }; // v1.4.0: lets optional backup sync notice changes
+export function saveSettings(s) { localStorage.setItem(KEY, JSON.stringify(s)); if (afterSave) { try { afterSave(); } catch {} } }
 
 // ---- "Mute every sport I haven't selected" ----
 // Curated, unambiguous words per sport (no "playoff", "bowl", "grand slam", "bout" ...). A word that also belongs to a sport you DID pick

@@ -1,6 +1,6 @@
 # Proposal: keep favorites after cache/cookies are cleared
 
-**Status:** design proposal only. Nothing in this document is built or shipped in v1.3.0 "Pick Six".
+**Status:** Option B (recovery code on Neon Postgres) is **built in v1.4.0** (local commits, not yet deployed). Nothing was shipped in v1.3.0 "Pick Six". Differences from this proposal: the Neon HTTPS driver is used (the sandbox and some hosts block raw Postgres TCP), `blockOutlets` is also synced, and there is no QR/link hand-off or onboarding "I have a code" step yet. See `CHANGELOG.md` v1.4.0.
 **Author:** Grok Bot · **Date:** Wed Oct 28, 2026 (America/Denver) · **Requested by:** Justin
 **Ask (verbatim):** "I'd like to have the account favorites stay for the users even if their cache and cookies are deleted. Can you create something like that and what would it look like?"
 
