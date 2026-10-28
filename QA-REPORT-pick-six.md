@@ -198,3 +198,52 @@ Evidence screenshots are local-only files under `screenshots/v19/` (gitignored).
 **Test-script defects (the product was right, my test was wrong):** first full run 96/108. Besides the bug above: the news mock lacked the `status` array the client reads; AS-03 regexes were case-sensitive (CSS upper-cases headings); GC-03 waited for a *visible* element instead of an attached one; S-03 could not intercept the service-worker script fetch with `page.route` (replaced by a small proxy); R-18's length threshold; P-01's text check; MU-06's news check ran with "This sport only" on, which legitimately hid non-football stories (now off, to isolate the mute behaviour).
 
 **Not tested / limits:** real iOS Safari; Render free-plan cold start; the live site (nothing deployed); college basketball and the NCAA.com play-by-play fallback against live data (off-season / no game today); account sync (proposal only). Final run: **109/109 pass** on the committed code.
+
+
+## Live verification (production, after deploy)
+
+- **Pushed:** `origin/main` = `5977823` (code commits d954833, 8c26999, 173ddc7, 5977823), Wed Oct 28, 2026, about 1:24 PM MT.
+- **Deploy:** `dep-dbh4o33bc2fs73eo20j0` (trigger: API, commit 5977823), started 1:25:00 PM MT, finished 1:25:46 PM MT, status `live`. `/sw.js` still served `ss-v24` at 1:25:44 PM MT and `ss-v25` at 1:26:05 PM MT.
+- **Run:** `node scripts/live-verify-v19.js` against https://straight-sports.onrender.com, Chromium 390x844 @2x touch emulation (not real iOS Safari), at 1:29 PM MT. Raw results: `live-verify-v19.json`, `live-prod-v19.json`.
+- **Result: 30 PASS / 0 FAIL of 30 live checks.**
+
+| ID | Check | Actual | Result | Screenshot |
+|---|---|---|---|---|
+| LV-01 | /sw.js version is ss-v25 | VERSION=ss-v25 | **PASS** | — |
+| LV-02 | index.html loads app.js?v=25 | app.js?v=25 | **PASS** | — |
+| LV-03 | Bracket Buzzer: /api/lists indexes the 9 sports | HTTP 200 | **PASS** | — |
+| LV-04 | All 9 /api/lists/<sport> and /api/playoffs/<sport> return 200 | lists 200,200,200,200,200,200,200,200,200; playoffs 200,200,200,200,200,200,200,200,200 | **PASS** | — |
+| LV-05 | /api/brackets works (JT/AP/CFP) | HTTP 200 | **PASS** | — |
+| LV-06 | /api/jt-top25 still carries the legacy `bracket` field | HTTP 200; seeds 12 | **PASS** | — |
+| LV-GC-nfl | NFL live API: every play has a description; players with roles | PASS; 187 plays, 154 with players, blank 0; roles Kicker, Returner, Tackled by, Rusher, Passer | **PASS** | — |
+| LV-GC-cfb | CFB live API: every play has a description; players with roles | PASS; 161 plays, 148 with players, blank 0; roles Rusher, Tackled by, Kicker, Passer, Target | **PASS** | — |
+| LV-GC-mlb | MLB live API: every play has a description; players with roles | PASS; 123 plays, 113 with players, blank 0; roles Pitcher, Batter, Runner on 2nd, Runner on 3rd | **PASS** | — |
+| LV-GC-nba | NBA live API: every play has a description; players with roles | PASS; 199 plays, 187 with players, blank 0; roles Subbed in, Subbed out, Shooter, Player, Turnover | **PASS** | — |
+| LV-GC-nhl | NHL live API: every play has a description; players with roles | PASS; 81 plays, 68 with players, blank 0; roles Won faceoff, Lost faceoff, Goal, Assist, Hit by | **PASS** | — |
+| LV-07 | Fresh profile still shows every sport (all-sports note) | Re-run after harness fix (first run read the home page because a same-hash goto did not re-render): all-sports note shown, 27 sport tiles, all 27 shown as on, scrollWidth 390, no console errors | **PASS** | `screenshots/v19/live-fresh-sports.png` |
+| LV-08 | Fresh profile: Mute checkbox disabled with "Pick favorite sports first" | {"dis":true,"chk":false,"sub":"Pick favorite sports first"} | **PASS** | `screenshots/v19/live-mute-disabled.png` |
+| LV-09 | Fresh profile: 390px, no horizontal scroll, no console errors | scrollWidth 390; no console/page errors, no failed app requests | **PASS** | — |
+| LV-10 | Settings fix: a Sources switch toggles and saves on each tap | before {"box":true}, tap1 {"stored":false,"box":false}, tap2 {"stored":true,"box":true} | **PASS** | `screenshots/v19/live-switch-sources.png` |
+| LV-11 | Mute checkbox enabled when sports are picked, with the one-line explanation | {"dis":false,"chk":false,"sub":"Hides every sport you didn’t pick, even ones added later. Untick to bring them back."} | **PASS** | `screenshots/v19/live-mute-enabled.png` |
+| LV-12 | Ticking it saves muteUnselected and shows the "Muting N sports" note; unticking restores (own mute list untouched) | ticked {"chk":true,"saved":true,"note":"Muting 26 sports: news and games outside NFL are hidden."}; unticked {"chk":false,"saved":false} | **PASS** | `screenshots/v19/live-mute-ticked.png` |
+| LV-13 | Mute page: 390px, no horizontal scroll, no console errors | scrollWidth 390; no console/page errors, no failed app requests | **PASS** | — |
+| LV-14 | Picker is broken out by league (5 collapsible groups for the 5 picked sports) | nfl,mlb,nba,nhl,cfb | **PASS** | `screenshots/v19/live-picker-groups.png` |
+| LV-15 | MLB group: 30 teams, location-first names ("Boston Red Sox"), sorted A–Z | 30 teams; first: Arizona Diamondbacks, Athletics, Atlanta Braves; sorted=true | **PASS** | `screenshots/v19/live-picker-mlb.png` |
+| LV-16 | Search still works ("boston" finds Boston teams) | Boston Red Sox, Boston Celtics, Boston Bruins, Boston College Eagles | **PASS** | `screenshots/v19/live-picker-search.png` |
+| LV-17 | Teams page: 390px, no horizontal scroll, no console errors | scrollWidth 390; no console/page errors, no failed app requests | **PASS** | — |
+| LV-UI-nfl | NFL Gamecast shows what happened and who was involved (390px) | 12 play sentences, 28 player chips (Passer, Target, Tackled by, Kicker), scrollWidth 390; e.g. "Tanner McKee pass complete to Elijah Mitchell for no gain, tackled by Justin Barron and Juanyeh Thom" | **PASS** | `screenshots/v19/live-gc-nfl.png` |
+| LV-UI-cfb | CFB Gamecast shows what happened and who was involved (390px) | 7 play sentences, 10 player chips (Passer, Target, Extra point, Kicker), scrollWidth 390; e.g. "(00:31) Kneel down by #2 H.Belin IV at MSU08 for loss of 2 yards" | **PASS** | `screenshots/v19/live-gc-cfb.png` |
+| LV-UI-mlb | MLB Gamecast shows what happened and who was involved (390px) | 9 play sentences, 25 player chips (Pitcher, Batter, Runner on 2nd, Runner on 3rd), scrollWidth 390; e.g. "Williamson singled to right, Fortes scored, Simpson to second, DeLuca to third. (Ben Williamson batt" | **PASS** | `screenshots/v19/live-gc-mlb.png` |
+| LV-UI-nba | NBA Gamecast shows what happened and who was involved (390px) | 2 play sentences, 1 player chips (Shooter), scrollWidth 390; e.g. "End of Game" | **PASS** | `screenshots/v19/live-gc-nba.png` |
+| LV-UI-nhl | NHL Gamecast shows what happened and who was involved (390px) | 4 play sentences, 9 player chips (Goal, Assist), scrollWidth 390; e.g. "Game End" | **PASS** | `screenshots/v19/live-gc-nhl.png` |
+| LV-18 | Gamecast pages: no console/page errors | no console/page errors, no failed app requests | **PASS** | — |
+| LV-19 | Regression: scores, news, Top 25, JT bracket, lists, brackets, settings render (390px, no horizontal scroll) | home:3831/390 scores:2078/390 news:11043/390 top25:1292/390 jt:1123/390 bracket:1123/390 lists:880/390 list-nfl:2888/390 playoffs-mlb:1586/390 settings:560/390 | **PASS** | `screenshots/v19/live-reg-scores.png` |
+| LV-20 | Regression pages: no console/page errors | no console/page errors, no failed app requests | **PASS** | — |
+
+**Notes and caveats**
+- LV-07 first failed because of a test-script problem (a same-hash navigation did not re-render, so it read the home page). The script was fixed (full reload with a query string) and LV-07 was re-run against production: the all-sports note shows, all 27 sport tiles are on, no horizontal scroll, no console errors. The product was right.
+- Gamecast checks used whichever NFL, college football, MLB, NBA and NHL games were available today (completed or in progress); a sport with no game on the day could not be tested. All five had games, so none were skipped. The first two play sentences per sport in the screenshots are often the closing plays (for example "End of Game"), which have no players by nature.
+- A free-plan cold start can delay the first request after a deploy; the script retries 5xx/timeouts and the API checks all returned 200.
+- Item 3 (account-synced favorites) is a proposal only (`PROPOSAL-account-sync.md`); nothing for it was deployed.
+- Not tested live: real iOS Safari, college basketball and the NCAA.com fallback (off-season / no games).
+- Screenshots are saved on the box in `screenshots/v19/live-*.png` (the folder is gitignored, so they are not in the repo).

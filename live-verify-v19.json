@@ -1,0 +1,216 @@
+{
+ "at": "2026-10-28T19:29:49.283Z",
+ "base": "https://straight-sports.onrender.com",
+ "results": [
+  {
+   "id": "LV-01",
+   "desc": "/sw.js version is ss-v25",
+   "status": "PASS",
+   "actual": "VERSION=ss-v25",
+   "evidence": ""
+  },
+  {
+   "id": "LV-02",
+   "desc": "index.html loads app.js?v=25",
+   "status": "PASS",
+   "actual": "app.js?v=25",
+   "evidence": ""
+  },
+  {
+   "id": "LV-03",
+   "desc": "Bracket Buzzer: /api/lists indexes the 9 sports",
+   "status": "PASS",
+   "actual": "HTTP 200",
+   "evidence": ""
+  },
+  {
+   "id": "LV-04",
+   "desc": "All 9 /api/lists/<sport> and /api/playoffs/<sport> return 200",
+   "status": "PASS",
+   "actual": "lists 200,200,200,200,200,200,200,200,200; playoffs 200,200,200,200,200,200,200,200,200",
+   "evidence": ""
+  },
+  {
+   "id": "LV-05",
+   "desc": "/api/brackets works (JT/AP/CFP)",
+   "status": "PASS",
+   "actual": "HTTP 200",
+   "evidence": ""
+  },
+  {
+   "id": "LV-06",
+   "desc": "/api/jt-top25 still carries the legacy `bracket` field",
+   "status": "PASS",
+   "actual": "HTTP 200; seeds 12",
+   "evidence": ""
+  },
+  {
+   "id": "LV-GC-nfl",
+   "desc": "NFL live API: every play has a description; players with roles",
+   "status": "PASS",
+   "actual": "PASS; 187 plays, 154 with players, blank 0; roles Kicker, Returner, Tackled by, Rusher, Passer",
+   "evidence": ""
+  },
+  {
+   "id": "LV-GC-cfb",
+   "desc": "CFB live API: every play has a description; players with roles",
+   "status": "PASS",
+   "actual": "PASS; 161 plays, 148 with players, blank 0; roles Rusher, Tackled by, Kicker, Passer, Target",
+   "evidence": ""
+  },
+  {
+   "id": "LV-GC-mlb",
+   "desc": "MLB live API: every play has a description; players with roles",
+   "status": "PASS",
+   "actual": "PASS; 123 plays, 113 with players, blank 0; roles Pitcher, Batter, Runner on 2nd, Runner on 3rd",
+   "evidence": ""
+  },
+  {
+   "id": "LV-GC-nba",
+   "desc": "NBA live API: every play has a description; players with roles",
+   "status": "PASS",
+   "actual": "PASS; 199 plays, 187 with players, blank 0; roles Subbed in, Subbed out, Shooter, Player, Turnover",
+   "evidence": ""
+  },
+  {
+   "id": "LV-GC-nhl",
+   "desc": "NHL live API: every play has a description; players with roles",
+   "status": "PASS",
+   "actual": "PASS; 81 plays, 68 with players, blank 0; roles Won faceoff, Lost faceoff, Goal, Assist, Hit by",
+   "evidence": ""
+  },
+  {
+   "id": "LV-07",
+   "desc": "Fresh profile still shows every sport (all-sports note)",
+   "status": "PASS",
+   "actual": "Re-run after harness fix (first run read the home page because a same-hash goto did not re-render): all-sports note shown, 27 sport tiles, all 27 shown as on, scrollWidth 390, no console errors",
+   "evidence": "screenshots/v19/live-fresh-sports.png"
+  },
+  {
+   "id": "LV-08",
+   "desc": "Fresh profile: Mute checkbox disabled with \"Pick favorite sports first\"",
+   "status": "PASS",
+   "actual": "{\"dis\":true,\"chk\":false,\"sub\":\"Pick favorite sports first\"}",
+   "evidence": "screenshots/v19/live-mute-disabled.png"
+  },
+  {
+   "id": "LV-09",
+   "desc": "Fresh profile: 390px, no horizontal scroll, no console errors",
+   "status": "PASS",
+   "actual": "scrollWidth 390; no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-10",
+   "desc": "Settings fix: a Sources switch toggles and saves on each tap",
+   "status": "PASS",
+   "actual": "before {\"box\":true}, tap1 {\"stored\":false,\"box\":false}, tap2 {\"stored\":true,\"box\":true}",
+   "evidence": "screenshots/v19/live-switch-sources.png"
+  },
+  {
+   "id": "LV-11",
+   "desc": "Mute checkbox enabled when sports are picked, with the one-line explanation",
+   "status": "PASS",
+   "actual": "{\"dis\":false,\"chk\":false,\"sub\":\"Hides every sport you didn\u2019t pick, even ones added later. Untick to bring them back.\"}",
+   "evidence": "screenshots/v19/live-mute-enabled.png"
+  },
+  {
+   "id": "LV-12",
+   "desc": "Ticking it saves muteUnselected and shows the \"Muting N sports\" note; unticking restores (own mute list untouched)",
+   "status": "PASS",
+   "actual": "ticked {\"chk\":true,\"saved\":true,\"note\":\"Muting 26 sports: news and games outside NFL are hidden.\"}; unticked {\"chk\":false,\"saved\":false}",
+   "evidence": "screenshots/v19/live-mute-ticked.png"
+  },
+  {
+   "id": "LV-13",
+   "desc": "Mute page: 390px, no horizontal scroll, no console errors",
+   "status": "PASS",
+   "actual": "scrollWidth 390; no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-14",
+   "desc": "Picker is broken out by league (5 collapsible groups for the 5 picked sports)",
+   "status": "PASS",
+   "actual": "nfl,mlb,nba,nhl,cfb",
+   "evidence": "screenshots/v19/live-picker-groups.png"
+  },
+  {
+   "id": "LV-15",
+   "desc": "MLB group: 30 teams, location-first names (\"Boston Red Sox\"), sorted A\u2013Z",
+   "status": "PASS",
+   "actual": "30 teams; first: Arizona Diamondbacks, Athletics, Atlanta Braves; sorted=true",
+   "evidence": "screenshots/v19/live-picker-mlb.png"
+  },
+  {
+   "id": "LV-16",
+   "desc": "Search still works (\"boston\" finds Boston teams)",
+   "status": "PASS",
+   "actual": "Boston Red Sox, Boston Celtics, Boston Bruins, Boston College Eagles",
+   "evidence": "screenshots/v19/live-picker-search.png"
+  },
+  {
+   "id": "LV-17",
+   "desc": "Teams page: 390px, no horizontal scroll, no console errors",
+   "status": "PASS",
+   "actual": "scrollWidth 390; no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-UI-nfl",
+   "desc": "NFL Gamecast shows what happened and who was involved (390px)",
+   "status": "PASS",
+   "actual": "12 play sentences, 28 player chips (Passer, Target, Tackled by, Kicker), scrollWidth 390; e.g. \"Tanner McKee pass complete to Elijah Mitchell for no gain, tackled by Justin Barron and Juanyeh Thom\"",
+   "evidence": "screenshots/v19/live-gc-nfl.png"
+  },
+  {
+   "id": "LV-UI-cfb",
+   "desc": "CFB Gamecast shows what happened and who was involved (390px)",
+   "status": "PASS",
+   "actual": "7 play sentences, 10 player chips (Passer, Target, Extra point, Kicker), scrollWidth 390; e.g. \"(00:31) Kneel down by #2 H.Belin IV at MSU08 for loss of 2 yards\"",
+   "evidence": "screenshots/v19/live-gc-cfb.png"
+  },
+  {
+   "id": "LV-UI-mlb",
+   "desc": "MLB Gamecast shows what happened and who was involved (390px)",
+   "status": "PASS",
+   "actual": "9 play sentences, 25 player chips (Pitcher, Batter, Runner on 2nd, Runner on 3rd), scrollWidth 390; e.g. \"Williamson singled to right, Fortes scored, Simpson to second, DeLuca to third. (Ben Williamson batt\"",
+   "evidence": "screenshots/v19/live-gc-mlb.png"
+  },
+  {
+   "id": "LV-UI-nba",
+   "desc": "NBA Gamecast shows what happened and who was involved (390px)",
+   "status": "PASS",
+   "actual": "2 play sentences, 1 player chips (Shooter), scrollWidth 390; e.g. \"End of Game\"",
+   "evidence": "screenshots/v19/live-gc-nba.png"
+  },
+  {
+   "id": "LV-UI-nhl",
+   "desc": "NHL Gamecast shows what happened and who was involved (390px)",
+   "status": "PASS",
+   "actual": "4 play sentences, 9 player chips (Goal, Assist), scrollWidth 390; e.g. \"Game End\"",
+   "evidence": "screenshots/v19/live-gc-nhl.png"
+  },
+  {
+   "id": "LV-18",
+   "desc": "Gamecast pages: no console/page errors",
+   "status": "PASS",
+   "actual": "no console/page errors, no failed app requests",
+   "evidence": ""
+  },
+  {
+   "id": "LV-19",
+   "desc": "Regression: scores, news, Top 25, JT bracket, lists, brackets, settings render (390px, no horizontal scroll)",
+   "status": "PASS",
+   "actual": "home:3831/390 scores:2078/390 news:11043/390 top25:1292/390 jt:1123/390 bracket:1123/390 lists:880/390 list-nfl:2888/390 playoffs-mlb:1586/390 settings:560/390",
+   "evidence": "screenshots/v19/live-reg-scores.png"
+  },
+  {
+   "id": "LV-20",
+   "desc": "Regression pages: no console/page errors",
+   "status": "PASS",
+   "actual": "no console/page errors, no failed app requests",
+   "evidence": ""
+  }
+ ]
+}
