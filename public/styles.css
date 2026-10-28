@@ -1304,3 +1304,43 @@ a.nm[href^="#/schedule"]:hover b, a.nm[href^="#/schedule"]:focus-visible b { col
 .lb-champrow { display: flex; align-items: center; gap: 14px; } .lb-champrow img { width: 56px; height: 56px; object-fit: contain; }
 .lb-champ .gk-title { margin: 2px 0 4px; font-size: 28px; }
 .lb-yr { width: 34px !important; font-size: 17px !important; }
+
+/* ---- v1.3.0 favorites picker: collapsible league groups, location-first names ---- */
+.pick-list .lg { border-bottom: 1px solid var(--border); } .pick-list .lg:last-child { border-bottom: 0; }
+.lg-head { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 8px 14px; border: 0; background: var(--chip); color: inherit; text-align: left; cursor: pointer; position: sticky; top: 0; z-index: 1; }
+.lg-head .em { font-size: 20px; flex: none; width: 30px; text-align: center; }
+.lg-head .nm { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.lg-head .nm small { color: var(--faint); font-size: 12.5px; }
+.lg-head .chev { width: 10px; height: 10px; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(-45deg); transition: transform .15s; flex: none; margin-right: 4px; }
+.lg-head[aria-expanded="true"] .chev { transform: rotate(45deg); }
+.lg-body .pick-row:last-child { border-bottom: 0; }
+.sub-head { padding: 6px 14px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--faint); background: color-mix(in srgb, var(--chip) 55%, transparent); }
+.pick-row .nm b { overflow-wrap: anywhere; }
+.by-seg { align-self: flex-start; }
+.row.disabled { opacity: .62; } .row.disabled .switch { pointer-events: none; }
+
+/* ---- v1.3.0 "Pick Six": what happened + who was involved (whoplay.js) ---- */
+.pb2 { display: block; line-height: 1.38; }
+.pb2 .pw { display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 1px 7px; margin-right: 6px; vertical-align: 1px; }
+.pb2 .pd { color: var(--text); overflow-wrap: anywhere; }
+.who { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.wc { display: inline-flex; align-items: center; gap: 7px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 3px 11px 3px 3px; max-width: 100%; min-height: 34px; }
+.wc img, .wc .wi { width: 26px; height: 26px; border-radius: 50%; flex: none; object-fit: cover; background: var(--surface); }
+.wc .wi { display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--muted); border: 1px solid var(--border); }
+.wc .wt { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.wc .wt b { font-size: 12.5px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc .wt b a { color: inherit; text-decoration: none; }
+.wc .wr { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); font-weight: 700; }
+.wc .ws { font-size: 10.5px; color: var(--faint); }
+.lp { margin-top: 10px; padding: 10px 12px; background: var(--surface-2); border-radius: 12px; border-left: 3px solid var(--accent); }
+.lp .lp-t { display: block; margin-bottom: 4px; }
+.card.lp { margin: 10px 0; }
+.gx-txt .pb2, .gx-txt.shot-cap .pb2 { margin-top: 2px; }
+.shot-cap { margin: 8px 2px 0; }
+.gc-story .sp .small, .gc-story-t { overflow-wrap: anywhere; }
+.gc-story-t { padding: 12px; }
+.sets-ol { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+.ev-story { padding: 6px 2px 8px; font-size: 13px; }
+.plays li .pb2, .sp .pb2 { font-size: 13.5px; }
+.plays li .dd { display: block; font-size: 11.5px; color: var(--faint); margin-bottom: 2px; }
+.munsel-row .rt small{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.3}

@@ -1,12 +1,13 @@
-import { LEAGUE_MUTES, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
+import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=25';
+import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=20';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=25';
 import * as GA from './anim.js?v=18';
 import * as BD from './backdrop.js';
 import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=19';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
-import { createLists, FEED as LIST_FEED } from './lists.js?v=24';
+import { createLists, FEED as LIST_FEED } from './lists.js?v=25';
 
 // ---------------- state ----------------
 let S = loadSettings();
@@ -105,7 +106,7 @@ const SK = {
 // ---------------- filters ----------------
 let _mf = null; let _mfKey = '';
 function muteFilter() {
-  const k = JSON.stringify([S.muteKeywords, S.muteLeagues, S.muteTeams, S.sportOnly, TEAMS.length, S.sport]);
+  const k = JSON.stringify([S.muteKeywords, S.muteLeagues, S.muteTeams, S.sportOnly, TEAMS.length, S.sport, S.muteUnselected, S.sportsChosen, S.sports, SPORT_IDS.length]);
   if (k !== _mfKey) { _mf = buildMuteFilter(S, entities(), S.sport); _mfKey = k; }
   return _mf;
 }
@@ -194,6 +195,7 @@ function topClusters(items, n) {
 }
 function activeMutes() {
   const out = []; const seen = new Set();
+  const nu = mutedSports(S).length; if (nu) { out.push(`${nu} unselected sport${nu > 1 ? 's' : ''}`); seen.add('unselected'); }
   for (const v of [...S.muteKeywords, ...S.muteLeagues.map((l) => (LEAGUE_MUTES[l] || {}).label), ...S.muteTeams.map((id) => (teamById(id) || {}).short)]) {
     if (!v || seen.has(v.toLowerCase())) continue; seen.add(v.toLowerCase()); out.push(v);
   }
@@ -982,7 +984,7 @@ async function viewPlayer(id) {
 }
 
 // ---------------- preference pickers (shared by onboarding + settings sub-screens) ----------------
-let teamQ = ''; let teamConf = ''; let muteQ = ''; let pickSport = null; let pickMode = 'teams'; let browseTeam = '';
+let teamQ = ''; let teamConf = ''; let muteQ = ''; let pickAll = true; let pickBy = 'az'; let pickOpen = null; let pickSport = null; let pickMode = 'teams'; let browseTeam = '';
 const ATH = new Map(); const ROSTER = new Map(); let athTimer = 0;
 const pickRoot = () => document.querySelector('#onb') || view;
 const regrid = () => { const g = $('[data-part="grid"]', pickRoot()); if (g) g.innerHTML = partHTML('grid'); };
@@ -1012,22 +1014,51 @@ async function loadPlayers(sp, root) {
 const KW_SUGGEST = ['Transfer portal', 'Odds', 'Fantasy', 'Mock draft'];
 const OUTLET_SUGGEST = ['ESPN', 'Bleacher Report', 'Barstool', 'OutKick'];
 const CHECK = '<span class="check" aria-hidden="true"></span>';
+const teamSportIds = () => S.sports.filter(teamSport);
+const allMode = () => pickAll && pickMode === 'teams' && teamSportIds().length > 1;
+const pickRow = (t, f) => `<button class="pick-row ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img src="${esc(logo(t))}" alt="" loading="lazy" /><span class="nm"><b>${esc(fullName(t))}</b><small>${esc([t.abbr, t.conference].filter(Boolean).join(' · '))}</small></span>${CHECK}</button>`;
+function teamRows(teams, f) {
+  if (pickBy !== 'conf') return teams.map((t) => pickRow(t, f)).join('');
+  return subGroups(teams).map((g) => (g.name ? `<div class="sub-head">${esc(g.name)}</div>` : '') + g.teams.map((t) => pickRow(t, f)).join('')).join('');
+}
+const lgMeta = (g, q) => `${q ? `${g.teams.length} of ${g.total}` : `${g.total || ''} teams`.trim()}${g.followed ? ` · ${g.followed} following` : ''}`;
+function allGrid(f, q) { // every league you picked, collapsible, each sorted location-first
+  const groups = buildGroups({ sportIds: S.sports, isTeam: teamSport, sports: SPORTS, teamsBy: TEAMS_BY, followedIn: (sp) => followsIn(sp).filter((id) => !isAthleteId(id)).length, q, conf: '' });
+  if (pickOpen === null) pickOpen = new Set(groups.length ? [groups[0].sport] : []);
+  const searching = q.length >= 1;
+  const need = groups.filter((g) => !g.loaded && (searching || pickOpen.has(g.sport)));
+  if (need.length) Promise.all(need.map((g) => ensureTeams(g.sport))).then(() => { const gr = $('[data-part="grid"]', pickRoot()); if (gr && allMode()) gr.innerHTML = partHTML('grid'); });
+  const out = groups.map((g) => {
+    if (searching && g.loaded && !g.teams.length) return '';
+    const open = searching ? true : pickOpen.has(g.sport);
+    const meta = g.loaded ? lgMeta(g, searching) : (g.followed ? `${g.followed} following` : 'tap to load');
+    return `<div class="lg" data-lg="${g.sport}"><button class="lg-head" data-lghead="${g.sport}" aria-expanded="${open}"><span class="em">${SPORTS[g.sport].emoji}</span><span class="nm"><b>${esc(g.label)}</b><small data-total="${g.total}">${esc(meta)}</small></span><span class="chev" aria-hidden="true"></span></button>${open ? `<div class="lg-body">${g.loaded ? teamRows(g.teams, f) : '<div class="empty small">Loading teams…</div>'}</div>` : ''}</div>`;
+  }).join('');
+  return out || '<div class="empty">No teams match.</div>';
+}
+function syncGroupCounts(root) { // follow toggles update league headers without re-rendering (keeps scroll position)
+  root.querySelectorAll('[data-lghead]').forEach((h) => {
+    const sp = h.dataset.lghead; const n = followsIn(sp).filter((id) => !isAthleteId(id)).length; const sm = $('small', h); if (!sm) return;
+    const base = sm.textContent.replace(/\s*·\s*\d+ following$/, '').replace(/^\d+ following$/, '').trim();
+    sm.textContent = base ? (n ? `${base} · ${n} following` : base) : (n ? `${n} following` : '');
+  });
+}
 const mascot = (t) => (t.name.startsWith(t.location) ? t.name.slice(t.location.length).trim() : t.name);
 
 function partHTML(p) {
   const f = (id) => S.follow.includes(id);
   switch (p) {
-    case 'sportseg': return S.sports.length > 1 ? `<div class="chips sport-chips">${S.sports.map((k) => `<button class="chip lg ${k === pSport() ? 'on' : ''}" data-psport="${k}">${SPORTS[k].emoji} ${esc(SPORTS[k].short)}<span class="cnt">${followsIn(k).length || ''}</span></button>`).join('')}</div>` : '';
+    case 'sportseg': return S.sports.length > 1 ? `<div class="chips sport-chips">${teamSportIds().length > 1 ? `<button class="chip lg ${allMode() ? 'on' : ''}" data-psport="all" aria-pressed="${allMode()}">🏟️ All leagues<span class="cnt">${S.follow.filter((id) => !isAthleteId(id) && teamSport(sportOfId(id))).length || ''}</span></button>` : ''}${S.sports.map((k) => `<button class="chip lg ${!allMode() && k === pSport() ? 'on' : ''}" data-psport="${k}">${SPORTS[k].emoji} ${esc(SPORTS[k].short)}<span class="cnt">${followsIn(k).length || ''}</span></button>`).join('')}</div>` : '';
     case 'sports': return (S.sportsChosen ? '<div class="sports-note"><button class="btn small" data-allsports="1">Show all sports</button></div>' : '<p class="sports-note faint small">Showing every sport until you pick some. Tap a sport to show only the ones you choose.</p>') + SPORT_GROUPS.map((g) => { const ks = SPORT_IDS.filter((k) => SPORTS[k].group === g); return ks.length ? `<div class="group-lbl tiles-lbl">${esc(g)}</div>${ks.map((k) => { const on = S.sports.includes(k); const v = SPORTS[k]; return `<button class="tile sport ${on ? 'on' : ''}" data-sport="${k}" aria-pressed="${on}" style="--sa:${v.accent}"><span class="em">${v.emoji}</span><span><b>${esc(v.name)}</b><small>${esc(v.blurb || '')}${v.kind === 'news' ? ' · headlines only' : ''}</small></span>${CHECK}</button>`; }).join('')}` : ''; }).join('');
-    case 'pmode': { const sp = pSport(); if (!teamSport(sp)) return '';
+    case 'pmode': { const sp = pSport(); if (allMode() || !teamSport(sp)) return '';
       return `<div class="seg pmode"><button data-pmode="teams" class="${pickMode === 'teams' ? 'on' : ''}" aria-pressed="${pickMode === 'teams'}">Teams</button><button data-pmode="players" class="${pickMode === 'players' ? 'on' : ''}" aria-pressed="${pickMode === 'players'}">Players</button></div>`; }
-    case 'quicklbl': return pSport() === 'cfb' && UTAH().length ? 'Popular in Utah' : '';
-    case 'quick': if (pSport() !== 'cfb') return ''; return UTAH().map((t) => `<button class="chip lg ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img src="${esc(logo(t))}" alt="" />${esc(t.short)}${f(t.id) ? ' ✓' : ''}</button>`).join('');
+    case 'quicklbl': return (allMode() ? S.sports.includes('cfb') : pSport() === 'cfb') && TEAMS_BY.cfb && UTAH().length ? 'Popular in Utah' : '';
+    case 'quick': if (!(allMode() ? S.sports.includes('cfb') : pSport() === 'cfb') || !TEAMS_BY.cfb) return ''; return UTAH().map((t) => `<button class="chip lg ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img src="${esc(logo(t))}" alt="" />${esc(fullName(t))}${f(t.id) ? ' ✓' : ''}</button>`).join('');
     case 'followed': {
-      const sp = pSport(); const l = followsIn(sp).map(teamById).filter(Boolean);
-      return l.length ? l.map((t) => `<button class="chip on" data-tfollow="${t.id}"><img src="${esc(logo(t))}" alt="" class="${t.player ? (teamSport(sp) || eventSport(sp) ? 'hs' : 'flag') : ''}" />${t.player && teamSport(sp) ? '★ ' : ''}${esc(t.short)} <span class="x">✕</span></button>`).join('') : `<span class="faint small">None yet — that’s fine, you’ll see ${sp === 'cfb' ? 'all of FBS' : `all of ${esc(SPORTS[sp].short)}`}.</span>`;
+      const sp = pSport(); const l = (allMode() ? S.follow.filter((id) => !isAthleteId(id) && S.sports.includes(sportOfId(id))) : followsIn(sp)).map(teamById).filter(Boolean);
+      return l.length ? l.map((t) => `<button class="chip on" data-tfollow="${t.id}"><img src="${esc(logo(t))}" alt="" class="${t.player ? (teamSport(sp) || eventSport(sp) ? 'hs' : 'flag') : ''}" />${t.player && teamSport(sp) ? '★ ' : ''}${esc(t.player ? t.short : fullName(t))} <span class="x">✕</span></button>`).join('') : `<span class="faint small">None yet — that’s fine, you’ll see ${sp === 'cfb' ? 'all of FBS' : `all of ${esc(SPORTS[sp].short)}`}.</span>`;
     }
-    case 'followcount': { const n = followsIn(pSport()).length; return n ? `· ${n}` : ''; }
+    case 'followcount': { const n = allMode() ? S.follow.filter((id) => !isAthleteId(id) && S.sports.includes(sportOfId(id))).length : followsIn(pSport()).length; return n ? `· ${n}` : ''; }
     case 'tsearch': { const sp = pSport();
       if (newsSport(sp)) return '';
       if (teamSport(sp) && !TEAMS_BY[sp]) { ensureTeams(sp).then(() => refreshParts(pickRoot())); }
@@ -1035,10 +1066,12 @@ function partHTML(p) {
         const TL = (TEAMS_BY[sp] || []).filter((t) => !teamConf || t.conferenceId === teamConf);
         return `<input class="search" data-in="tsearch" type="search" placeholder="Search ${esc(SPORTS[sp].short)} players by name" value="${esc(teamQ)}" autocomplete="off" enterkeyhint="search" /><div class="pick-sel">${confSelect()}<select class="btn" data-in="bteam" aria-label="Team roster"><option value="">Browse a roster…</option>${TL.map((t) => `<option value="${t.id}" ${browseTeam === t.id ? 'selected' : ''}>${esc(t.short)}</option>`).join('')}</select></div>`;
       }
+      if (allMode()) return `<input class="search" data-in="tsearch" type="search" placeholder="Search teams in ${teamSportIds().length} leagues, e.g. Boston or Red Sox" value="${esc(teamQ)}" autocomplete="off" enterkeyhint="search" /><div class="pick-sel">${bySeg()}</div>`;
       const n = teamSport(sp) ? (TEAMS_BY[sp] || []).length : (PLAYERS_BY[sp] || []).length;
-      return `<input class="search" data-in="tsearch" type="search" placeholder="Search ${n || ''} ${teamSport(sp) ? 'teams' : esc(SPORTS[sp].what)}" value="${esc(teamQ)}" autocomplete="off" enterkeyhint="search" />${teamSport(sp) ? confSelect() : ''}`; }
+      return `<input class="search" data-in="tsearch" type="search" placeholder="Search ${n || ''} ${teamSport(sp) ? 'teams' : esc(SPORTS[sp].what)}" value="${esc(teamQ)}" autocomplete="off" enterkeyhint="search" />${teamSport(sp) ? `<div class="pick-sel">${confSelect()}${bySeg()}</div>` : ''}`; }
     case 'grid': {
       const sp = pSport(); const q = teamQ.trim().toLowerCase();
+      if (allMode()) return allGrid(f, q);
       if (newsSport(sp)) return `<div class="empty">${esc(SPORTS[sp].name)} is headlines-only, so there’s nobody to follow here. Its news uses every outlet you have on — mute names or keywords in Mute.</div>`;
       if (teamSport(sp) && pickMode === 'players') {
         const tname = (id) => (teamById(id) || {}).short || '';
@@ -1071,13 +1104,20 @@ function partHTML(p) {
           + (list.length > show.length ? `<div class="empty small">Showing ${show.length} of ${list.length} — search to find more.</div>` : '') || '<div class="empty">No players match.</div>';
       }
       const TL = TEAMS_BY[sp]; if (!TL) return '<div class="empty">Loading teams…</div>';
-      const list = TL.filter((t) => (!teamConf || t.conferenceId === teamConf) && (!q || `${t.name} ${t.abbr} ${t.conference}`.toLowerCase().includes(q)));
-      return list.map((t) => `<button class="pick-row ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img src="${esc(logo(t))}" alt="" loading="lazy" /><span class="nm"><b>${esc(t.short)}</b><small>${sp === 'cfb' ? `${esc(mascot(t))} · ` : ''}${esc(t.conference || '')}</small></span>${CHECK}</button>`).join('') || '<div class="empty">No teams match.</div>';
+      const list = leagueTeams(TL, { q: teamQ, conf: teamConf });
+      return teamRows(list, f) || '<div class="empty">No teams match.</div>';
     }
     case 'confs': return CONFS.map((c) => {
       const n = TEAMS.filter((t) => t.conferenceId === c.id).length; const on = S.conferences.includes(c.id);
       return `<button class="tile ${on ? 'on' : ''}" data-conf="${c.id}" aria-pressed="${on}"><span><b>${esc(c.short)}</b><small>${n} teams</small></span>${CHECK}</button>`;
     }).join('');
+    case 'munsel': {
+      const n = SPORT_IDS.filter((k) => !S.sports.includes(k)).length; const can = S.sportsChosen; const inOnb = !!document.querySelector('#onb');
+      const sub = can ? 'Hides every sport you didn’t pick, even ones added later. Untick to bring them back.' : 'Pick favorite sports first';
+      const note = !can ? `<div class="row"><span class="rt"><small class="faint">You’re showing every sport right now, so there is nothing to mute. ${inOnb ? 'Pick sports in the earlier step.' : '<a href="#/settings/sports">Pick your sports</a>'}, then come back.</small></span></div>`
+        : S.muteUnselected ? `<div class="row"><span class="rt"><small class="faint" data-munsel-note>Muting ${n} sport${n === 1 ? '' : 's'}: news and games outside ${S.sports.map((k) => esc(SPORTS[k].short)).join(', ')} are hidden.</small></span></div>` : '';
+      return `<label class="row munsel-row ${can ? '' : 'disabled'}"><span class="rt"><b>Mute every sport I haven’t selected</b><small>${sub}</small></span><span class="switch"><input type="checkbox" data-flag="muteUnselected" data-munsel ${can && S.muteUnselected ? 'checked' : ''} ${can ? '' : 'disabled'} /></span></label>${note}`;
+    }
     case 'leagues': return Object.entries(LEAGUE_MUTES).map(([k, v]) => { const on = S.muteLeagues.includes(k); return `<button class="chip lg mute ${on ? 'on' : ''}" data-league="${k}" aria-pressed="${on}" title="Hides: ${esc(v.words.join(', '))}">${on ? '🔇 ' : ''}${esc(v.label)}</button>`; }).join('');
     case 'kws': return [...S.muteKeywords.map((k) => `<button class="chip lg mute on" data-unkw="${esc(k)}">${esc(k)} <span class="x">✕</span></button>`),
       ...KW_SUGGEST.filter((k) => !S.muteKeywords.some((x) => x.toLowerCase() === k.toLowerCase())).map((k) => `<button class="chip lg ghost" data-addkw="${esc(k)}">+ ${esc(k)}</button>`)].join('');
@@ -1086,7 +1126,7 @@ function partHTML(p) {
       const q = muteQ.trim().toLowerCase(); if (q.length < 2) return '';
       S.sports.filter((k) => !teamSport(k) && !newsSport(k)).forEach((k) => loadPlayers(k, document.querySelector('#onb') || view));
       const pool = [...TEAMS.filter((t) => S.sports.includes(t.sport)), ...S.sports.filter((k) => !teamSport(k) && !newsSport(k)).flatMap((k) => (PLAYERS_BY[k] || []).map((p) => ({ ...p, short: p.name, logo: p.flag, logoDark: p.flag, player: true })))];
-      return pool.filter((t) => t.name.toLowerCase().includes(q) && !S.muteTeams.includes(t.id)).slice(0, 10).map((t) => `<button class="chip lg" data-mute="${t.id}" ${t.player ? `data-pname="${esc(t.name)}" data-pflag="${esc(t.flag || '')}"` : ''}><img src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />Mute ${esc(t.short)}<small>${esc((SPORTS[t.sport] || {}).short || '')}</small></button>`).join('') || '<span class="faint small">No match.</span>';
+      return pool.filter((t) => t.name.toLowerCase().includes(q) && !S.muteTeams.includes(t.id)).slice(0, 10).map((t) => `<button class="chip lg" data-mute="${t.id}" ${t.player ? `data-pname="${esc(t.name)}" data-pflag="${esc(t.flag || '')}"` : ''}><img src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />Mute ${esc(t.player ? t.short : fullName(t))}<small>${esc((SPORTS[t.sport] || {}).short || '')}</small></button>`).join('') || '<span class="faint small">No match.</span>';
     }
     case 'outlets': { const b = S.blockOutlets || []; return [...b.map((x) => `<button class="chip lg mute on" data-unblock="${esc(x)}">🚫 ${esc(x)} <span class="x">✕</span></button>`), ...OUTLET_SUGGEST.filter((x) => !b.includes(x)).map((x) => `<button class="chip lg ghost" data-block="${esc(x)}">+ ${esc(x)}</button>`)].join(''); }
     case 'sources': return S.sports.map((k) => `<div class="group-lbl">${SPORTS[k].emoji} ${esc(SPORTS[k].name)}</div><div class="list card">${sportSources(k).map((s) => `<label class="row"><span class="rt"><b>${esc(s.name)}</b><small>${esc(s.kind)}${s.via ? ` · via ${esc(s.via)}` : ''}</small></span><span class="switch"><input type="checkbox" data-src="${s.id}" ${sourceOn(s.id) ? 'checked' : ''} /></span></label>`).join('')}</div>`).join('');
@@ -1120,7 +1160,7 @@ function refreshParts(root, skip = []) {
   });
 }
 function prefClick(e, root) {
-  const b = e.target.closest('[data-prov],[data-tfollow],[data-sport],[data-allsports],[data-psport],[data-pmode],[data-conf],[data-league],[data-unkw],[data-addkw],[data-unmute],[data-mute],[data-block],[data-unblock],[data-theme]');
+  const b = e.target.closest('[data-prov],[data-tfollow],[data-sport],[data-allsports],[data-psport],[data-lghead],[data-pby],[data-pmode],[data-conf],[data-league],[data-unkw],[data-addkw],[data-unmute],[data-mute],[data-block],[data-unblock],[data-theme]');
   if (!b || !root.contains(b)) return false;
   e.preventDefault(); tick();
   const d = b.dataset; let skip = [];
@@ -1145,13 +1185,16 @@ function prefClick(e, root) {
     pickSport = on ? null : d.sport; teamQ = ''; teamConf = ''; browseTeam = '';
     if (!on) ensureTeams(d.sport).then(() => refreshParts(root));
     syncSportUI();
-  } else if (d.psport) { pickSport = d.psport; teamQ = ''; teamConf = ''; browseTeam = ''; ensureTeams(d.psport).then(() => refreshParts(root)); }
+  } else if (d.psport === 'all') { pickAll = true; pickMode = 'teams'; teamQ = ''; teamConf = ''; browseTeam = ''; Promise.all(teamSportIds().map(ensureTeams)).then(() => refreshParts(root)); }
+  else if (d.psport) { pickAll = false; pickSport = d.psport; teamQ = ''; teamConf = ''; browseTeam = ''; ensureTeams(d.psport).then(() => refreshParts(root)); }
+  else if (d.lghead) { if (!pickOpen) pickOpen = new Set(); if (teamQ.trim()) { teamQ = ''; const i = $('[data-in="tsearch"]', root); if (i) i.value = ''; pickOpen.add(d.lghead); } else if (pickOpen.has(d.lghead)) pickOpen.delete(d.lghead); else pickOpen.add(d.lghead); }
+  else if (d.pby) { pickBy = d.pby; }
   else if (d.pmode) { pickMode = d.pmode; teamQ = ''; browseTeam = ''; }
   else if (d.tfollow) {
     S.follow = toggle(S.follow, d.tfollow); S.muteTeams = S.muteTeams.filter((x) => !S.follow.includes(x));
     const on = S.follow.includes(d.tfollow);
     root.querySelectorAll(`.pick-row[data-tfollow="${d.tfollow}"]`).forEach((el) => { el.classList.toggle('on', on); el.setAttribute('aria-pressed', on); });
-    skip = ['grid'];
+    syncGroupCounts(root); skip = ['grid'];
   } else if (d.conf) S.conferences = toggle(S.conferences, d.conf);
   else if (d.league) S.muteLeagues = toggle(S.muteLeagues, d.league);
   else if (d.unkw) S.muteKeywords = S.muteKeywords.filter((x) => x !== d.unkw);
@@ -1186,9 +1229,11 @@ function prefSubmit(e, root) {
   input.value = ''; save(); refreshParts(root);
 }
 function bindPrefs(root) {
-  root.onclick = (e) => prefClick(e, root); root.oninput = (e) => prefInput(e, root);
-  root.onchange = (e) => prefChange(e, root); root.onsubmit = (e) => prefSubmit(e, root);
+  // Braces matter: an `onclick` property handler that RETURNS false cancels the click, which silently stopped every switch/checkbox in Settings from toggling.
+  root.onclick = (e) => { prefClick(e, root); }; root.oninput = (e) => { prefInput(e, root); };
+  root.onchange = (e) => { prefChange(e, root); }; root.onsubmit = (e) => { prefSubmit(e, root); };
 }
+const bySeg = () => `<div class="seg by-seg" role="group" aria-label="Sort teams"><button data-pby="az" class="${pickBy === 'az' ? 'on' : ''}" aria-pressed="${pickBy === 'az'}">A–Z</button><button data-pby="conf" class="${pickBy === 'conf' ? 'on' : ''}" aria-pressed="${pickBy === 'conf'}">By conference</button></div>`;
 const confSelect = () => `<select class="btn" data-in="tconf" aria-label="${pSport() === 'cfb' ? 'Conference' : 'Division'}"><option value="">All ${pSport() === 'cfb' ? 'conferences' : 'divisions'}</option>${(DIVS_BY[pSport()] || []).map((c) => `<option value="${c.id}" ${teamConf === c.id ? 'selected' : ''}>${esc(c.short)}</option>`).join('')}</select>`;
 const flagSwitch = (flag, title, sub) => `<label class="row"><span class="rt"><b>${title}</b><small>${sub}</small></span><span class="switch"><input type="checkbox" data-flag="${flag}" ${S[flag] ? 'checked' : ''} /></span></label>`;
 const P = {
@@ -1198,7 +1243,8 @@ const P = {
     <div class="pick-list card" data-part="grid"></div>`,
   confs: () => '<div class="tiles" data-part="confs"></div>',
   sports: () => '<div class="tiles sports" data-part="sports"></div>',
-  mute: (full) => `<div class="lbl">Leagues & topics</div><div class="chips" data-part="leagues"></div>
+  mute: (full) => `<div class="list card" data-part="munsel"></div>
+    <div class="lbl">Leagues & topics</div><div class="chips" data-part="leagues"></div>
     <div class="lbl">Keywords <span class="faint">· whole word, any case</span></div><div class="chips" data-part="kws"></div>
     <form class="kw-form" data-form="kw"><input placeholder="Add a keyword, e.g. Deion" autocomplete="off" enterkeyhint="done" /><button class="btn">Mute</button></form>
     ${full ? `<div class="lbl">Teams & players</div><div class="chips" data-part="mteams"></div><div class="kw-form"><input data-in="mutesearch" placeholder="Type a team or player to mute…" autocomplete="off" /></div><div class="chips" data-part="mresults" style="margin-top:8px"></div>
@@ -1291,7 +1337,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=24" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=25" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
@@ -1586,6 +1632,8 @@ async function route(silent) {
   }
   const y = scrollY; SILENT = !!silent;
   try {
+    const mutedSp = ['team', 'schedule', 'player'].includes(name) && arg ? sportOfId(decodeURIComponent(arg)) : name === 'game' && arg ? arg : null;
+    if (mutedSp && mutedSports(S).includes(mutedSp)) { setBar(SPORTS[mutedSp].short, { back: '#/home' }); view.innerHTML = `<div class="card panel"><div class="empty">🔇 ${esc(SPORTS[mutedSp].name)} is muted because it isn’t one of your favorite sports.<br/><a class="btn small" href="#/settings/mute">Change in Mute</a></div></div>`; SILENT = false; return; }
     if (name === 'scores') await viewScores();
     else if (name === 'news') await viewNews();
     else if (name === 'rankings') await viewRankings();

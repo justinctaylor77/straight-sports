@@ -14,7 +14,7 @@ assert.deepEqual(s.muteTeams, v2.muteTeams);
 assert.deepEqual(s.muteLeagues, v2.muteLeagues, 'NBA/WNBA mutes intact, nothing duplicated');
 assert.deepEqual(s.conferences, v2.conferences); assert.deepEqual(s.sources, v2.sources); assert.equal(s.theme, 'dark');
 assert.ok(!s.sports.includes('nba') && !s.sports.includes('wnba'));
-assert.equal(s.v, 5); assert.equal(s.sportsChosen, true, 'an install with several sports keeps them as an explicit choice');
+assert.equal(s.v, 6); assert.equal(s.sportsChosen, true, 'an install with several sports keeps them as an explicit choice');
 assert.deepEqual(s.watch, { providers: ['yttv'] }, 'existing install: YouTube TV pre-selected');
 // v2 user who never muted NBA: hidden-by-default behaviour preserved as a mute, still no sports added
 const s2 = migrate({ ...structuredClone(v2), muteLeagues: [] });
@@ -55,7 +55,7 @@ console.log('migrate.test: all assertions passed');
 // ---- v5: all sports by default ----
 // stale default: v4 install that only has the old default ['cfb'] never chose -> everything (and the auto-added NBA/WNBA mutes go away)
 const stale = migrate({ v: 4, onboarded: true, sports: ['cfb'], sport: 'cfb', muteLeagues: ['nba', 'wnba'], watch: { providers: ['yttv'] }, follow: ['252'] });
-assert.deepEqual(stale.sports, SPORT_IDS); assert.equal(stale.sportsChosen, false); assert.deepEqual(stale.muteLeagues, []); assert.deepEqual(stale.follow, ['252'], 'follows untouched'); assert.equal(stale.v, 5);
+assert.deepEqual(stale.sports, SPORT_IDS); assert.equal(stale.sportsChosen, false); assert.deepEqual(stale.muteLeagues, []); assert.deepEqual(stale.follow, ["252"], "follows untouched"); assert.equal(stale.v, 6);
 // a user who picked sports (anything beyond the default) keeps exactly those; NBA/WNBA mutes untouched
 const picked = migrate({ v: 4, onboarded: true, sports: ['nfl', 'golf'], sport: 'nfl', muteLeagues: ['nba'] });
 assert.deepEqual(picked.sports, ['nfl', 'golf']); assert.equal(picked.sportsChosen, true); assert.deepEqual(picked.muteLeagues, ['nba']); assert.equal(picked.sport, 'nfl');

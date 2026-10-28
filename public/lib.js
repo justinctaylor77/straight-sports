@@ -25,9 +25,11 @@ export const sportOfId = (id) => { const m = /^([a-z0-9]+):/.exec(String(id)); r
 export const isAthleteId = (id) => /^[a-z0-9]+:a\d+$/.test(String(id)) || /^(golf|tennis):/.test(String(id));
 
 export const DEFAULTS = {
-  v: 5, onboarded: false,
+  v: 6, onboarded: false,
   // sportsChosen=false means "never picked": every sport in the catalog is shown. Picking sports (onboarding or Settings) sets it true.
   sports: SPORT_IDS.slice(), sportsChosen: false, sport: 'cfb', players: {},
+  // muteUnselected (v6): when true AND sportsChosen, every catalog sport you did not pick is muted from news/scores/schedule. Derived at read time, never stored in muteLeagues.
+  muteUnselected: false,
   conferences: [], follow: [], muteTeams: [], muteLeagues: [], muteKeywords: [],
   sources: {}, straightOnly: true, sportOnly: true, theme: 'system',
   watch: { providers: [] }, // how you watch: TV / streaming provider ids (see watch.js)
@@ -68,6 +70,12 @@ export function migrate(raw) {
     if (!s.sportsChosen && raw.onboarded) s.muteLeagues = (s.muteLeagues || []).filter((l) => l !== 'nba' && l !== 'wnba');
     s.v = 5;
   }
+  if (!raw.v || raw.v < 6) {
+    // v6 (mute unselected sports): additive flag, off for everyone until they tick it. Nothing else changes.
+    s.muteUnselected = raw.muteUnselected === true;
+    s.v = 6;
+  }
+  s.muteUnselected = s.muteUnselected === true;
   s.watch = { providers: [...new Set(((s.watch && s.watch.providers) || []).filter((x) => typeof x === 'string'))] };
   s.sports = (s.sports || []).filter((x) => SPORTS[x]);
   if (!s.sportsChosen) s.sports = SPORT_IDS.slice(); // never picked: everything (also picks up sports added to the catalog later)
@@ -80,11 +88,46 @@ export function loadSettings() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || '{}');
     const s = migrate(raw);
-    if (raw.onboarded && (!raw.v || raw.v < 5)) saveSettings(s); // persist the upgrade once
+    if (raw.onboarded && (!raw.v || raw.v < 6)) saveSettings(s); // persist the upgrade once
     return s;
   } catch { return structuredClone(DEFAULTS); }
 }
 export function saveSettings(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
+
+// ---- "Mute every sport I haven't selected" ----
+// Curated, unambiguous words per sport (no "playoff", "bowl", "grand slam", "bout" ...). A word that also belongs to a sport you DID pick
+// (e.g. "basketball" when you picked the NBA but not men's college basketball) is never muted. A sport added to the catalog later
+// without an entry here falls back to the plain words of its `own` pattern, so it is still muted.
+export const MUTE_WORDS = {
+  cfb: ['college football', 'CFB', 'NCAAF', 'FBS', 'Heisman'], nfl: ['NFL', 'Super Bowl'], mlb: ['MLB', 'World Series', 'baseball'],
+  golf: ['golf', 'PGA', 'LPGA', 'Ryder Cup'], tennis: ['tennis', 'ATP', 'WTA', 'Wimbledon', 'Roland Garros', 'Davis Cup'],
+  nba: ['NBA', 'basketball'], wnba: ['WNBA', 'basketball'], mcbb: ['NCAAM', 'March Madness', 'basketball'], wcbb: ['NCAAW', 'March Madness', 'basketball'],
+  nhl: ['NHL', 'hockey', 'Stanley Cup'], mls: ['MLS', 'Major League Soccer', 'soccer'], nwsl: ['NWSL', 'soccer'], epl: ['Premier League', 'soccer'],
+  laliga: ['LaLiga', 'La Liga', 'soccer'], bund: ['Bundesliga', 'soccer'], seriea: ['Serie A', 'soccer'], ligue1: ['Ligue 1', 'soccer'],
+  ucl: ['Champions League', 'soccer'], ligamx: ['Liga MX', 'soccer'], cbase: ['College World Series', 'baseball'], softball: ['softball', 'WCWS'],
+  gymnastics: ['gymnastics', 'gymnast'], ufc: ['UFC', 'MMA', 'mixed martial arts'], boxing: ['boxing', 'boxer'], f1: ['F1', 'Formula 1', 'Formula One', 'Grand Prix'],
+  nascar: ['NASCAR'], indy: ['IndyCar', 'Indy 500'],
+};
+const AMBIGUOUS = new Set(['playoff', 'bowl', 'masters', 'liv', 'bout', 'grand slam', 'us open', 'football', 'birdie', 'bogey', 'pitcher', 'inning', 'home run', 'quarterback', 'touchdown', 'heavyweight', 'welterweight', 'middleweight']);
+export function muteWordsFor(id) {
+  if (MUTE_WORDS[id]) return MUTE_WORDS[id];
+  const src = SPORTS[id] && SPORTS[id].own ? SPORTS[id].own.source : '';
+  return (src.match(/[A-Za-z][A-Za-z0-9 ]+[A-Za-z0-9]/g) || []).filter((w) => w.length > 2 && !AMBIGUOUS.has(w.toLowerCase()));
+}
+// The sports that are muted because you didn't pick them. Empty unless the box is ticked AND you have actually picked sports
+// (with "show everything" there is nothing unselected to mute). Computed from the live catalog, so sports added later are included.
+export function mutedSports(settings) {
+  if (!settings || !settings.muteUnselected || !settings.sportsChosen) return [];
+  const mine = new Set(settings.sports || []);
+  return SPORT_IDS.filter((k) => !mine.has(k));
+}
+export function mutedSportWords(settings) {
+  const muted = mutedSports(settings); if (!muted.length) return [];
+  const keep = new Set((settings.sports || []).flatMap((k) => muteWordsFor(k).map((w) => w.toLowerCase())));
+  const out = new Map();
+  for (const k of muted) for (const w of muteWordsFor(k)) if (!keep.has(w.toLowerCase()) && !out.has(w.toLowerCase())) out.set(w.toLowerCase(), { w, sport: k });
+  return [...out.values()];
+}
 
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const wordRe = (w) => new RegExp(`(^|[^\\p{L}\\p{N}])${esc(w).replace(/\s+/g, '[\\s\\-_]+')}(?=$|[^\\p{L}\\p{N}])`, 'iu');
@@ -133,6 +176,9 @@ export function buildMuteFilter(settings, teams, feedSport = 'cfb') {
   const words = [...(settings.muteKeywords || [])];
   for (const l of settings.muteLeagues || []) if (LEAGUE_MUTES[l] && LEAGUE_OF[feedSport] !== l) words.push(...LEAGUE_MUTES[l].words);
   const kw = words.filter(Boolean).map((w) => ({ w, re: wordRe(w.trim()) }));
+  // sports you didn't pick (only while you're looking at a sport you did pick; its own feed is never muted)
+  const mutedSp = new Set(mutedSports(settings));
+  const sw = (!settings.sports || settings.sports.includes(feedSport)) ? mutedSportWords(settings).map(({ w, sport }) => ({ w, sport, re: wordRe(w.trim()) })) : [];
   const tm = (settings.muteTeams || []).map((id) => teams.find((t) => t.id === id)).filter(Boolean).map((t) => ({ t, m: teamMatcher(t, teams, feedSport) }));
   const own = (SPORTS[feedSport] || SPORTS.cfb).own;
   const ownWords = new Set((own.source.match(/[A-Za-z][A-Za-z ]+/g) || []).map((w) => w.toLowerCase()));
@@ -140,6 +186,7 @@ export function buildMuteFilter(settings, teams, feedSport = 'cfb') {
   return {
     text(text) {
       for (const k of kw) if (k.re.test(text)) return `keyword “${k.w}”`;
+      for (const k of sw) if (k.re.test(text)) return `unselected sport (${(SPORTS[k.sport] || {}).short || k.sport})`;
       for (const x of tm) if (x.m(text)) return `team ${x.t.short || x.t.name}`;
       return null;
     },
@@ -161,6 +208,7 @@ export function buildMuteFilter(settings, teams, feedSport = 'cfb') {
       return null;
     },
     teamId: (id) => muteTeamIds.has(String(id)),
+    sport: (id) => mutedSp.has(id),
   };
 }
 

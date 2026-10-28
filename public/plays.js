@@ -2,6 +2,7 @@
 // Every renderer returns '' or a calm "no data" card when ESPN doesn't provide the numbers, so the screen never breaks.
 // Selection state (which play / at-bat / filter) lives in `st` (castState) and is changed through [data-gcset="key=value"] buttons.
 
+import { playBlock, playText, whoChips } from './whoplay.js?v=25';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const hex = (c, fb) => (c && /^[0-9a-f]{6}$/i.test(c) ? `#${c}` : fb);
 const f1 = (n) => (Math.round(n * 10) / 10).toString();
@@ -13,6 +14,12 @@ export function teamColors(d) {
   if (near(a, h)) h = hex(d.home.team.alt, '#FF5C6C');
   return { away: near(a, h) ? '#9AA7C0' : a, home: h };
 }
+// Caption under a shot graphic: the latest shot as "what happened + who" (server-explained), else ESPN's own text.
+const shotCap = (s, d) => {
+  if (!s) return '';
+  const body = playBlock({ what: s.what, desc: s.desc || s.full || s.text, who: s.wh || (s.who && typeof s.who === 'string' ? [{ role: 'Shooter', name: s.who }] : []) }, d.heads);
+  return body ? `<div class="gx-txt small shot-cap"><span class="faint small">Latest shot${s.clk ? ` · ${esc(s.clk)}` : ''}</span> ${body}</div>` : '';
+};
 const empty = (msg) => `<div class="card gx-empty">${esc(msg)}</div>`;
 const set = (k, v, on, label, extra = '') => `<button class="gx-chip ${on ? 'on' : ''} ${extra}" data-gcset="${esc(k)}=${esc(v)}" aria-pressed="${!!on}">${label}</button>`;
 const gxHead = (title, sub = '', replay = false) => `<div class="gx-hd"><b>${esc(title)}</b><span class="gx-hr">${sub ? `<span class="faint small">${sub}</span>` : ''}${replay ? '<button class="gx-replay rp" data-replay aria-label="Replay animation" title="Replay">↻ Replay</button>' : ''}</span></div>`;
@@ -160,8 +167,8 @@ export function footballPlays(d, st, ctx) {
       <line x1="${f1(fx(p.s))}" x2="${f1(fx(p.s))}" y1="8" y2="${FH - 20}" class="los" data-slide="t-los" data-x="${f1(fx(p.s))}"/>
       ${drawn}<g class="pg-main" data-an="fb" data-ak="fb:${esc(p.id)}" data-kind="${main.kind}">${main.svg}${main.ball}</g>
     </svg>
-    <div class="gx-cap"><b>${esc(main.label)}</b><span class="faint small">${esc(p.dd || '')}${p.clock ? ` · ${p.period ? `Q${p.period} ` : ''}${esc(p.clock)}` : ''}</span></div>
-    <p class="gx-txt small">${esc(p.text)}</p>
+    <div class="gx-cap"><b>${esc(p.what || main.label)}</b><span class="faint small">${esc(p.dd || '')}${p.clock ? ` · ${p.period ? `Q${p.period} ` : ''}${esc(p.clock)}` : ''}</span></div>
+    <div class="gx-txt small">${playBlock({ ...p, what: null }, d.heads) || esc(p.text)}</div>
     <div class="gx-chips" role="group" aria-label="Plays in this drive">${chips}${autoBtn}</div>
     <div class="gx-key"><span><i class="k pass"></i>Pass</span><span><i class="k run"></i>Run</span><span><i class="k kick"></i>Kick</span><span><i class="k bad"></i>Incomplete / sack / miss</span><span class="faint">${esc(d.away.team.abbr)} → · ← ${esc(d.home.team.abbr)}</span></div>
     <p class="faint small gx-note">Drawn from ESPN yard lines; passes and runs are shaped from the play text (direction, depth). Exact field positions aren't in the free feed.</p></div>`;
@@ -202,7 +209,7 @@ export function pitchTracker(d, st) {
     <div class="gx-drive">${nav(i > 0 ? abs[i - 1].id : '', '‹', i <= 0)}<span><b>${esc(ab.bat || 'Batter')}</b> <span class="faint">vs</span> ${esc(ab.pit || 'Pitcher')}${i === abs.length - 1 && d.state === 'in' ? ' <i class="live-dot"></i>' : ''}</span>${nav(i < abs.length - 1 ? abs[i + 1].id : '', '›', i >= abs.length - 1)}</div>
     <div class="gx-bbrow"><svg viewBox="${X0} ${Y0} ${VW} ${VH + 0}" class="sz-svg" role="img" aria-label="Pitch locations in the strike zone">${zone}${plate}${dots}</svg>${spray}</div>
     <ol class="gx-pitches">${rows}</ol>
-    ${ab.res ? `<p class="gx-txt small ${ab.score ? 'scored' : ''}">${esc(ab.res)}</p>` : ''}
+    ${ab.res ? `<div class="gx-txt small ${ab.score ? 'scored' : ''}">${ab.what ? `<b class="pw">${esc(ab.what)}</b> ` : ''}${playBlock({ desc: ab.desc, text: ab.res, who: ab.who }, d.heads) || esc(ab.res)}</div>` : ''}
     <div class="gx-key"><span><i class="k ball"></i>Ball</span><span><i class="k strike"></i>Strike</span><span><i class="k foul"></i>Foul</span><span><i class="k play"></i>In play</span></div>
     <p class="faint small gx-note">Locations are ESPN’s tracking coordinates; the box is an approximate strike zone.</p></div>`;
 }
@@ -236,6 +243,7 @@ export function hockeyShots(d, st) {
     ${gxHead('Shot map', `${esc(d.away.team.abbr)} ${A.sog} SOG · ${esc(d.home.team.abbr)} ${H.sog} SOG`, true)}
     ${filterChips(d, st, [set('sf', 'goal', f === 'goal', 'Goals')])}
     <svg viewBox="-2 -2 204 89" class="rink-svg" role="img" aria-label="Rink with shot locations">${rink}${dotsSvg}</svg>
+    ${shotCap(list[list.length - 1], d)}
     <div class="gx-key"><span><i class="k goalk"></i>Goal</span><span><i class="k saveK"></i>Shot on goal</span><span><i class="k missK">×</i>Missed</span><span><i class="k blockK"></i>Blocked</span></div>
     <div class="gx-legend"><span><i style="background:${col.away}"></i>${esc(d.away.team.abbr)} ${A.g} ${A.g === 1 ? 'goal' : 'goals'}</span><span><i style="background:${col.home}"></i>${esc(d.home.team.abbr)} ${H.g} ${H.g === 1 ? 'goal' : 'goals'}</span></div>
     <p class="faint small gx-note">Plotted where ESPN logged each shot (teams switch ends each period).</p></div>`;
@@ -265,6 +273,7 @@ export function basketballShots(d, st) {
     ${gxHead('Shot chart', `${esc(d.away.team.abbr)} ${A.fg} · ${esc(d.home.team.abbr)} ${H.fg} FG`, true)}
     ${filterChips(d, st)}
     <svg viewBox="-2 -2 54 51" class="court-svg" role="img" aria-label="Basketball half court with shot locations">${court}${dotsSvg}</svg>
+    ${shotCap(list[list.length - 1], d)}
     <div class="gx-key"><span><i class="k madeK"></i>Made</span><span><i class="k missK">×</i>Missed</span></div>
     <div class="gx-legend"><span><i style="background:${col.away}"></i>${esc(d.away.team.abbr)} ${A.p}% · 3PT ${A.t3}</span><span><i style="background:${col.home}"></i>${esc(d.home.team.abbr)} ${H.p}% · 3PT ${H.t3}</span></div>
     <p class="faint small gx-note">Every shot is shown at one basket (ESPN reports shots relative to the basket attacked). Free throws are left out.</p></div>`;
@@ -297,6 +306,7 @@ export function soccerShots(d, st) {
     ${gxHead('Shot map', `${esc(d.away.team.abbr)} ${A.n} · ${esc(d.home.team.abbr)} ${H.n} shots`, true)}
     ${filterChips(d, st, [set('sf', 'goal', f === 'goal', 'Goals')])}
     <svg viewBox="-3 -2 111 72" class="pitch-svg" role="img" aria-label="Pitch with shot locations">${pitch}${dotsSvg}</svg>
+    ${shotCap(list[list.length - 1], d)}
     <div class="gx-key"><span><i class="k goalk"></i>Goal</span><span><i class="k saveK"></i>On target</span><span><i class="k missK">×</i>Off target</span><span><i class="k blockK"></i>Blocked</span></div>
     <div class="gx-legend"><span><i style="background:${col.away}"></i>${esc(d.away.team.abbr)} ${A.on} on target · ${A.g} ${A.g === 1 ? 'goal' : 'goals'}</span><span><i style="background:${col.home}"></i>${esc(d.home.team.abbr)} ${H.on} on target · ${H.g} ${H.g === 1 ? 'goal' : 'goals'}</span></div>
     <p class="faint small gx-note">${esc(d.away.team.abbr)} attacks left, ${esc(d.home.team.abbr)} right. From ESPN’s match commentary positions.</p></div>`;
