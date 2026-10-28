@@ -12,6 +12,7 @@ const ESPN_WEB = 'https://site.web.api.espn.com/apis/v2/sports/football/college-
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36 OldSchoolSports/0.3';
 
 const app = express();
+app.set('trust proxy', 1); // Render terminates TLS in front of us; lets rate limits see the client address
 app.use(compression());
 
 // ---------- tiny TTL cache with in-flight de-duplication + stale fallback ----------
@@ -245,6 +246,11 @@ app.get('/api/news', wrap(async (req) => {
   const dropped = req.query.debug ? results.flatMap((r) => (DROPPED.get([...DROPPED.keys()].find((k) => k.startsWith(`${r.id}:`))) || []).map((d) => ({ feed: r.id, ...d }))) : undefined;
   return { sport, dropped, items: items.slice(0, 800), status: results.map(({ id, ok, error, items: it }) => ({ id, ok, error, count: it.length })), fetchedAt: new Date().toISOString() };
 }));
+
+// ---------- optional recovery-code sync (see sync.js). Off unless NEON_DATABASE_URL and SYNC_PEPPER are set; never blocks startup ----------
+const SYNC = require('./sync')();
+app.use('/api/sync', SYNC.router);
+SYNC.init().catch((e) => console.error('sync init failed:', e && e.message));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));
 
