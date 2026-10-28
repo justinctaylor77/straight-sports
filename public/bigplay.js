@@ -52,7 +52,7 @@ export function show(it, d, { force = false } = {}) {
   if (!it || !it.bp || typeof document === 'undefined') return null;
   hide();
   const b = it.bp; const rm = RM.matches; const huge = b.t === 'huge'; const col = sideColor(d, b.side);
-  const who = whoLine(it); const sub = b.s || '';
+  const who = whoLine(it); const sub = b.s && b.s !== it.when ? b.s : '';
   const cnt = b.v != null && b.u && /^\d+$/.test(String(b.v)) && !rm && typeof CSS !== 'undefined' && CSS.supports && CSS.supports('(--a: 1)');
   const subHtml = b.v != null && b.u && sub.includes(String(b.v)) && cnt
     ? esc(sub).replace(String(b.v), `<span class="bpo-n" style="--to:${+b.v}" aria-hidden="true"></span><span class="sr">${+b.v}</span>`) : esc(sub);
