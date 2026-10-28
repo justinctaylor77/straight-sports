@@ -2,6 +2,30 @@
 
 Releases get a vintage-sports nickname plus a version label (service-worker cache version in parentheses).
 
+## v1.3.1 "Windmill" (ss-v26) — 2026-10-28
+
+One request from Justin: add pro softball. He wrote "Athletes Ultimate Softball"; the league is the **Athletes Unlimited Softball League (AUSL)** and is still branded that way, so the app calls it "AUSL Pro Softball". Not yet released (awaiting Justin's go-ahead). v1.4.0 stays reserved for the recovery-code account sync.
+
+### Added
+- **AUSL Pro Softball** as a sport (group Baseball, kind team; included in the all-sports default and in "Mute every sport I haven't selected"). Six teams with location-first names and logos: Carolina Blaze, Chicago Bandits, Oklahoma City Spark, Portland Cascade, Texas Volts, Utah Talons. Picker entry in its own AUSL group (teams only; no followable players).
+- Scores and schedule, **standings (computed)**, team pages (schedule, record, roster, news), game page (result, venue, TV), sports-only news, Top list and **championship bracket** (play-in, then the AUSL Championship Series) in the Bracket Buzzer hub.
+- **Honest offseason state:** shows the last 8 real games, the 2026 regular-season table and the 2026 champion (Utah Talons over the Chicago Bandits, 2-0). No next-season date is shown: no verifiable source publishes one. Preseason and mid-season states are unit-tested from the real 2026 game log.
+- Data sources (all server-side, cached, with attribution in the app): Wikipedia "2026 AUSL season" game log (CC BY-SA 4.0; results, schedule, postseason; standings are computed from it) and MLB Stats API (sport 576, league 6044; teams, venues, rosters, logos only). theausl.com is link-only. A saved snapshot `data/ausl-2026.json` is served (and flagged) when both sources are down; rebuild it with `node scripts/build-ausl-snapshot.js`.
+- Tests: new `tests/ausl.test.mjs`; 13 suites via `npm test`; browser QA `scripts/qa-v20.sh`; report `QA-REPORT-windmill.md`.
+
+### Changed
+- Service worker `ss-v26`; `?v=26` on changed assets; package version 1.3.1.
+- `server/highlight.js`: AUSL teams are treated as pro teams, so the Utah Talons are not flagged as the Utah Utes.
+
+### Fixed
+- AUSL stories that say "softball" were hidden by "mute unselected" when College Softball was not picked. "softball" now counts as an AUSL word (kept when AUSL is picked).
+
+### Known limits
+- **No live scores, play-by-play or Gamecast who/what for AUSL:** no free, licensed feed exists (ESPN has none; theausl.com's terms forbid automated copying). Gamecast says so and links to theausl.com.
+- MLB Stats API terms say "individual, non-commercial, non-bulk use"; the app uses it only for team names, logos and rosters (cached). Justin should confirm he is comfortable with that.
+- Standings are computed from a volunteer-edited Wikipedia log (may lag in season), not the league's official table. The Results record includes playoffs and says so.
+- Roster rows are display-only. AUSL stories may also show up in College Softball news.
+
 ## v1.3.0 "Pick Six" (ss-v25) — 2026-10-28
 
 Four requests from Justin: a better favorites picker, a "mute everything I didn't pick" switch, a proposal for accounts that survive clearing the browser, and "who did what" on every Gamecast. Not yet released (awaiting Justin's go-ahead).

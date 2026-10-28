@@ -30,6 +30,7 @@ Defined in `public/catalog.js` (client) and `server/catalog.js` (server). Every 
 | Leaderboard / match Gamecast | Golf (PGA, LPGA), Tennis (ATP, WTA) |
 | Event cards (fight card / race sessions and results) | UFC, Formula 1, NASCAR Cup, IndyCar |
 | Headlines only (no free scores feed) | Boxing |
+| Results, computed standings, teams, news, championship bracket (no play-by-play) | AUSL Pro Softball (see below) |
 
 Migration never turns on a sport. An existing saved setup keeps exactly its sports, follows and mutes.
 
@@ -79,6 +80,17 @@ The script adds `prev`, `move` (number, `"new"` or `null` for the first week), `
 Rules implemented (2026-27 CFP, per collegefootballplayoff.com): ACC, Big 12, Big Ten and SEC champions + the highest-ranked Group of 6 team + Notre Dame (if ranked in the top 12) get automatic bids; the next highest-ranked teams fill out the 12. Seeds follow ranking order (an automatic qualifier outside the top 12 takes the last seeds) and seeds 1-4 get byes; byes are no longer reserved for conference champions. First round 5v12, 6v11, 7v10, 8v9 at the higher seed; quarterfinals 1 v 8/9, 2 v 7/10, 3 v 6/11, 4 v 5/12. Conference champions are not decided in October, so a Power 4 conference's projected champion is its highest-ranked team in that ranking.
 
 Test with a mocked CFP payload: `BRACKETS_MOCK_CFP=tests/fixtures/mock-cfp.json PORT=8798 node server/index.js` (shows a TEST DATA banner; never set this in production).
+
+## AUSL Pro Softball (v1.3.1 "Windmill")
+
+The Athletes Unlimited Softball League is not on ESPN, so `server/ausl.js` (CJS provider, wired in `server/sports.js` and `server/index.js`) builds it from public data, cached server-side:
+- **Wikipedia** "2026 AUSL season" game log (CC BY-SA 4.0): results, schedule, postseason. Standings are **computed** from it (not the league's table).
+- **MLB Stats API** (sport 576, league 6044): team names, venues, rosters, logos only. Its terms say "individual, non-commercial, non-bulk use"; keep usage small.
+- **theausl.com**: link-only. Its terms of use forbid scraping.
+- `data/ausl-2026.json` is the saved fallback (flagged `stale`) when sources are down; rebuild with `node scripts/build-ausl-snapshot.js`. `AUSL_WIKI_BASE` / `AUSL_MLB_BASE` override the source URLs (used by QA to simulate outages).
+- Team ids are `ausl:<MLB team id>`; game ids `YYYYMMDDNN`. No followable players, no play-by-play or Gamecast who/what (no legal source). Offseason shows the last results, final table and champion; no next-season date unless a real source gives one.
+- Mute logic: `MUTE_WORDS.ausl` includes "softball" so AUSL stories survive when AUSL is picked. The provider is year-aware (tries next year's Wikipedia article, then falls back; the parser is verified only against the 2026 layout).
+- Tests: `tests/ausl.test.mjs`; `npm test` runs 13 suites; `scripts/qa-v20.sh` runs browser QA at 390px (`screenshots/v20/`, gitignored) and `node scripts/qa-report-v20.js <commit>` writes `QA-REPORT-windmill.md`.
 
 ## Picker, mute-unselected, Gamecast who/what (v1.3.0 "Pick Six")
 
