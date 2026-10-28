@@ -21,6 +21,7 @@ async function newPage(base, settings, opts = {}) {
 const base6 = { v: 6, onboarded: true, sportsChosen: true, sport: 'nfl', follow: [], players: {}, conferences: [], muteTeams: [], muteLeagues: [], muteKeywords: [], watch: { providers: [] } };
 const chosen = { ...base6, sports: ['nfl', 'mlb', 'nba', 'nhl', 'cfb'] };
 async function tc(id, area, desc, steps, expected, fn) {
+  if (process.env.QA_ONLY && !new RegExp(process.env.QA_ONLY).test(id)) return;
   let r; try { r = await fn(); } catch (e) { r = { pass: false, actual: `Test threw: ${e.message.split('\n')[0]}` }; }
   results.push({ id, area, desc, steps, expected, actual: r.actual, status: r.pass ? 'PASS' : 'FAIL', evidence: r.shot || '' }); console.log(r.pass ? 'PASS' : 'FAIL', id, r.pass ? '' : r.actual);
 }
@@ -176,7 +177,7 @@ const pngSize = (f) => { const b = fs.readFileSync(f); return [b.readUInt32BE(16
       await p.unroute(`**/api/game/${nflSp}/${nflId}`); return { pass: r.n > 5 && !r.blank && r.chips === 0, actual: `${r.n} plays shown with raw text, blank ${r.blank}, chips ${r.chips}; e.g. "${r.sample}"`, shot: await snap(p, 'qa-gc-fallback-raw.png') }; });
     await tc('GC-03', 'Item 4 safety', 'Hostile data is escaped: script in a player name, javascript: and http: headshot URLs never become live markup/links', 'Inject <img onerror>, javascript: headshot, http: headshot into a play\'s who', 'Nothing executes; no javascript:/http: src rendered; name shown as text', async () => {
       await p.route(`**/api/game/${nflSp}/${nflId}`, async (rt) => { const resp = await rt.fetch(); const j = await resp.json(); let done = 0; const inj = (o) => { if (!o || typeof o !== 'object' || done >= 3) return; if (Array.isArray(o)) return o.forEach(inj); if (Array.isArray(o.who) && o.who.length && done < 3) { o.who[0].name = '<img src=x onerror="window.__xss=1">'; o.who[0].headshot = ['javascript:window.__xss=2', 'http://evil.example/a.png', 'https://example.com/ok.png'][done]; done++; } Object.values(o).forEach(inj); }; inj(j); await rt.fulfill({ response: resp, body: JSON.stringify(j), contentType: 'application/json' }); });
-      await p.goto(`${NEW}/#/home`); await p.waitForTimeout(1500); await p.goto(`${NEW}/#/game/${nflSp}/${nflId}`); await p.waitForSelector('.who .wc', { state: 'attached', timeout: 30000 }); await p.waitForTimeout(800); const r = await p.evaluate(() => ({ x: window.__xss || 0, inj: document.querySelectorAll('.who img[onerror], .pb2 img[onerror]').length, bad: [...document.querySelectorAll('.who img')].filter((i) => !/^https:\/\//.test(i.getAttribute('src') || '')).length, text: document.querySelector('#view').innerText.includes('<img src=x') })); await p.unroute(`**/api/game/${nflSp}/${nflId}`);
+      await p.goto(`${NEW}/?gc3=1#/game/${nflSp}/${nflId}`); /* full reload: the app keeps fetched games in memory, GC-02 left a stripped copy */ await p.waitForSelector('.who .wc', { state: 'attached', timeout: 30000 }).catch(async () => { console.log('DBG', await p.evaluate(() => ({ h: location.hash, pd: document.querySelectorAll('.pb2 .pd').length, t: document.querySelector('#view').innerText.slice(0, 200) }))); throw new Error('no chips'); }); await p.waitForTimeout(800); const r = await p.evaluate(() => ({ x: window.__xss || 0, inj: document.querySelectorAll('.who img[onerror], .pb2 img[onerror]').length, bad: [...document.querySelectorAll('.who img')].filter((i) => !/^https:\/\//.test(i.getAttribute('src') || '')).length, text: document.querySelector('#view').innerText.includes('<img src=x') })); await p.unroute(`**/api/game/${nflSp}/${nflId}`);
       return { pass: !r.x && !r.inj && !r.bad && r.text, actual: JSON.stringify(r) }; });
     await tc('C-04', 'Console', 'Console clean through every Gamecast check', 'Review diagnostics', 'No page errors / app-origin errors (expected 4xx from deliberately stripped intercepts excluded)', async () => ({ pass: !d.page.length && !d.errors.length && !d.failed.length, actual: diag(d) + ` (CDN noise ${d.ext})` }));
     await c.close();
@@ -229,6 +230,6 @@ const pngSize = (f) => { const b = fs.readFileSync(f); return [b.readUInt32BE(16
     await c.close();
   }
 
-  await browser.close(); fs.writeFileSync(path.join(ROOT, 'qa-results.json'), JSON.stringify(results, null, 1));
+  await browser.close(); fs.writeFileSync(process.env.QA_ONLY ? '/tmp/qa-only.json' : path.join(ROOT, 'qa-results.json'), JSON.stringify(results, null, 1));
   const f = results.filter((r) => r.status === 'FAIL').length; console.log(`\n${results.length - f} PASS / ${f} FAIL of ${results.length}`); process.exit(0);
 })().catch((e) => { console.error(e); process.exit(2); });

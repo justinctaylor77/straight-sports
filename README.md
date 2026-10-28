@@ -80,6 +80,14 @@ Rules implemented (2026-27 CFP, per collegefootballplayoff.com): ACC, Big 12, Bi
 
 Test with a mocked CFP payload: `BRACKETS_MOCK_CFP=tests/fixtures/mock-cfp.json PORT=8798 node server/index.js` (shows a TEST DATA banner; never set this in production).
 
+## Picker, mute-unselected, Gamecast who/what (v1.3.0 "Pick Six")
+
+- **Teams picker** (`public/picker.js`): groups by league, sorted by location-first full name; collapsible groups, A/Z or Conference sort, search.
+- **Mute unselected sports** (`muteUnselected` in settings v6): Settings › Mute. Derived at read time (`mutedSports()` / `mutedSportWords()` in `public/lib.js`), never written into `muteLeagues`; inert while `sportsChosen` is false.
+- **Gamecast who/what:** `server/playwho.js` turns an ESPN play into `{text, who[{role,name,...}]}` per sport; `server/ncaa-pbp.js` is the NCAA.com fallback; `public/whoplay.js` renders it (banner, play list, graphic caption). Fixtures: `tests/fixtures/plays/` (regenerate with `node scripts/make-playwho-fixtures.js`).
+- **Account sync:** design only, see `PROPOSAL-account-sync.md` (mockups `docs/mocks/`, built by `scripts/make-account-mocks.js`).
+- Tests: `npm test` runs 12 suites; `scripts/qa-v19.sh` runs the browser + live QA (390px) and writes `qa-results.json` + `screenshots/v19/`; `node scripts/qa-report-v19.js <commit>` writes `QA-REPORT-pick-six.md`.
+
 ## Rankings & Brackets (v1.2.0 "Bracket Buzzer")
 
 Hub: `#/rankings/lists`. Per sport: `#/rankings/list/<sport>` (Top list) and `#/rankings/playoffs/<sport>` (bracket / championship). Sports: `nfl nba wnba mcbb wcbb mlb cbase softball gymnastics`. API: `GET /api/lists`, `/api/lists/:sport`, `/api/playoffs/:sport` (unknown sport → 400).
