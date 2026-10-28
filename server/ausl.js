@@ -13,7 +13,7 @@ const path = require('path');
 
 const WIKI = process.env.AUSL_WIKI_BASE || 'https://en.wikipedia.org/w/api.php'; // env overrides exist only so QA can simulate the source being down
 const MLB = process.env.AUSL_MLB_BASE || 'https://statsapi.mlb.com/api/v1';
-const UA = 'OldSchoolSports/1.3.1 (https://straight-sports.onrender.com; sports scores reader; contact: repo github.com/justinctaylor77/straight-sports)';
+const UA = 'OldSchoolSports/1.4.0 (https://straight-sports.onrender.com; sports scores reader; contact: repo github.com/justinctaylor77/straight-sports)';
 const OFFICIAL = 'https://theausl.com';
 const FIRST_YEAR = 2026; // the game-log layout this parser is verified against
 const SPORT = 'ausl';

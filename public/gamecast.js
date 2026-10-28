@@ -4,8 +4,9 @@
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ord = (n) => (n == null ? '' : `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)]}`);
 const fmtWhen = (iso) => { const d = new Date(iso); return `${d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`; };
-import { playBlock, latestBanner, whoChips, playText } from './whoplay.js?v=26';
-import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=26';
+import { playBlock, latestBanner, whoChips, playText } from './whoplay.js?v=27';
+import { bigChips } from './bigplay.js?v=27';
+import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=27';
 const hex = (c, fb) => (c && /^[0-9a-f]{6}$/i.test(c) ? `#${c}` : fb);
 
 export const castState = { tab: 'summary', player: null, sport: null, id: null, fp: null, fd: null, ab: null, sf: 'all' };
@@ -173,7 +174,7 @@ function footballCast(d, ctx) {
   else if (castState.tab === 'plays') body = drives(d, ctx);
   else if (castState.tab === 'stats') body = statCompare(d, ctx) + leaders(d, ctx);
   else if (castState.tab === 'box') body = boxTables(d, ctx);
-  else body = (d.state === 'in' ? field(d, ctx) : bannerFor(d, finalFb(d))) + footballPlays(d, castState, ctx) + lineScore(d) + wpChart(d, ctx) + scoringList(d, ctx) + (d.state === 'post' ? leaders(d, ctx) : '');
+  else body = bigChips(d) + (d.state === 'in' ? field(d, ctx) : bannerFor(d, finalFb(d))) + footballPlays(d, castState, ctx) + lineScore(d) + wpChart(d, ctx) + scoringList(d, ctx) + (d.state === 'post' ? leaders(d, ctx) : '');
   return header(d, ctx) + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Drives'], ['stats', 'Team stats'], ['box', 'Box score']])) + body
     + footer(d, d.state === 'in' ? 'Field graphic is schematic (away team attacks right).' : '');
 }
@@ -203,7 +204,7 @@ function baseballCast(d, ctx) {
         ${latestBanner('Last play', s.last, d.heads, s.lastPlay)}
         ${s.runnersKnown ? '' : '<div class="faint small">Runner positions unavailable right now.</div>'}</div>`;
     }
-    if (d.state !== 'in') body += bannerFor(d, ((d.plays || [])[0] || { items: [] }).items.find((p) => playText(p)) || null);
+    if (d.state !== 'in') body += bigChips(d) + bannerFor(d, ((d.plays || [])[0] || { items: [] }).items.find((p) => playText(p)) || null);
     body += pitchTracker(d, castState) + lineScore(d, { min: 9, extra: ['hits', 'errors'] }) + wpChart(d, ctx);
     if (d.scoring && d.scoring.length) body += `<h2>Scoring plays</h2><div class="card panel gc-scoring">${d.scoring.slice().reverse().map((p) => `<div class="sp"><span class="faint small inn">${esc(p.inning)}</span><div class="small">${playBlock(p, d.heads)}</div><span class="sc">${p.away}–${p.home}</span></div>`).join('')}</div>`;
   }
@@ -254,7 +255,7 @@ function golfCast(d, ctx) {
       <div class="st">${d.state === 'in' ? `<span class="live">LIVE · ${esc(d.detail)}</span>` : `<b>${esc(d.detail || '')}</b>`}</div>
       <div class="gc-meta">${[d.course, d.par && `Par ${d.par}`, d.purse && `Purse ${d.purse}`, d.cut && d.cut.score != null && `Cut ${d.cut.score > 0 ? '+' : ''}${d.cut.score === 0 ? 'E' : d.cut.score}`].filter(Boolean).map(esc).join(' · ')}</div>${ctx.watch ? ctx.watch(d) : ''}</div>
     ${golfLeaders(d, ctx)}
-    ${golfStory(d)}
+    ${bigChips(d)}${golfStory(d)}
     ${mine.length ? `<h2>Your players</h2><div class="card lb">${mine.map(row).join('')}</div>` : ''}
     <h2>Leaderboard <span class="count">${d.players.length}</span></h2>
     <div class="card lb"><div class="lb-row hd"><span class="pos">Pos</span><span></span><span class="nm">Player</span><span class="tp">Total</span><span class="td">Today</span><span class="rds"><i>R1</i><i>R2</i><i>R3</i><i>R4</i></span><span class="th">Thru</span></div>${rows}</div>
@@ -363,7 +364,7 @@ function genericCast(d, ctx) {
   else {
     const sc = soccer || fam === 'hockey' ? playList(d, ctx, d.scoring.slice().reverse(), '') : '';
     const gfx = fam === 'hockey' ? hockeyShots(d, castState) : fam === 'basketball' ? basketballShots(d, castState) : soccer ? soccerShots(d, castState) : '';
-    body = bannerFor(d, latestOf(d)) + yourPlayers(d, ctx) + lineScore(d, { min: soccer ? 2 : fam === 'hockey' ? 3 : (d.home.lines.length === 2 ? 2 : 4) }) + gfx + wpChart(d, ctx)
+    body = bigChips(d) + bannerFor(d, latestOf(d)) + yourPlayers(d, ctx) + lineScore(d, { min: soccer ? 2 : fam === 'hockey' ? 3 : (d.home.lines.length === 2 ? 2 : 4) }) + gfx + wpChart(d, ctx)
       + (sc && d.scoring.length ? `<h2>${soccer ? 'Goals' : 'Scoring'}</h2>${sc}` : '') + leadersG(d, ctx);
   }
   const tl = soccer ? [['summary', 'Summary'], ['plays', 'Key events'], ['stats', 'Stats & lineups']] : [['summary', 'Summary'], ['plays', 'Play-by-play'], ['stats', 'Box score']];

@@ -1344,3 +1344,58 @@ a.nm[href^="#/schedule"]:hover b, a.nm[href^="#/schedule"]:focus-visible b { col
 .plays li .pb2, .sp .pb2 { font-size: 13.5px; }
 .plays li .dd { display: block; font-size: 11.5px; color: var(--faint); margin-bottom: 2px; }
 .munsel-row .rt small{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.3}
+
+/* ---------- Big plays (v1.4.0): callout overlay, glow, badges, chips. Transform/opacity only; fixed overlay = no layout shift. ---------- */
+@property --bpn { syntax: '<integer>'; initial-value: 0; inherits: false; }
+.bpbadge { display: inline-block; font-size: .66rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); vertical-align: 1px; white-space: nowrap; }
+.bpbadge.huge { background: var(--accent); color: var(--accent-ink); }
+.bpo { position: fixed; inset: 0; z-index: 90; pointer-events: none; --bpc: var(--accent); overflow: hidden; }
+.bpo-edge { position: absolute; inset: 0; box-shadow: inset 0 0 0 4px var(--bpc), inset 0 0 38px 10px var(--bpc); opacity: 0; }
+.bpo-spot { position: absolute; left: 50%; top: calc(var(--bar-h) + var(--sat, 0px) + 118px); width: 150vmin; height: 150vmin; margin: -75vmin 0 0 -75vmin; background: radial-gradient(closest-side, color-mix(in srgb, var(--bpc) 55%, transparent), transparent 70%); opacity: 0; transform: scale(.4); }
+.bpo-card { position: absolute; left: 50%; top: calc(var(--bar-h) + var(--sat, 0px) + 52px); width: min(86vw, 340px); margin-left: calc(min(86vw, 340px) / -2); box-sizing: border-box; text-align: center; padding: 14px 16px 15px; border-radius: 16px;
+  background: var(--surface); color: var(--text); border: 3px solid var(--bpc); box-shadow: 0 10px 34px rgba(0,0,0,.35), 0 0 0 5px color-mix(in srgb, var(--bpc) 28%, transparent); opacity: 0; transform: scale(.4); transform-origin: 50% 40%; overflow: visible; }
+.bpo-tag { font-size: .68rem; font-weight: 800; letter-spacing: .12em; color: var(--bpc); filter: brightness(.92); }
+.bpo-h { font-size: 1.85rem; line-height: 1.05; font-weight: 900; letter-spacing: -.01em; margin: 3px 0 2px; overflow-wrap: anywhere; text-transform: uppercase; }
+.bpo.huge .bpo-h { font-size: 2.15rem; }
+.bpo-s { font-size: 1.02rem; font-weight: 800; letter-spacing: .03em; }
+.bpo-n::after { content: counter(bpn); }
+.bpo-n { counter-reset: bpn var(--bpn); --bpn: var(--to); display: inline-block; min-width: 0; }
+.bpo-w { margin-top: 4px; font-size: .86rem; opacity: .85; font-weight: 600; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.bpo-sweep { position: absolute; inset: 0; border-radius: 13px; overflow: hidden; }
+.bpo-sweep::after { content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent); transform: translateX(0) skewX(-18deg); opacity: 0; }
+.bpo-conf { position: absolute; left: 50%; top: 40%; width: 0; height: 0; }
+.bpo-c { position: absolute; left: 0; top: 0; width: 8px; height: 12px; margin: -6px 0 0 -4px; background: var(--c); border-radius: 2px; opacity: 0; }
+
+.bpo.go .bpo-edge { animation: bpEdge 2.2s ease-out both; }
+.bpo.go .bpo-spot { animation: bpSpot 2.3s ease-out both; }
+.bpo.go .bpo-card { animation: bpPop .5s cubic-bezier(.2,1.5,.4,1) both, bpOut .4s ease-in 2.2s both; }
+.bpo.go.huge .bpo-card { animation: bpPop .5s cubic-bezier(.2,1.5,.4,1) both, bpShake .5s linear .45s both, bpOut .4s ease-in 2.2s both; }
+.bpo.go .bpo-sweep::after { animation: bpSweep .9s ease-out .35s both; }
+.bpo.go .bpo-c { animation: bpConf 1.5s cubic-bezier(.15,.7,.3,1) var(--d) both; }
+.bpo.go .bpo-n { animation: bpCount 1s cubic-bezier(.2,.7,.2,1) .25s both; }
+@keyframes bpEdge { 0% { opacity: 0; } 12% { opacity: 1; } 30% { opacity: .25; } 45% { opacity: .9; } 100% { opacity: 0; } }
+@keyframes bpSpot { 0% { opacity: 0; transform: scale(.4); } 25% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.15); } }
+@keyframes bpPop { 0% { opacity: 0; transform: scale(.4) rotate(-3deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes bpShake { 0%, 100% { transform: translateX(0); } 15% { transform: translateX(-7px) rotate(-1deg); } 35% { transform: translateX(6px) rotate(1deg); } 55% { transform: translateX(-4px); } 75% { transform: translateX(3px); } }
+@keyframes bpOut { to { opacity: 0; transform: scale(.92) translateY(-8px); } }
+@keyframes bpSweep { 0% { opacity: 1; transform: translateX(0) skewX(-18deg); } 100% { opacity: 0; transform: translateX(420%) skewX(-18deg); } }
+@keyframes bpConf { 0% { opacity: 1; transform: translate(0,0) rotate(0) scale(.5); } 60% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), calc(var(--y) + 90px)) rotate(var(--r)) scale(1); } }
+@keyframes bpCount { from { --bpn: 0; } to { --bpn: var(--to); } }
+/* glow on the graphic card + banner */
+.bp-glow { --bpc: var(--accent); animation: bpGlow 2.2s ease-out both; }
+@keyframes bpGlow { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 12% { box-shadow: 0 0 0 4px var(--bpc), 0 0 22px 4px var(--bpc); } 45% { box-shadow: 0 0 0 2px var(--bpc), 0 0 8px 0 var(--bpc); } 60% { box-shadow: 0 0 0 4px var(--bpc), 0 0 20px 4px var(--bpc); } }
+/* reduced motion: the same information as a still highlighted card (no movement, no flashing) */
+.bpo.rm .bpo-card { opacity: 1; transform: none; }
+.bpo.rm .bpo-edge { opacity: .55; box-shadow: inset 0 0 0 4px var(--bpc); }
+.bp-glow.rm { animation: none; box-shadow: 0 0 0 3px var(--bpc); }
+@media (prefers-reduced-motion: reduce) { .bpo .bpo-edge, .bpo .bpo-spot, .bpo .bpo-card, .bpo .bpo-sweep::after, .bpo .bpo-c, .bpo .bpo-n, .bp-glow { animation: none !important; } .bpo .bpo-card { opacity: 1; transform: none; } .bpo .bpo-spot { display: none; } }
+/* finished-game chips */
+.bp-chips { padding: 10px; }
+.bpc-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.bpc { font: inherit; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; max-width: 100%; min-height: 44px; padding: 6px 11px; border-radius: 12px; border: 1px solid var(--border); background: var(--accent-soft); color: inherit; text-align: left; cursor: pointer; }
+.bpc.huge { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.bpc b { font-size: .84rem; text-transform: uppercase; letter-spacing: .02em; }
+.bpc small { font-size: .72rem; opacity: .85; overflow-wrap: anywhere; }
+.bp-chips:not(.all) .bpc.more { display: none; }
+.bpc-more { font: inherit; margin-top: 8px; min-height: 40px; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border); background: transparent; color: inherit; cursor: pointer; }

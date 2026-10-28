@@ -2,6 +2,7 @@
 // The server (server/playwho.js) attaches to each play: what (short label), desc (one plain sentence) and who[]
 // ({role, name, id, team, jersey, pos}); headshots come once per game in d.heads (id → url). Nothing here invents a name:
 // if a play has no `who` the chips are simply omitted and the raw ESPN text is shown, never a blank.
+import { bpBadge } from './bigplay.js?v=27';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initials = (n) => String(n || '').split(/\s+/).filter(Boolean).map((x) => x[0]).slice(0, 2).join('').toUpperCase();
 
@@ -27,7 +28,7 @@ export function playBlock(p, heads, { chips = true, label = true, max = 5 } = {}
   const txt = playText(p);
   if (!txt) return '';
   const what = label && p.what && p.what !== txt ? `<b class="pw">${esc(p.what)}</b> ` : '';
-  return `<div class="pb2">${what}<span class="pd">${esc(txt)}</span>${chips ? whoChips(p.who, heads, { max }) : ''}</div>`;
+  return `<div class="pb2">${bpBadge(p)}${what}<span class="pd">${esc(txt)}</span>${chips ? whoChips(p.who, heads, { max }) : ''}</div>`;
 }
 
 /** Banner for "the play that just happened": used in the field card, diamond card and generic Latest play. */

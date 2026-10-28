@@ -1,13 +1,14 @@
-import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=26';
+import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=27';
 import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=26';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=27';
 import * as GA from './anim.js?v=18';
+import * as BPL from './bigplay.js?v=27';
 import * as BD from './backdrop.js';
 import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=19';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
-import { createLists, FEED as LIST_FEED } from './lists.js?v=26';
+import { createLists, FEED as LIST_FEED } from './lists.js?v=27';
 
 // ---------------- state ----------------
 let S = loadSettings();
@@ -832,6 +833,7 @@ async function viewGame(sp, id, quick) {
   // 'refresh' (10s live poll: only cards that changed are patched and only brand-new plays/pitches/shots animate).
   const mode = castState.mode || (quick ? 'refresh' : 'load'); castState.mode = null;
   GA.mountCast(view, `gc gc-${d.kind}`, renderGamecast(d, castCtx()), `${sp}:${id}`, mode);
+  try { BPL.watch(d, `${sp}:${id}`); } catch { /* the big-play animation is decoration: never break the Gamecast */ }
   if (quick) window.scrollTo(0, y);
   castLive = d.state === 'in';
   scheduleRefresh(castLive, 10e3);
@@ -1340,7 +1342,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=26" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=27" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
@@ -1616,7 +1618,7 @@ function scheduleRefresh(live, ms = 15e3) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden && refreshLive) liveTick(); });
 const HIST = []; let prevDepth = 0; let lastTab = 'home';
 async function route(silent) {
-  if (!silent) clearInterval(refreshTimer);
+  if (!silent) { clearInterval(refreshTimer); try { BPL.hide(); } catch { /* no overlay */ } }
   if (!silent && $('#sheet')) { $('#sheet').remove(); document.body.classList.remove('modal-open'); }
   view.onclick = view.onchange = view.oninput = view.onsubmit = null;
   const h = location.hash || '#/home';
