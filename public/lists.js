@@ -40,7 +40,7 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
     const tag = linkable(d.sport) && t.id ? 'a' : 'div';
     const href = tag === 'a' ? ` href="#/schedule/${esc(t.id)}"` : '';
     const rec = r.record && !(d.kind === 'computed' && r.why) ? `<span class="rec">${esc(r.record)}</span>` : '';
-    return `<${tag} class="gk-row lb-row ${mine(t, d.sport)} ${hlCls(t)}"${href} style="--tc:#${esc(t.color || '888')}"><span class="gk-rank">${esc(r.rank)}</span><img src="${esc(logo(t))}" alt="" loading="lazy" />
+    return `<${tag} class="gk-row lb-row ${mine(t, d.sport)} ${hlCls(t)}"${href} style="--tc:#${esc(t.color || '888')}"><span class="gk-rank">${esc(r.rank)}</span><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" loading="lazy" />
       <div class="gk-nm"><b>${esc(t.short || t.name || 'TBD')}</b>${rec}${spotTag(t)}${bigTag(t)}${r.why ? `<div class="gk-why">${esc(r.why)}</div>` : ''}</div>
       <span class="gk-polls">${moveChip(r.move)}${sub(r, d)}</span></${tag}>`;
   }
@@ -73,7 +73,7 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
   function slot(s, m) {
     if (!s || !s.team) return `<div class="bt tbd"><span class="sd">${s && s.seed != null ? esc(s.seed) : ''}</span><span class="n"><b>${esc((s && s.label) || 'TBD')}</b></span></div>`;
     const t = s.team; const val = s.score != null ? s.score : s.wins != null && m.bestOf > 1 ? s.wins : null;
-    return `<div class="bt ${s.winner ? 'win' : m.status === 'final' ? 'lose' : ''} ${hlCls(t)} ${mine(t, m._sport)}" style="--tc:#${esc(t.color || '888')}"><span class="sd">${s.seed != null ? esc(s.seed) : ''}</span><img src="${esc(logo(t))}" alt="" loading="lazy" />
+    return `<div class="bt ${s.winner ? 'win' : m.status === 'final' ? 'lose' : ''} ${hlCls(t)} ${mine(t, m._sport)}" style="--tc:#${esc(t.color || '888')}"><span class="sd">${s.seed != null ? esc(s.seed) : ''}</span><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" loading="lazy" />
       <span class="n"><b>${esc(t.short || t.name)}</b><small>${t.hl && t.hl.spot ? esc(t.hl.spot === 'utah' ? 'Utah' : 'BYU') : t.hl && t.hl.big12 ? 'Big 12' : esc(t.abbr || '')}</small></span>${val != null ? `<span class="lb-sc">${esc(val)}</span>` : ''}</div>`;
   }
   function matchup(m) {
@@ -99,7 +99,7 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
   }
   function seedsCards(b) {
     if (!b.seeds || !b.seeds.length) return '';
-    return `<h2>The field</h2><div class="lb-field">${b.seeds.map((g) => `<div class="card br-list"><div class="lb-fh">${esc(g.name)}</div>${g.seeds.map((s) => `<div class="br-row ${hlCls(s.team)}" style="--tc:#${esc(s.team.color || '888')}"><span class="sd">${esc(s.seed)}</span><img src="${esc(logo(s.team))}" alt="" loading="lazy" /><span class="n"><b>${esc(s.team.short || s.team.name)}</b><small>${esc([s.record, s.tag].filter(Boolean).join(' · '))}</small></span></div>`).join('')}</div>`).join('')}</div>`;
+    return `<h2>The field</h2><div class="lb-field">${b.seeds.map((g) => `<div class="card br-list"><div class="lb-fh">${esc(g.name)}</div>${g.seeds.map((s) => `<div class="br-row ${hlCls(s.team)}" style="--tc:#${esc(s.team.color || '888')}"><span class="sd">${esc(s.seed)}</span><img crossorigin="anonymous" src="${esc(logo(s.team))}" alt="" loading="lazy" /><span class="n"><b>${esc(s.team.short || s.team.name)}</b><small>${esc([s.record, s.tag].filter(Boolean).join(' · '))}</small></span></div>`).join('')}</div>`).join('')}</div>`;
   }
   function pollMini(p, d) {
     if (!p || !(p.rows || []).length) return '';
@@ -111,7 +111,7 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
     const games = (sec.games || []).map((g) => { const [a, b] = g.slots || []; const nm = (s) => (s && s.team ? s.team.short || s.team.name : (s && s.label) || 'TBD');
       return `<div class="lb-g"><span class="faint">${esc(g.date || '')}</span><span class="${a && a.winner ? 'w' : ''}">${esc(nm(a))} <b>${a && a.score != null ? esc(a.score) : ''}</b></span><span class="${b && b.winner ? 'w' : ''}">${esc(nm(b))} <b>${b && b.score != null ? esc(b.score) : ''}</b></span></div>`; }).join('');
     return `<div class="card br-game lb-sec"><div class="host">${esc(sec.name)}${sec.complete ? '' : ' · in progress'}</div>
-      ${tm.map((x) => `<div class="bt ${adv && x.team && adv.id && x.team.id === adv.id ? 'win' : ''} ${hlCls(x.team)}" style="--tc:#${esc((x.team && x.team.color) || '888')}"><span class="sd">${x.seed != null ? esc(x.seed) : ''}</span><img src="${esc(logo(x.team))}" alt="" loading="lazy" /><span class="n"><b>${esc((x.team && (x.team.short || x.team.name)) || 'TBD')}</b><small>${x.team && x.team.hl && x.team.hl.spot ? esc(x.team.hl.spot === 'utah' ? 'Utah' : 'BYU') : x.team && x.team.hl && x.team.hl.big12 ? 'Big 12' : adv && x.team && x.team.id && x.team.id === adv.id ? 'Advanced' : ''}</small></span><span class="lb-sc" title="${kind === 'series' ? 'series wins' : 'wins'}">${x.wins != null ? esc(x.wins) : ''}</span></div>`).join('')}
+      ${tm.map((x) => `<div class="bt ${adv && x.team && adv.id && x.team.id === adv.id ? 'win' : ''} ${hlCls(x.team)}" style="--tc:#${esc((x.team && x.team.color) || '888')}"><span class="sd">${x.seed != null ? esc(x.seed) : ''}</span><img crossorigin="anonymous" src="${esc(logo(x.team))}" alt="" loading="lazy" /><span class="n"><b>${esc((x.team && (x.team.short || x.team.name)) || 'TBD')}</b><small>${x.team && x.team.hl && x.team.hl.spot ? esc(x.team.hl.spot === 'utah' ? 'Utah' : 'BYU') : x.team && x.team.hl && x.team.hl.big12 ? 'Big 12' : adv && x.team && x.team.id && x.team.id === adv.id ? 'Advanced' : ''}</small></span><span class="lb-sc" title="${kind === 'series' ? 'series wins' : 'wins'}">${x.wins != null ? esc(x.wins) : ''}</span></div>`).join('')}
       ${games ? `<details class="lb-games"><summary>${(sec.games || []).length} game${(sec.games || []).length === 1 ? '' : 's'}</summary>${games}</details>` : ''}</div>`;
   }
   function stagesBody(d, stageId) {
@@ -123,13 +123,13 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
     const c = d.champion; if (!c) return '';
     const t = c.team || c; const ru = c.runnerUp || d.runnerUp;
     return `<div class="card gk-hero lb-champ" style="--tc:#${esc(t.color || '888')}"><div class="gk-kicker">${c.label ? esc(c.label) : `${c.year ? `${esc(c.year)} ` : ''}national champion`}</div>
-      <div class="lb-champrow"><img src="${esc(logo(t))}" alt="" /><div><div class="gk-title">${esc(t.short || t.name)}</div>
+      <div class="lb-champrow"><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" /><div><div class="gk-title">${esc(t.short || t.name)}</div>
       <div class="gk-method">${[c.note ? esc(c.note) : ru ? `Beat ${esc(ru.short || ru.name)}` : '', c.score != null ? `${esc(c.score)}` : '', c.site ? esc(c.site) : '', c.coach ? `Coach ${esc(c.coach)}` : ''].filter(Boolean).join(' · ')}</div></div></div></div>`;
   }
   function gymBody(d) {
     return `${champCard(d)}
       <div class="card br-foot lb-format"><h3>How the championship works</h3><ul class="gk-how-list">${(d.format || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>
-      ${(d.history || []).length ? `<h2>Recent champions</h2><div class="card br-list">${d.history.slice(0, 10).map((h) => `<div class="br-row ${hlCls(h.champion)}" style="--tc:#${esc((h.champion && h.champion.color) || '888')}"><span class="sd lb-yr">’${esc(String(h.year).slice(2))}</span><img src="${esc(logo(h.champion))}" alt="" loading="lazy" /><span class="n"><b>${esc((h.champion && (h.champion.short || h.champion.name)) || '')}${h.champion && h.champion.hl && h.champion.hl.spot ? ` ${spotTag(h.champion)}` : ''}</b><small>${[h.runnerUp ? `over ${esc(h.runnerUp.short || h.runnerUp.name)}` : '', h.points != null ? esc(h.points) : '', h.site ? esc(h.site) : ''].filter(Boolean).join(' · ')}</small></span></div>`).join('')}</div>` : ''}
+      ${(d.history || []).length ? `<h2>Recent champions</h2><div class="card br-list">${d.history.slice(0, 10).map((h) => `<div class="br-row ${hlCls(h.champion)}" style="--tc:#${esc((h.champion && h.champion.color) || '888')}"><span class="sd lb-yr">’${esc(String(h.year).slice(2))}</span><img crossorigin="anonymous" src="${esc(logo(h.champion))}" alt="" loading="lazy" /><span class="n"><b>${esc((h.champion && (h.champion.short || h.champion.name)) || '')}${h.champion && h.champion.hl && h.champion.hl.spot ? ` ${spotTag(h.champion)}` : ''}</b><small>${[h.runnerUp ? `over ${esc(h.runnerUp.short || h.runnerUp.name)}` : '', h.points != null ? esc(h.points) : '', h.site ? esc(h.site) : ''].filter(Boolean).join(' · ')}</small></span></div>`).join('')}</div>` : ''}
       <p class="faint small">There is no single-elimination bracket in gymnastics. For rankings and live results: ${(d.links || []).map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)}</a>`).join(' · ')} · <a href="#/rankings/list/gymnastics">Team ranking ›</a></p>`;
   }
   function playoffsBody(d, ui = {}) {

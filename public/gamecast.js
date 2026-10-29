@@ -20,7 +20,7 @@ function statusLine(d) {
 function side(c, d, ctx, align) {
   const t = c.team || {}; const lost = d.state === 'post' && !c.winner && (d.home.winner || d.away.winner);
   return `<a class="gc-team ${align} ${lost ? 'lost' : ''}" href="#/team/${esc(t.id)}">
-    <img src="${esc(ctx.logo(t))}" alt="" width="52" height="52" />
+    <img crossorigin="anonymous" src="${esc(ctx.logo(t))}" alt="" width="52" height="52" />
     <span class="nm">${c.rank ? `<span class="rk">${c.rank}</span>` : ''}${esc(t.short || t.name)}${ctx.follows(t.id) ? ' <span class="star">●</span>' : ''}</span>
     <span class="rec">${esc(c.record || '')}</span>
     ${c.possession && d.state === 'in' ? '<span class="poss" title="Possession">●</span>' : ''}</a>`;
@@ -57,7 +57,7 @@ function wpChart(d, ctx) {
   const hc = hex(d.home.team.color, '#1f6f5c'); const ac = hex(d.away.team.color, '#3b6fd8');
   const cur = d.wp.current; const lead = cur >= 50 ? d.home : d.away; const p = cur >= 50 ? cur : 100 - cur;
   return `<h2>Win probability</h2><div class="card gc-wp">
-    <div class="wp-top"><span><img src="${esc(ctx.logo(lead.team))}" alt="" width="20" height="20" /><b>${esc(lead.team.abbr)}</b> ${p.toFixed(1)}%</span><span class="faint small">${d.state === 'post' ? 'final' : 'current'} · ESPN model</span></div>
+    <div class="wp-top"><span><img crossorigin="anonymous" src="${esc(ctx.logo(lead.team))}" alt="" width="20" height="20" /><b>${esc(lead.team.abbr)}</b> ${p.toFixed(1)}%</span><span class="faint small">${d.state === 'post' ? 'final' : 'current'} · ESPN model</span></div>
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="wp-svg" role="img" aria-label="Win probability chart">
       <defs><clipPath id="wpTop"><rect x="0" y="0" width="${W}" height="${H / 2}"/></clipPath><clipPath id="wpBot"><rect x="0" y="${H / 2}" width="${W}" height="${H / 2}"/></clipPath></defs>
       <path d="${line}L${W},${H / 2}L0,${H / 2}Z" fill="${hc}" opacity=".28" clip-path="url(#wpTop)"/>
@@ -69,7 +69,7 @@ function wpChart(d, ctx) {
 function statCompare(d, ctx) {
   if (!d.stats || !d.stats.length) return '<div class="card empty">Team stats appear once the game starts.</div>';
   const num = (v) => parseFloat(String(v).replace(/[^\d.-]/g, '')) || 0;
-  return `<div class="card gc-stats"><div class="hd"><span><img src="${esc(ctx.logo(d.away.team))}" alt="" />${esc(d.away.team.abbr)}</span><span>${esc(d.home.team.abbr)}<img src="${esc(ctx.logo(d.home.team))}" alt="" /></span></div>
+  return `<div class="card gc-stats"><div class="hd"><span><img crossorigin="anonymous" src="${esc(ctx.logo(d.away.team))}" alt="" />${esc(d.away.team.abbr)}</span><span>${esc(d.home.team.abbr)}<img crossorigin="anonymous" src="${esc(ctx.logo(d.home.team))}" alt="" /></span></div>
     ${d.stats.map((s) => { const a = num(s.away); const h = num(s.home); const t = a + h || 1; const tm = /time|possession/i.test(s.label);
       return `<div class="sr"><b>${esc(s.away)}</b><span>${esc(s.label)}</span><b>${esc(s.home)}</b>${!tm && /\d/.test(s.away) && !/-/.test(s.away) ? `<div class="bar"><i style="width:${(a / t) * 100}%;background:${hex(d.away.team.color, 'var(--muted)')}"></i><i style="width:${(h / t) * 100}%;background:${hex(d.home.team.color, 'var(--accent)')}"></i></div>` : ''}</div>`; }).join('')}</div>`;
 }
@@ -128,7 +128,7 @@ function field(d, ctx) {
   const gain = right ? ball + dist : ball - dist;
   const off = right ? d.away.team : d.home.team;
   return `<div class="card gc-field">
-    <div class="sit"><img src="${esc(ctx.logo(off))}" alt="" width="22" height="22" /><b>${esc(s.text || '')}</b>${s.spot && !(s.text || '').includes(s.spot) ? `<span class="faint">at ${esc(s.spot)}</span>` : ''}${s.redZone ? '<span class="rz">Red zone</span>' : ''}</div>
+    <div class="sit"><img crossorigin="anonymous" src="${esc(ctx.logo(off))}" alt="" width="22" height="22" /><b>${esc(s.text || '')}</b>${s.spot && !(s.text || '').includes(s.spot) ? `<span class="faint">at ${esc(s.spot)}</span>` : ''}${s.redZone ? '<span class="rz">Red zone</span>' : ''}</div>
     <svg viewBox="0 0 ${W} ${H}" class="field-svg" role="img" aria-label="Ball on the field: ${esc(s.text || '')}">
       ${fieldInner(d, ctx)}
       ${dist ? `<rect x="${Math.min(yx(ball), yx(gain))}" y="14" width="${Math.abs(yx(gain) - yx(ball))}" height="${H - 36}" class="togo" data-slide="f-togo" data-x="${Math.min(yx(ball), yx(gain))}" data-w="${Math.abs(yx(gain) - yx(ball))}"/>` : ''}
@@ -151,21 +151,21 @@ function scoringList(d, ctx) {
   const byQ = {}; for (const p of d.scoring) (byQ[p.period] = byQ[p.period] || []).push(p);
   return `<h2>Scoring summary</h2><div class="card panel gc-scoring">${Object.entries(byQ).map(([q, ps]) => `<div class="qh">${+q <= 4 ? `${ord(+q)} quarter` : 'Overtime'}</div>${ps.map((p) => {
     const t = [d.home, d.away].find((x) => x.team.id === p.teamId);
-    return `<div class="sp"><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="22" height="22" /><div><b>${esc(p.type || '')}</b> <span class="faint small">${esc(p.clock || '')}</span><div class="small">${playBlock(p, d.heads)}</div></div><span class="sc">${esc(p.away)}–${esc(p.home)}</span></div>`; }).join('')}`).join('')}</div>`;
+    return `<div class="sp"><img crossorigin="anonymous" src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="22" height="22" /><div><b>${esc(p.type || '')}</b> <span class="faint small">${esc(p.clock || '')}</span><div class="small">${playBlock(p, d.heads)}</div></div><span class="sc">${esc(p.away)}–${esc(p.home)}</span></div>`; }).join('')}`).join('')}</div>`;
 }
 function drives(d, ctx) {
   if (!d.drives || !d.drives.length) return '<div class="card empty">No drives yet.</div>';
   return `<div class="gc-drives">${d.drives.map((x, i) => {
     const t = [d.home, d.away].find((s) => s.team.id === x.teamId);
     return `<details class="card drive ${x.score ? 'scored' : ''}" ${i === 0 && (x.current || d.state === 'in') ? 'open' : ''}>
-      <summary><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="24" height="24" /><span class="dt"><b>${esc(x.result || '')}</b>${x.current ? ' <span class="live small">· now</span>' : ''}<small>${esc(x.description || '')}${x.start ? ` · from ${esc(x.start)}` : ''}</small></span><span class="faint small">${x.period ? `Q${x.period}` : ''} ${esc(x.clock || '')}</span></summary>
+      <summary><img crossorigin="anonymous" src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="24" height="24" /><span class="dt"><b>${esc(x.result || '')}</b>${x.current ? ' <span class="live small">· now</span>' : ''}<small>${esc(x.description || '')}${x.start ? ` · from ${esc(x.start)}` : ''}</small></span><span class="faint small">${x.period ? `Q${x.period}` : ''} ${esc(x.clock || '')}</span></summary>
       <ol class="plays">${x.plays.slice().reverse().map((p) => `<li class="${p.score ? 'scored' : ''}">${p.dd ? `<span class="dd">${esc(p.dd)}</span>` : ''}${playBlock(p, d.heads)}</li>`).join('')}</ol></details>`;
   }).join('')}</div>`;
 }
 function leaders(d, ctx) {
   if (!d.leaders || !d.leaders.length || d.state === 'pre') return '';
   return `<h2>Leaders</h2><div class="gc-leaders">${d.leaders.map((tm) => { const t = [d.home, d.away].find((s) => s.team.id === tm.teamId);
-    return `<div class="card"><div class="lh"><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="20" height="20" /><b>${esc(tm.abbr)}</b></div>${tm.cats.slice(0, 3).map((c) => `<div class="r"><span class="faint small">${esc(c.cat)}</span><b>${c.id ? `<a href="#/player/${esc(c.id)}">${esc(c.name)}</a>` : esc(c.name)}</b><span class="small">${esc(c.line)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
+    return `<div class="card"><div class="lh"><img crossorigin="anonymous" src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="20" height="20" /><b>${esc(tm.abbr)}</b></div>${tm.cats.slice(0, 3).map((c) => `<div class="r"><span class="faint small">${esc(c.cat)}</span><b>${c.id ? `<a href="#/player/${esc(c.id)}">${esc(c.name)}</a>` : esc(c.name)}</b><span class="small">${esc(c.line)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
 }
 const finalFb = (d) => { for (const dr of d.drives || []) for (const p of (dr.plays || []).slice().reverse()) if ((p.who && p.who.length) || (p.desc && !/^END (GAME|OF)/i.test(p.desc))) return p; return null; };
 function footballCast(d, ctx) {
@@ -307,7 +307,7 @@ function boxTables(d, ctx) {
   if (!d.box || !d.box.length) return '<div class="card empty">Box score appears once the game starts.</div>';
   const P = (r) => (r.id ? `<a href="#/player/${esc(r.id)}">${esc(r.name)}</a>` : esc(r.name));
   return `<p class="faint small">Tap a name for that player’s season and career stats.</p>` + d.box.map((t) => { const side = t.side === 'home' ? d.home : d.away;
-    return `<h2 class="box-h">${side && side.team ? `<img src="${esc(ctx.logo(side.team))}" alt="" width="22" height="22" />` : ''}${esc(t.abbr)} box score</h2>${t.groups.map((g) => `<div class="card scroll-x box-card"><table class="tbl box"><thead><tr><th>${esc(cap(g.name) || 'Player')}</th>${g.labels.map((l, i) => `<td title="${esc((g.descs || [])[i] || l)}">${esc(l)}</td>`).join('')}</tr></thead>
+    return `<h2 class="box-h">${side && side.team ? `<img crossorigin="anonymous" src="${esc(ctx.logo(side.team))}" alt="" width="22" height="22" />` : ''}${esc(t.abbr)} box score</h2>${t.groups.map((g) => `<div class="card scroll-x box-card"><table class="tbl box"><thead><tr><th>${esc(cap(g.name) || 'Player')}</th>${g.labels.map((l, i) => `<td title="${esc((g.descs || [])[i] || l)}">${esc(l)}</td>`).join('')}</tr></thead>
     <tbody>${g.rows.map((r) => { const mine = ctx.follows(r.id); return `<tr class="${mine ? 'mine' : ''} ${r.starter ? '' : 'bench'}"><th><span class="pn">${playerFollow({ ...r, teamId: t.teamId }, ctx)}<span>${P(r)}${r.pos ? ` <small class="faint">${esc(r.pos)}</small>` : ''}</span></span></th>${r.stats.map((v) => `<td>${esc(v)}</td>`).join('')}</tr>`; }).join('')}
     ${g.totals && g.totals.some((v) => v !== '' && v != null) ? `<tr class="tot"><th>Team</th>${g.totals.map((v) => `<td><b>${esc(v)}</b></td>`).join('')}</tr>` : ''}</tbody></table></div>`).join('')}`; }).join('');
 }
@@ -317,7 +317,7 @@ function lineups(d, ctx) {
   return `<h2>Lineups</h2><div class="lu-grid">${d.lineups.map((t) => { const side = t.side === 'home' ? d.home : d.away;
     const xi = t.players.filter((p) => p.starter); const subs = t.players.filter((p) => !p.starter);
     const row = (p) => `<div class="lu-row ${ctx.follows(p.id) ? 'mine' : ''}"><span class="jn">${esc(p.jersey || '')}</span><span class="nm">${esc(p.name)}${p.pos ? ` <small class="faint">${esc(p.pos)}</small>` : ''}${p.subbedIn ? ' <small class="sub-in">↑ on</small>' : ''}</span>${playerFollow({ ...p, teamId: t.teamId }, ctx)}</div>`;
-    return `<div class="card lu"><div class="lh"><img src="${esc(ctx.logo(side.team))}" alt="" width="22" height="22" /><b>${esc(side.team.short || side.team.name)}</b>${t.formation ? `<span class="chip sm">${esc(t.formation)}</span>` : ''}</div>
+    return `<div class="card lu"><div class="lh"><img crossorigin="anonymous" src="${esc(ctx.logo(side.team))}" alt="" width="22" height="22" /><b>${esc(side.team.short || side.team.name)}</b>${t.formation ? `<span class="chip sm">${esc(t.formation)}</span>` : ''}</div>
       ${xi.map(row).join('')}${subs.length ? `<div class="lu-sub">Substitutes</div>${subs.map(row).join('')}` : ''}</div>`; }).join('')}</div>`;
 }
 // Latest play for a generic game: the server sends plays newest-first. Live → "Last play"; finished → "Final play".
@@ -331,14 +331,14 @@ function playList(d, ctx, list, empty) {
     if (lab !== last) { out += `<div class="qh">${esc(cap(lab))}</div>`; last = lab; }
     const t = [d.home, d.away].find((x) => x.team.id === p.teamId);
     const mine = (p.ath || []).some((id) => ctx.follows(id)) || (t && ctx.follows(t.team.id));
-    out += `<div class="sp ${p.score ? 'scored' : ''} ${mine ? 'mine' : ''}">${t ? `<img src="${esc(ctx.logo(t.team))}" alt="" width="20" height="20" />` : '<span></span>'}<div><span class="faint small">${esc(p.clock || '')}</span><div class="small">${playBlock(p, d.heads)}</div></div><span class="sc">${p.score && p.away != null ? `${esc(p.away)}–${esc(p.home)}` : ''}</span></div>`;
+    out += `<div class="sp ${p.score ? 'scored' : ''} ${mine ? 'mine' : ''}">${t ? `<img crossorigin="anonymous" src="${esc(ctx.logo(t.team))}" alt="" width="20" height="20" />` : '<span></span>'}<div><span class="faint small">${esc(p.clock || '')}</span><div class="small">${playBlock(p, d.heads)}</div></div><span class="sc">${p.score && p.away != null ? `${esc(p.away)}–${esc(p.home)}` : ''}</span></div>`;
   }
   return `<div class="card panel gc-scoring gc-plays">${out}</div>`;
 }
 function leadersG(d, ctx) {
   if (!d.leaders || !d.leaders.length || d.state === 'pre') return '';
   return `<h2>Leaders</h2><div class="gc-leaders">${d.leaders.map((tm) => { const t = [d.home, d.away].find((s) => s.team.id === tm.teamId);
-    return `<div class="card"><div class="lh"><img src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="20" height="20" /><b>${esc(tm.abbr)}</b></div>${tm.cats.slice(0, 3).map((c) => `<div class="r ${c.id && ctx.follows(c.id) ? 'mine' : ''}"><span class="faint small">${esc(c.cat)}</span><b>${c.id ? `<a href="#/player/${esc(c.id)}">${esc(c.name)}</a>` : esc(c.name)}${c.id && ctx.follows(c.id) ? ' <span class="star">★</span>' : ''}</b><span class="small">${esc(c.line)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
+    return `<div class="card"><div class="lh"><img crossorigin="anonymous" src="${esc(t ? ctx.logo(t.team) : '')}" alt="" width="20" height="20" /><b>${esc(tm.abbr)}</b></div>${tm.cats.slice(0, 3).map((c) => `<div class="r ${c.id && ctx.follows(c.id) ? 'mine' : ''}"><span class="faint small">${esc(c.cat)}</span><b>${c.id ? `<a href="#/player/${esc(c.id)}">${esc(c.name)}</a>` : esc(c.name)}${c.id && ctx.follows(c.id) ? ' <span class="star">★</span>' : ''}</b><span class="small">${esc(c.line)}</span></div>`).join('')}</div>`; }).join('')}</div>`;
 }
 function yourPlayers(d, ctx) {
   const rows = [];

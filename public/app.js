@@ -10,6 +10,8 @@ import { scheduleSections, playerHero, playerTabs, playerBody } from './people.j
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
 import { createLists, FEED as LIST_FEED } from './lists.js?v=27';
+import * as LOGOTONE from './logotone.js?v=28';
+const LOGOS = LOGOTONE.install(document); // v1.5.0: measure each logo against the surface it sits on, outline the ones under 3:1
 
 // ---------------- state ----------------
 let S = loadSettings();
@@ -80,6 +82,7 @@ function syncThemeColor() {
   const metas = document.querySelectorAll('meta[name="theme-color"]');
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || (isDark() ? '#061225' : '#F2F5FB');
   metas.forEach((m, i) => { if (i) m.remove(); else { m.removeAttribute('media'); m.content = bg; } });
+  requestAnimationFrame(() => requestAnimationFrame(() => LOGOS.recheck())); // surfaces changed (theme / team colors): re-measure logos already on screen
 }
 // team pages wear the team's ESPN colors; every other page is back to red-white-and-blue
 function teamTheme(t) { if (!t || !applyTeamTheme(t, isDark())) clearTeamTheme(); syncThemeColor(); }
@@ -152,7 +155,7 @@ function teamRow(c, ev) {
   const mine = S.follow.includes(t.id); const mp = myPlayersOn(t.id);
   const poss = ev.state === 'in' && ev.possession && ev.possession === t.id;
   return `<div class="trow ${lost ? 'lost' : ''}">
-    <img src="${esc(logo(t))}" alt="" loading="lazy" width="28" height="28" />
+    <img crossorigin="anonymous" src="${esc(logo(t))}" alt="" loading="lazy" width="28" height="28" />
     <a class="nm" href="#/schedule/${t.id}" title="${esc(t.short || t.name)} schedule">${c.rank ? `<span class="rk">${c.rank}</span>` : ''}<b>${esc(t.short || t.name)}</b>${mine ? '<span class="star" title="Following">●</span>' : mp.length ? `<span class="star" title="Your player${mp.length > 1 ? 's' : ''}: ${esc(mp.map((p) => p.name).join(', '))}">★</span>` : ''}${poss ? '<span class="poss" title="Possession">◂</span>' : ''}<span class="rec">${esc(c.record || '')}</span></a>
     <span class="sc">${ev.state === 'pre' ? '' : esc(c.score ?? '')}</span></div>`;
 }
@@ -221,7 +224,7 @@ function sortGames(a, b) {
 function renderSideTeams() {
   const el = $('#side-teams'); if (!el) return;
   const l = S.follow.map(teamById).filter(Boolean).filter((t) => S.sports.includes(t.sport || 'cfb'));
-  el.innerHTML = l.length ? `<div class="side-lbl">Following</div>${l.map((t) => `<a href="${t.player ? `#/player/${t.id}` : `#/team/${t.id}`}" data-team="${t.id}" data-sp="${t.sport || 'cfb'}"><img src="${esc(logo(t))}" alt="" width="22" height="22" class="${t.player ? 'flag' : ''}" /><span>${esc(t.short)}</span><small>${esc((SPORTS[t.sport || 'cfb'] || {}).short || '')}</small></a>`).join('')}` : '';
+  el.innerHTML = l.length ? `<div class="side-lbl">Following</div>${l.map((t) => `<a href="${t.player ? `#/player/${t.id}` : `#/team/${t.id}`}" data-team="${t.id}" data-sp="${t.sport || 'cfb'}"><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" width="22" height="22" class="${t.player ? 'flag' : ''}" /><span>${esc(t.short)}</span><small>${esc((SPORTS[t.sport || 'cfb'] || {}).short || '')}</small></a>`).join('')}` : '';
 }
 
 // ---------------- views ----------------
@@ -556,7 +559,7 @@ async function viewNews() {
 function rankRow(r) {
   const t = r.team; const mine = S.follow.includes(t.id);
   const tr = r.trend && r.trend !== '-' ? r.trend : '';
-  return `<a class="rank-row ${mine ? 'mine' : ''}" href="#/team/${t.id}"><span class="n">${r.rank}</span><img src="${esc(logo(t))}" alt="" loading="lazy" />
+  return `<a class="rank-row ${mine ? 'mine' : ''}" href="#/team/${t.id}"><span class="n">${r.rank}</span><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" loading="lazy" />
     <span><b>${esc(t.location)}</b> <span class="faint small">${esc(r.record || '')}</span></span>
     <span class="tr ${tr.startsWith('+') ? 'up' : tr.startsWith('-') ? 'down' : ''}">${tr ? (tr.startsWith('+') ? '▲' + tr.slice(1) : '▼' + tr.slice(1)) : '—'}</span>
     <span class="pts">${r.points ? `${r.points} pts` : ''}${r.fpv ? ` (${r.fpv})` : ''}</span></a>`;
@@ -564,7 +567,7 @@ function rankRow(r) {
 let pollId = 'ap'; let tPoll = 'atp';
 function standRow(r, sp, withDiv) {
   const t = r.team; const mine = S.follow.includes(t.id);
-  return `<a class="st-row ${mine ? 'mine' : ''}" href="#/team/${t.id}"><img src="${esc(logo(t))}" alt="" loading="lazy" />
+  return `<a class="st-row ${mine ? 'mine' : ''}" href="#/team/${t.id}"><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" loading="lazy" />
     <span class="nm"><b>${esc(t.short || t.location)}</b>${withDiv ? ` <span class="faint small">${esc(r.div)}</span>` : ''}${r.seed ? ` <span class="faint small">#${esc(r.seed)}</span>` : ''}</span>
     <span class="n">${esc(r.w)}-${esc(r.l)}${r.t && r.t !== '0' ? `-${esc(r.t)}` : ''}</span><span class="n">${esc(r.pct || '')}</span>
     <span class="n">${esc(sp === 'mlb' ? (r.gb || '') : (r.diff || ''))}</span><span class="n faint">${esc(r.streak || '')}</span></a>`;
@@ -573,7 +576,7 @@ function standRow(r, sp, withDiv) {
 function genStandTable(g, cols, withDiv) {
   const my = myTeamIds();
   return `<div class="card panel st-gen"><div class="st-row hd" style="--nc:${cols.length}"><span></span><span class="nm">${esc(g.name)}</span>${cols.map((c) => `<span class="n">${esc(c)}</span>`).join('')}</div>
-    ${g.rows.map((r) => `<a class="st-row ${my.has(r.team.id) ? 'mine' : ''}" style="--nc:${cols.length}" href="#/team/${esc(r.team.id)}"><img src="${esc(logo(r.team))}" alt="" loading="lazy" /><span class="nm"><b>${esc(r.team.short || r.team.location)}</b>${withDiv && r.div ? ` <span class="faint small">${esc(r.div)}</span>` : ''}</span>${(r.cells || []).map((c) => `<span class="n">${esc(c)}</span>`).join('')}</a>`).join('')}</div>`;
+    ${g.rows.map((r) => `<a class="st-row ${my.has(r.team.id) ? 'mine' : ''}" style="--nc:${cols.length}" href="#/team/${esc(r.team.id)}"><img crossorigin="anonymous" src="${esc(logo(r.team))}" alt="" loading="lazy" /><span class="nm"><b>${esc(r.team.short || r.team.location)}</b>${withDiv && r.div ? ` <span class="faint small">${esc(r.div)}</span>` : ''}</span>${(r.cells || []).map((c) => `<span class="n">${esc(c)}</span>`).join('')}</a>`).join('')}</div>`;
 }
 const LISTS = createLists({ view, api, mem, setBar, LT, paint, SK, tick, S, SPORTS, logo, myTeamIds, openCfb: (h) => { S.sport = 'cfb'; save(); syncSportUI(); location.hash = h; } });
 // v1.2.0: every sport's Rankings tab gets a link to its top list + bracket; the new pages live under #/rankings/{lists|list|playoffs}
@@ -660,7 +663,7 @@ function grokChart(g, lp) {
     const ap = r.live?.ap; const co = r.live?.coaches; const prev = r.prev;
     const lo = Math.min(r.rank, ap || 26); const hi = Math.max(r.rank, ap || 26);
     const d = ap ? ap - r.rank : null;
-    return `<div class="gk-crow" style="--tc:#${esc(r.info?.color || '888')}"><span class="tn"><img src="${esc(gLogo(r.info))}" alt="" loading="lazy" /><span>${r.rank}. ${esc(gName(r))}</span></span>
+    return `<div class="gk-crow" style="--tc:#${esc(r.info?.color || '888')}"><span class="tn"><img crossorigin="anonymous" src="${esc(gLogo(r.info))}" alt="" loading="lazy" /><span>${r.rank}. ${esc(gName(r))}</span></span>
       <span class="gk-track" role="img" aria-label="${esc(gName(r))}: JT ${r.rank}, AP ${ap || 'unranked'}, Coaches ${co || 'unranked'}">
         <span class="gk-bar" style="left:${pos(lo)};width:calc(${pos(Math.min(hi, 25))} - ${pos(lo)})"></span>
         ${prev ? `<span class="gk-dot last" style="left:${pos(prev)}"></span>` : ''}
@@ -678,7 +681,7 @@ const BR_SHORT = { champ: (s) => `${s.conference} champ*`, g6: () => 'Top G6 (au
 const SPOT_IDS = new Set(['254', '252']); // Utah, BYU are always highlighted
 function brTeam(s, extra = '') {
   const my = myTeamIds();
-  return `<div class="bt ${my.has(s.id) ? 'mine' : ''} ${SPOT_IDS.has(s.id) ? 'spot' : ''}" style="--tc:#${esc(s.color || '888')}"><span class="sd">${s.seed}</span><img src="${esc(logo(s))}" alt="" loading="lazy" /><span class="n"><b>${esc(s.short)}</b><small>${s.record ? `${esc(s.record)} · ` : ''}No. ${s.rank}</small><small class="ty ${esc(s.type)}">${esc(BR_SHORT[s.type](s))}</small></span>${extra}</div>`;
+  return `<div class="bt ${my.has(s.id) ? 'mine' : ''} ${SPOT_IDS.has(s.id) ? 'spot' : ''}" style="--tc:#${esc(s.color || '888')}"><span class="sd">${s.seed}</span><img crossorigin="anonymous" src="${esc(logo(s))}" alt="" loading="lazy" /><span class="n"><b>${esc(s.short)}</b><small>${s.record ? `${esc(s.record)} · ` : ''}No. ${s.rank}</small><small class="ty ${esc(s.type)}">${esc(BR_SHORT[s.type](s))}</small></span>${extra}</div>`;
 }
 const brTbd = (t) => `<div class="bt tbd"><span class="sd"></span><span></span><span class="n"><b>${t}</b></span></div>`;
 function brGrid(b) {
@@ -724,8 +727,8 @@ function brBody(v, d) {
       <div class="br-spots">${chip('Utah')}${chip('BYU')}</div>
       <p class="faint small">Source: ${esc(v.source.name)}${v.source.week ? ` · week ${esc(v.source.week)}` : ''}${v.source.date ? ` · ${esc(when(v.source.date))}` : ''}</p></div>
     ${brGrid(b)}
-    <h2>The 12-team field</h2><div class="card br-list">${b.seeds.map((s) => `<div class="br-row ${myTeamIds().has(s.id) ? 'mine' : ''} ${SPOT_IDS.has(s.id) ? 'spot' : ''}" style="--tc:#${esc(s.color || '888')}"><span class="sd">${s.seed}</span><img src="${esc(logo(s))}" alt="" loading="lazy" /><span class="n"><b>${esc(s.short)}</b> <small>${s.record ? `${esc(s.record)} · ` : ''}No. ${s.rank} · ${esc(s.conference || '')}</small><small class="ty ${esc(s.type)}">${esc(BR_TYPE[s.type](s))}</small></span>${s.bye ? '<span class="tg bye">Bye</span>' : ''}</div>`).join('')}</div>
-    ${b.out.length ? `<h2>First teams out</h2><div class="card br-list">${b.out.map((o) => `<div class="br-row out ${SPOT_IDS.has(o.id) ? 'spot' : ''}" style="--tc:#${esc(o.color || '888')}"><span class="sd">·</span><img src="${esc(logo(o))}" alt="" loading="lazy" /><span class="n"><b>${esc(o.short)}</b> <small>${o.record ? `${esc(o.record)} · ` : ''}No. ${o.rank}</small><small>${esc(o.reason)}</small></span></div>`).join('')}</div>` : ''}
+    <h2>The 12-team field</h2><div class="card br-list">${b.seeds.map((s) => `<div class="br-row ${myTeamIds().has(s.id) ? 'mine' : ''} ${SPOT_IDS.has(s.id) ? 'spot' : ''}" style="--tc:#${esc(s.color || '888')}"><span class="sd">${s.seed}</span><img crossorigin="anonymous" src="${esc(logo(s))}" alt="" loading="lazy" /><span class="n"><b>${esc(s.short)}</b> <small>${s.record ? `${esc(s.record)} · ` : ''}No. ${s.rank} · ${esc(s.conference || '')}</small><small class="ty ${esc(s.type)}">${esc(BR_TYPE[s.type](s))}</small></span>${s.bye ? '<span class="tg bye">Bye</span>' : ''}</div>`).join('')}</div>
+    ${b.out.length ? `<h2>First teams out</h2><div class="card br-list">${b.out.map((o) => `<div class="br-row out ${SPOT_IDS.has(o.id) ? 'spot' : ''}" style="--tc:#${esc(o.color || '888')}"><span class="sd">·</span><img crossorigin="anonymous" src="${esc(logo(o))}" alt="" loading="lazy" /><span class="n"><b>${esc(o.short)}</b> <small>${o.record ? `${esc(o.record)} · ` : ''}No. ${o.rank}</small><small>${esc(o.reason)}</small></span></div>`).join('')}</div>` : ''}
     ${b.missingChampions && b.missingChampions.length ? `<p class="notice">No ranked team in: ${b.missingChampions.map(esc).join(', ')}, so that conference’s automatic bid isn’t shown.</p>` : ''}
     ${v.outlook ? `<div class="card nt br-outlook"><h3>JT’s own CFP outlook</h3><p>${esc(v.outlook)}</p><p class="gk-note">JT’s written outlook, copied as published. The bracket above is computed from the JT ranking with the current CFP rules, so the two can differ.</p></div>` : ''}
     ${brFootnote(v, d)}`;
@@ -790,7 +793,7 @@ async function viewGrok(quick) {
   const mv = (r) => r.move === 'new' ? '<span class="mv new">New</span>' : r.move == null ? '' : `<span class="mv ${r.move > 0 ? 'up' : r.move < 0 ? 'dn' : 'eq'}">${r.move ? (r.move > 0 ? '▲' + r.move : '▼' + -r.move) : '–'}</span>`;
   let body = '';
   if (grokTab === 'top') {
-    body = `<div class="card gk-list">${g.ranks.map((r) => `<a class="gk-row ${my.has(r.info?.id) ? 'mine' : ''}" href="${r.info ? `#/schedule/${esc(r.info.id)}` : '#/rankings/grok'}" style="--tc:#${esc(r.info?.color || '888')}"><span class="gk-rank">${r.rank}</span><img src="${esc(gLogo(r.info))}" alt="" loading="lazy" />
+    body = `<div class="card gk-list">${g.ranks.map((r) => `<a class="gk-row ${my.has(r.info?.id) ? 'mine' : ''}" href="${r.info ? `#/schedule/${esc(r.info.id)}` : '#/rankings/grok'}" style="--tc:#${esc(r.info?.color || '888')}"><span class="gk-rank">${r.rank}</span><img crossorigin="anonymous" src="${esc(gLogo(r.info))}" alt="" loading="lazy" />
       <span class="gk-nm"><b>${esc(gName(r))}</b><span class="rec">${esc(r.record)} · ${esc(r.conference || '')}</span> ${mv(r)}<div class="gk-why">${esc(r.reason || '')}</div></span>
       <span class="gk-polls">${P('AP', r.live?.ap)}${P('Coaches', r.live?.coaches)}${P('CFP', r.live?.cfp, true)}</span></a>`).join('')}</div>
       ${g.justMissed?.length ? `<h2>Just missed</h2><p class="muted small">${g.justMissed.map((j) => j.info ? `<a href="#/team/${esc(j.info.id)}">${esc(j.info.short)}</a>` : esc(j.team)).join(' · ')}</p>` : ''}
@@ -801,7 +804,7 @@ async function viewGrok(quick) {
     const box = (t, v) => `<div class="card nt"><h3>${t}</h3><p class="${v ? '' : 'na'}">${v ? esc(v) : 'Not included in this week’s JT output.'}</p></div>`;
     const same = n.risersFallers && n.apVsGrok && n.risersFallers.trim() === n.apVsGrok.trim();
     body = `<div class="gk-notes">${same ? box('Risers & fallers · AP vs JT', n.risersFallers) : box('Risers & fallers', n.risersFallers) + box('AP vs JT', n.apVsGrok)}${box('What to watch next week', n.nextWeek)}${box('JT’s CFP outlook', n.cfpOutlook)}${n.cfpOutlook ? '<p class="gk-note">This is JT’s own outlook text. The Bracket tab is computed separately from the JT order using the 5+7 format.</p>' : ''}</div>
-      ${(g.apTop5 || []).length ? `<h2>AP top 5 this week</h2><div class="card panel">${g.apTop5.map((a) => `<div class="rank-row"><span class="n">${a.rank}</span><img src="${esc(gLogo(a.info))}" alt="" loading="lazy" /><span><b>${esc(gName(a))}</b></span></div>`).join('')}</div>` : ''}`;
+      ${(g.apTop5 || []).length ? `<h2>AP top 5 this week</h2><div class="card panel">${g.apTop5.map((a) => `<div class="rank-row"><span class="n">${a.rank}</span><img crossorigin="anonymous" src="${esc(gLogo(a.info))}" alt="" loading="lazy" /><span><b>${esc(gName(a))}</b></span></div>`).join('')}</div>` : ''}`;
   }
   const hist = (g.history || []).slice().reverse();
   view.innerHTML = `<div class="card gk-hero"><div class="gk-kicker">Week ${esc(g.week)} · ${new Date(g.date + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</div><h1 class="gk-title">JT Top 25</h1>
@@ -872,7 +875,7 @@ async function viewTeam(id, forceTab) {
   const back = HIST.length > 1 ? HIST[HIST.length - 2] : `#/${lastTab}`;
   setBar(meta.short || 'Team', { back });
   teamTheme(meta);
-  paint(`<div class="card team-hero" style="--team:#${esc(meta.color || '1f6f5c')}">${meta.logo ? `<img src="${esc(logo(meta))}" alt="" />` : '<span class="sk logo big"></span>'}<div><h1>${esc(meta.name || '')}</h1><div class="sk w30 sm"></div></div></div>
+  paint(`<div class="card team-hero" style="--team:#${esc(meta.color || '1f6f5c')}">${meta.logo ? `<img crossorigin="anonymous" src="${esc(meta.logo || logo(meta))}" alt="" />` : '<span class="sk logo big"></span>'}<div><h1>${esc(meta.name || '')}</h1><div class="sk w30 sm"></div></div></div>
     <div class="toolbar sticky"><div class="seg">${TEAM_TABS.map(([k, l]) => `<button class="${k === teamTab ? 'on' : ''}" disabled>${l}</button>`).join('')}</div></div>${SK.rows(8)}`);
   let d; try { d = await api(`/api/team/${id}`, 2 * 60e3); } catch (e) { view.innerHTML = errBox(e); return; }
   const t = d.team;
@@ -892,7 +895,7 @@ async function viewTeam(id, forceTab) {
       ${meta.streak ? `<div class="card"><div class="v">${esc(meta.streak)}</div><div class="l">Streak</div></div>` : ''}</div>
     <h2>Season stats</h2><div class="stat-groups">${d.stats.map((g) => `<div class="card"><h4>${esc(g.name)}</h4>${g.items.map((s) => `<div class="r"><span>${esc(s.label)}</span><b>${esc(s.value)}</b></div>`).join('')}</div>`).join('') || `<div class="empty">${sp === 'mlb' ? 'Season stats aren’t in ESPN’s free MLB team feed.' : 'No season stats in ESPN’s free feed yet.'}</div>`}</div>`;
   const rosterHTML = () => `<h2>Roster <span class="count">${roster.length}${roster.every((p) => p.noPage) ? '' : ' · ★ to follow a player'}</span></h2><div class="card panel roster">${roster.map((p) => p.noPage ? `<div class="ro-row"><span class="hs"></span><span class="nm"><b>${esc(p.name)}</b> <span class="faint small">${esc([p.jersey ? '#' + p.jersey : '', p.pos].filter(Boolean).join(' · '))}</span></span></div>` : `<div class="ro-row ${follows(p.id) ? 'mine' : ''}">${p.headshot ? `<img class="hs" src="${esc(p.headshot)}" alt="" loading="lazy" />` : '<span class="hs"></span>'}<a class="nm" href="#/player/${esc(p.id)}"><b>${esc(p.name)}</b> <span class="faint small">${esc([p.jersey ? '#' + p.jersey : '', p.pos].filter(Boolean).join(' · '))}</span></a><button class="pf ${follows(p.id) ? 'on' : ''}" data-pfollow="${esc(p.id)}" data-pname="${esc(p.name)}" data-pflag="${esc(p.headshot || '')}" data-pteam="${esc(t.id)}" data-ppos="${esc(p.pos || '')}" aria-pressed="${follows(p.id)}" aria-label="${follows(p.id) ? 'Unfollow' : 'Follow'} ${esc(p.name)}">${follows(p.id) ? '★' : '☆'}</button></div>`).join('')}</div>${d.attribution ? `<p class="faint small attrib">${esc(d.attribution)}</p>` : ''}`;
-  view.innerHTML = `<div class="team-page"><div class="card team-hero" style="--team:#${esc(t.color || '1f6f5c')}"><img src="${esc(logo(t))}" alt="" />
+  view.innerHTML = `<div class="team-page"><div class="card team-hero" style="--team:#${esc(t.color || '1f6f5c')}"><img crossorigin="anonymous" src="${esc(t.logo || logo(t))}" alt="" />
       <div><h1>${esc(t.name)}</h1><div class="muted">${[summary, t.standing, meta.conference].filter(Boolean).map(esc).join(' · ')}</div></div>
       <div class="actions"><button class="btn ${following ? 'primary' : ''}" id="fol">${following ? '✓ Following' : '+ Follow'}</button><button class="btn ${muted ? 'danger' : ''}" id="mut">${muted ? 'Muted' : 'Mute'}</button></div></div>
     <div class="toolbar sticky team-tabs"><div class="seg" role="tablist">${tabs.map(([k, l]) => `<button data-ttab="${k}" class="${teamTab === k ? 'on' : ''}" role="tab" aria-selected="${teamTab === k}">${l}</button>`).join('')}</div></div>
@@ -944,7 +947,7 @@ function schedItemLite(ev, t, sp) {
   else if (ev.state === 'in') res = `<span class="res" style="color:var(--live)">LIVE ${esc(me.score)}–${esc(opp.score)}</span>`;
   else res = `<span class="faint small">${/TBD/.test(ev.detail) ? 'TBD' : new Date(ev.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>`;
   return `<a class="sched-row" href="#/game/${sp}/${esc(ev.id)}"><span class="faint small">${new Date(ev.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-    <span class="opp"><span class="faint small">${home ? 'vs' : '@'}</span><img src="${esc(logo(opp.team))}" alt="" loading="lazy" />${opp.rank ? `<span class="faint small">${opp.rank}</span>` : ''}<span>${esc(opp.team?.short || 'TBD')}</span></span>${res}</a>`;
+    <span class="opp"><span class="faint small">${home ? 'vs' : '@'}</span><img crossorigin="anonymous" src="${esc(logo(opp.team))}" alt="" loading="lazy" />${opp.rank ? `<span class="faint small">${opp.rank}</span>` : ''}<span>${esc(opp.team?.short || 'TBD')}</span></span>${res}</a>`;
 }
 
 // ---------------- schedule + player pages ----------------
@@ -1022,7 +1025,7 @@ const OUTLET_SUGGEST = ['ESPN', 'Bleacher Report', 'Barstool', 'OutKick'];
 const CHECK = '<span class="check" aria-hidden="true"></span>';
 const teamSportIds = () => S.sports.filter(teamSport);
 const allMode = () => pickAll && pickMode === 'teams' && teamSportIds().length > 1;
-const pickRow = (t, f) => `<button class="pick-row ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img src="${esc(logo(t))}" alt="" loading="lazy" /><span class="nm"><b>${esc(fullName(t))}</b><small>${esc([t.abbr, t.conference].filter(Boolean).join(' · '))}</small></span>${CHECK}</button>`;
+const pickRow = (t, f) => `<button class="pick-row ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" loading="lazy" /><span class="nm"><b>${esc(fullName(t))}</b><small>${esc([t.abbr, t.conference].filter(Boolean).join(' · '))}</small></span>${CHECK}</button>`;
 function teamRows(teams, f) {
   if (pickBy !== 'conf') return teams.map((t) => pickRow(t, f)).join('');
   return subGroups(teams).map((g) => (g.name ? `<div class="sub-head">${esc(g.name)}</div>` : '') + g.teams.map((t) => pickRow(t, f)).join('')).join('');
@@ -1059,10 +1062,10 @@ function partHTML(p) {
     case 'pmode': { const sp = pSport(); if (allMode() || !teamSport(sp) || sp === 'ausl') return '';
       return `<div class="seg pmode"><button data-pmode="teams" class="${pickMode === 'teams' ? 'on' : ''}" aria-pressed="${pickMode === 'teams'}">Teams</button><button data-pmode="players" class="${pickMode === 'players' ? 'on' : ''}" aria-pressed="${pickMode === 'players'}">Players</button></div>`; }
     case 'quicklbl': return (allMode() ? S.sports.includes('cfb') : pSport() === 'cfb') && TEAMS_BY.cfb && UTAH().length ? 'Popular in Utah' : '';
-    case 'quick': if (!(allMode() ? S.sports.includes('cfb') : pSport() === 'cfb') || !TEAMS_BY.cfb) return ''; return UTAH().map((t) => `<button class="chip lg ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img src="${esc(logo(t))}" alt="" />${esc(fullName(t))}${f(t.id) ? ' ✓' : ''}</button>`).join('');
+    case 'quick': if (!(allMode() ? S.sports.includes('cfb') : pSport() === 'cfb') || !TEAMS_BY.cfb) return ''; return UTAH().map((t) => `<button class="chip lg ${f(t.id) ? 'on' : ''}" data-tfollow="${t.id}" aria-pressed="${f(t.id)}"><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" />${esc(fullName(t))}${f(t.id) ? ' ✓' : ''}</button>`).join('');
     case 'followed': {
       const sp = pSport(); const l = (allMode() ? S.follow.filter((id) => !isAthleteId(id) && S.sports.includes(sportOfId(id))) : followsIn(sp)).map(teamById).filter(Boolean);
-      return l.length ? l.map((t) => `<button class="chip on" data-tfollow="${t.id}"><img src="${esc(logo(t))}" alt="" class="${t.player ? (teamSport(sp) || eventSport(sp) ? 'hs' : 'flag') : ''}" />${t.player && teamSport(sp) ? '★ ' : ''}${esc(t.player ? t.short : fullName(t))} <span class="x">✕</span></button>`).join('') : `<span class="faint small">None yet — that’s fine, you’ll see ${sp === 'cfb' ? 'all of FBS' : `all of ${esc(SPORTS[sp].short)}`}.</span>`;
+      return l.length ? l.map((t) => `<button class="chip on" data-tfollow="${t.id}"><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" class="${t.player ? (teamSport(sp) || eventSport(sp) ? 'hs' : 'flag') : ''}" />${t.player && teamSport(sp) ? '★ ' : ''}${esc(t.player ? t.short : fullName(t))} <span class="x">✕</span></button>`).join('') : `<span class="faint small">None yet — that’s fine, you’ll see ${sp === 'cfb' ? 'all of FBS' : `all of ${esc(SPORTS[sp].short)}`}.</span>`;
     }
     case 'followcount': { const n = allMode() ? S.follow.filter((id) => !isAthleteId(id) && S.sports.includes(sportOfId(id))).length : followsIn(pSport()).length; return n ? `· ${n}` : ''; }
     case 'tsearch': { const sp = pSport();
@@ -1127,12 +1130,12 @@ function partHTML(p) {
     case 'leagues': return Object.entries(LEAGUE_MUTES).map(([k, v]) => { const on = S.muteLeagues.includes(k); return `<button class="chip lg mute ${on ? 'on' : ''}" data-league="${k}" aria-pressed="${on}" title="Hides: ${esc(v.words.join(', '))}">${on ? '🔇 ' : ''}${esc(v.label)}</button>`; }).join('');
     case 'kws': return [...S.muteKeywords.map((k) => `<button class="chip lg mute on" data-unkw="${esc(k)}">${esc(k)} <span class="x">✕</span></button>`),
       ...KW_SUGGEST.filter((k) => !S.muteKeywords.some((x) => x.toLowerCase() === k.toLowerCase())).map((k) => `<button class="chip lg ghost" data-addkw="${esc(k)}">+ ${esc(k)}</button>`)].join('');
-    case 'mteams': { const l = S.muteTeams.map(teamById).filter(Boolean); return l.map((t) => `<button class="chip lg mute on" data-unmute="${t.id}"><img src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />${esc(t.short)}<small>${esc((SPORTS[t.sport || 'cfb'] || {}).short || '')}</small> <span class="x">✕</span></button>`).join('') || '<span class="faint small">No teams or players muted.</span>'; }
+    case 'mteams': { const l = S.muteTeams.map(teamById).filter(Boolean); return l.map((t) => `<button class="chip lg mute on" data-unmute="${t.id}"><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />${esc(t.short)}<small>${esc((SPORTS[t.sport || 'cfb'] || {}).short || '')}</small> <span class="x">✕</span></button>`).join('') || '<span class="faint small">No teams or players muted.</span>'; }
     case 'mresults': {
       const q = muteQ.trim().toLowerCase(); if (q.length < 2) return '';
       S.sports.filter((k) => !teamSport(k) && !newsSport(k)).forEach((k) => loadPlayers(k, document.querySelector('#onb') || view));
       const pool = [...TEAMS.filter((t) => S.sports.includes(t.sport)), ...S.sports.filter((k) => !teamSport(k) && !newsSport(k)).flatMap((k) => (PLAYERS_BY[k] || []).map((p) => ({ ...p, short: p.name, logo: p.flag, logoDark: p.flag, player: true })))];
-      return pool.filter((t) => t.name.toLowerCase().includes(q) && !S.muteTeams.includes(t.id)).slice(0, 10).map((t) => `<button class="chip lg" data-mute="${t.id}" ${t.player ? `data-pname="${esc(t.name)}" data-pflag="${esc(t.flag || '')}"` : ''}><img src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />Mute ${esc(t.player ? t.short : fullName(t))}<small>${esc((SPORTS[t.sport] || {}).short || '')}</small></button>`).join('') || '<span class="faint small">No match.</span>';
+      return pool.filter((t) => t.name.toLowerCase().includes(q) && !S.muteTeams.includes(t.id)).slice(0, 10).map((t) => `<button class="chip lg" data-mute="${t.id}" ${t.player ? `data-pname="${esc(t.name)}" data-pflag="${esc(t.flag || '')}"` : ''}><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />Mute ${esc(t.player ? t.short : fullName(t))}<small>${esc((SPORTS[t.sport] || {}).short || '')}</small></button>`).join('') || '<span class="faint small">No match.</span>';
     }
     case 'outlets': { const b = S.blockOutlets || []; return [...b.map((x) => `<button class="chip lg mute on" data-unblock="${esc(x)}">🚫 ${esc(x)} <span class="x">✕</span></button>`), ...OUTLET_SUGGEST.filter((x) => !b.includes(x)).map((x) => `<button class="chip lg ghost" data-block="${esc(x)}">+ ${esc(x)}</button>`)].join(''); }
     case 'sources': return S.sports.map((k) => `<div class="group-lbl">${SPORTS[k].emoji} ${esc(SPORTS[k].name)}</div><div class="list card">${sportSources(k).map((s) => `<label class="row"><span class="rt"><b>${esc(s.name)}</b><small>${esc(s.kind)}${s.via ? ` · via ${esc(s.via)}` : ''}</small></span><span class="switch"><input type="checkbox" data-src="${s.id}" ${sourceOn(s.id) ? 'checked' : ''} /></span></label>`).join('')}</div>`).join('');
@@ -1142,7 +1145,7 @@ function partHTML(p) {
       const mutes = activeMutes(); const bl = S.blockOutlets || [];
       return `<div class="list card summary">
         <div class="row"><span class="rt"><b>Sports</b><small>${S.sports.map((k) => `${SPORTS[k].emoji} ${esc(SPORTS[k].short)}`).join(' · ')}</small></span></div>
-        <div class="row"><span class="rt"><b>Following</b><small>${teams.length ? teams.map((t) => esc(t.short)).join(', ') : 'Nobody yet — showing everything'}</small></span><span class="logos">${teams.slice(0, 4).map((t) => `<img src="${esc(logo(t))}" alt="" />`).join('')}</span></div>
+        <div class="row"><span class="rt"><b>Following</b><small>${teams.length ? teams.map((t) => esc(t.short)).join(', ') : 'Nobody yet — showing everything'}</small></span><span class="logos">${teams.slice(0, 4).map((t) => `<img crossorigin="anonymous" src="${esc(logo(t))}" alt="" />`).join('')}</span></div>
         ${S.sports.includes('cfb') ? `<div class="row"><span class="rt"><b>CFB conferences</b><small>${confs.length ? confs.map((c) => esc(c.short)).join(', ') : 'All FBS'}</small></span></div>` : ''}
         <div class="row"><span class="rt"><b>Muted</b><small>${mutes.length ? mutes.map(esc).join(', ') : 'Nothing'}</small></span></div>
         <div class="row"><span class="rt"><b>Blocked outlets</b><small>${bl.length ? bl.map(esc).join(', ') : 'None'}</small></span></div>

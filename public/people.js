@@ -16,7 +16,7 @@ export function schedItem(ev, teamId, sport, ctx) {
   const home = ev.home.team && ev.home.team.id === teamId; const me = home ? ev.home : ev.away; const opp = home ? ev.away : ev.home;
   const ot = opp.team || {};
   const when = `${fmtDay(ev.date)}${tbd(ev) ? ' · Time TBD' : ` · ${fmtTime(ev.date)}`}`;
-  const oppHTML = `<span class="opp"><span class="va">${home ? 'vs' : '@'}</span><img src="${esc(ctx.logo(ot))}" alt="" loading="lazy" width="26" height="26" />${opp.rank ? `<span class="faint small">${esc(opp.rank)}</span>` : ''}<a href="#/schedule/${esc(ot.id)}" class="on">${esc(ot.short || ot.name || 'TBD')}</a></span>`;
+  const oppHTML = `<span class="opp"><span class="va">${home ? 'vs' : '@'}</span><img crossorigin="anonymous" src="${esc(ctx.logo(ot))}" alt="" loading="lazy" width="26" height="26" />${opp.rank ? `<span class="faint small">${esc(opp.rank)}</span>` : ''}<a href="#/schedule/${esc(ot.id)}" class="on">${esc(ot.short || ot.name || 'TBD')}</a></span>`;
   if (ev.state === 'post') {
     const res = me.winner ? 'W' : opp.winner ? 'L' : 'T';
     return `<a class="sx-row post" href="#/game/${sport}/${esc(ev.id)}"><span class="d faint small">${esc(fmtDay(ev.date, { weekday: undefined }))}</span>${oppHTML.replace(/<a [^>]*>|<\/a>/g, '')}
@@ -53,7 +53,7 @@ export function scheduleSections(events, teamId, sport, ctx, { limitUp = 0, limi
 
 export function scheduleView(d, ctx) {
   const t = d.team;
-  return `<div class="card team-hero" style="--team:#${esc(t.color || '333')}"><img src="${esc(ctx.logo(t))}" alt="" />
+  return `<div class="card team-hero" style="--team:#${esc(t.color || '333')}"><img crossorigin="anonymous" src="${esc(ctx.logo(t))}" alt="" />
       <div><h1>${esc(t.name)}</h1><div class="muted">${[d.season && `${d.season} schedule`, t.record, t.standing].filter(Boolean).map(esc).join(' · ')}</div></div>
       <div class="actions"><a class="btn" href="#/team/${esc(t.id)}">Team page</a>${ctx.followBtn(t)}</div></div>
     ${scheduleSections(d.events, t.id, d.sport, ctx)}
@@ -76,7 +76,7 @@ function careerTables(st) {
 function gameLog(p) {
   const L = p.log; if (!L) return '<div class="card empty">ESPN has no game log for this player this season.</div>';
   return tableHTML(['Date', 'Opp', 'Result', ...L.labels], L.games.map((g) => `<tr data-href="#/game/${esc(p.sport)}/${esc(g.id)}"><th>${esc(new Date(g.date).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }))}</th>
-    <td class="opp-c">${esc(g.atVs)} ${g.opp.logo ? `<img src="${esc(g.opp.logo)}" alt="" width="16" height="16" loading="lazy" />` : ''}${esc(g.opp.abbr || '')}</td><td class="res ${esc(g.result)}">${esc(g.result)} ${esc(g.score)}</td>${L.labels.map((_, i) => `<td>${esc(g.stats[i] ?? '')}</td>`).join('')}</tr>`), { cls: 'log' });
+    <td class="opp-c">${esc(g.atVs)} ${g.opp.logo ? `<img crossorigin="anonymous" src="${esc(g.opp.logo)}" alt="" width="16" height="16" loading="lazy" />` : ''}${esc(g.opp.abbr || '')}</td><td class="res ${esc(g.result)}">${esc(g.result)} ${esc(g.score)}</td>${L.labels.map((_, i) => `<td>${esc(g.stats[i] ?? '')}</td>`).join('')}</tr>`), { cls: 'log' });
 }
 
 export function playerHero(p, ctx) {
