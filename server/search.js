@@ -31,7 +31,8 @@ module.exports = function makeSearch({ cached, fetchJSON, SP }) {
       const by = new Map();
       for (const [lg, label] of TOURS) {
         const items = await pages(`${CORE}/golf/${lg}/athletes`).catch(() => []);
-        for (const a of items) { if (!a || !a.id || /\//.test(a.displayName || a.fullName || '')) continue; // skip team-event pairings ("McDowell/McIlroy Ireland") const k = `golf:${a.id}`; const p = by.get(k);
+        for (const a of items) { if (!a || !a.id || /\//.test(a.displayName || a.fullName || '')) continue; // skip team-event pairings ("McDowell/McIlroy Ireland")
+          const k = `golf:${a.id}`; const p = by.get(k);
           if (p) { if (!p.tours.includes(label)) p.tours.push(label); continue; }
           by.set(k, { id: k, name: a.displayName || a.fullName, tours: [label], country: a.citizenship || '', flag: flagOf(a), amateur: !!a.amateur, known: !!(a.debutYear || a.dateOfBirth) }); }
       }
@@ -67,7 +68,7 @@ module.exports = function makeSearch({ cached, fetchJSON, SP }) {
     if (sp.kind === 'team' && sport !== 'ausl') return teamSport(sport);
     return Promise.resolve(null);
   }
-  const within = (p, ms) => Promise.race([p.catch(() => null), new Promise((r) => setTimeout(() => r(null), ms))]);
+  const within = (p, ms) => Promise.race([p.catch((e) => { console.warn('search index:', e.message); return null; }), new Promise((r) => setTimeout(() => r(null), ms))]);
 
   /** fuzzy player search: local index (if ready within `wait` ms) merged with ESPN's own search */
   async function search(sport, q, { wait = 9000 } = {}) {
@@ -78,6 +79,10 @@ module.exports = function makeSearch({ cached, fetchJSON, SP }) {
     const tie = (a, b) => (b.known ? 1 : 0) - (a.known ? 1 : 0) || (a.rank || 9999) - (b.rank || 9999) || (a.amateur ? 1 : 0) - (b.amateur ? 1 : 0) || String(a.name).localeCompare(String(b.name));
     const hits = idx ? rank(idx.list, q, { key: (p) => p.name, min: 0.6, limit: 60, tie }) : [];
     for (const h of hits) if (ES.has(h.item.id)) h.score += 0.08; // ESPN agrees: likely the person meant
+    // golf prominence: ~11k names, most of them DP World / LPGA qualifiers with no ESPN bio. A full bio (debut year /
+    // birth date) marks a touring pro people actually look up, so "McElroy" puts Rory McIlroy (bio) above Dermot
+    // McElroy (exact spelling, no bio). Between two bio'd players the exact spelling still wins.
+    if (SP.SPORTS[sport] && SP.SPORTS[sport].kind === 'golf') for (const h of hits) if (h.item.known) h.score += 0.28;
     hits.sort((a, b) => b.score - a.score || tie(a.item, b.item));
     const out = []; const seen = new Set();
     const E = new Map(espn.map((p) => [p.id, p]));

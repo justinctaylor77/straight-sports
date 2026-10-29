@@ -63,12 +63,14 @@ const get = (p) => fetch(base + p).then((r) => r.json());
   console.log(md);
   // ---- contact sheet: worst offenders, before vs after, rendered with the app's own CSS ----
   const worst = res.filter((r) => !r.unmeasured).flatMap((r) => Object.entries(r.themes).filter(([, x]) => !x.pass).map(([k, x]) => ({ ...x, k, r }))).sort((a, b) => a.before - b.before);
-  const pick = []; const seen = new Set(); for (const w of worst) { const key = w.r.id + w.k; if (seen.has(w.r.id) || pick.length >= 36) continue; seen.add(w.r.id); pick.push(w); }
+  const pick = []; const seen = new Set(); const art = (w) => (w.k === 'light' ? w.r.logo : w.r.logoDark);
+  // Justin's example first (Broncos schedule, dark: Panthers / Raiders), then the worst offenders, one per logo artwork
+  for (const w of [...worst.filter((w) => w.r.sport === 'nfl' && /Panthers|Raiders/.test(w.r.name) && w.k === 'dark'), ...worst]) { if (seen.has(w.r.id) || seen.has(art(w)) || pick.length >= 36) continue; seen.add(w.r.id); seen.add(art(w)); pick.push(w); }
   const sp = await (await browser.newContext({ serviceWorkers: 'block', deviceScaleFactor: 2, viewport: { width: 1200, height: 900 } })).newPage();
   await sp.goto(base + '/'); await sp.waitForTimeout(1500);
   await sp.evaluate((pick) => {
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    document.body.innerHTML = `<div id="sheet" style="background:#222;padding:16px;width:1168px;font:13px system-ui;color:#eee"><h2 style="margin:0 0 4px">Logo contrast — worst ${pick.length} offenders, before → after</h2><p style="margin:0 0 12px;opacity:.8">Score = share of silhouette-edge pixels at ≥3:1 vs the surface (pass ≥50%). After = 1px opposite-tone outline (img.lt-lift / img.lt-sink).</p><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${pick.map((w) => {
+    document.body.innerHTML = `<div id="sheet" style="background:#222;padding:16px;width:1168px;font:13px system-ui;color:#eee"><h2 style="margin:0 0 4px">Logo contrast — worst ${pick.length} offenders, before → after</h2><p style="margin:0 0 12px;opacity:.8">Score = share of silhouette-edge pixels visible at ≥3:1 against the surface (pass ≥50%; keyline within 2px counts). After = 1px opposite-tone outline (img.lt-lift / img.lt-sink).</p><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${pick.map((w) => {
       const u = w.k === 'light' ? w.r.logo : w.r.logoDark;
       return `<div style="background:${w.bg};border-radius:10px;padding:8px;color:${w.k === 'light' ? '#111' : '#eee'}"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(w.r.name)} <span style="opacity:.6">${esc(w.r.sport)}</span></div><div style="font-size:11px;opacity:.75">${esc(w.k)} ${esc(w.bg)}</div>
         <div style="display:flex;gap:14px;align-items:center;margin-top:6px"><div style="text-align:center"><img data-lt-skip crossorigin="anonymous" src="${esc(u)}" style="width:56px;height:56px;object-fit:contain"><div style="font-size:11px">before ${Math.round(w.before * 100)}%</div></div><span>→</span>
