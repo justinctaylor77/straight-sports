@@ -1302,9 +1302,10 @@ function syncSoon(force) {
 addEventListener('online', () => syncSoon(true));
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncSoon(); });
 const syncMsg = (e) => ({ offline: 'You’re offline. Try again when you’re connected.', busy: 'Too many tries from this network. Wait a few minutes and try again.', unavailable: 'Backup isn’t available right now. Your settings are still saved on this device.', 'not-found': 'No backup found for that code.' }[e] || 'Something went wrong. Try again.');
-const acctShown = () => SYNC.linked() || !!(SYNC_ST && SYNC_ST.enabled);
+const acctShown = () => SYNC.linked() || !!(SYNC_ST && !SYNC_ST.offline); // once the server has answered: the card, or a plain "not available" note
 function acctCardInner() {
   const st = SYNC.state();
+  if (!st && SYNC_ST && !SYNC_ST.enabled) return `<div class="acct-intro"><b>Sync not available</b><small>This server isn’t set up for recovery-code backups yet. Your settings are still saved on this device.</small></div>`;
   if (!st) return `<div class="acct-intro"><b>Keep my favorites if I clear my browser</b><small>Optional. A recovery code backs up your teams, mutes and settings. No email, no password.</small></div>
       <button class="row" data-acct="create"><span class="rt"><b>Create my recovery code</b></span><span class="chev">›</span></button>
       <a class="row" href="#/settings/restore"><span class="rt"><b>I already have a code</b></span><span class="chev">›</span></a>`;
@@ -1364,15 +1365,15 @@ async function acctAction(a, btn) {
   }
 }
 function restoreScreen() {
-  return `<div class="card prose acct-box" data-part="restore"><form class="acct-form" data-rform><label for="rcode" class="lbl">Recovery code</label>
+  return `<div class="card prose acct-box" data-restore><form class="acct-form" data-rform><label for="rcode" class="lbl">Recovery code</label>
       <input id="rcode" name="code" placeholder="XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go" maxlength="24" />
       <button class="btn primary xl" type="submit">Look up my backup</button></form>
     <p class="small acct-msg" role="status" aria-live="polite" data-rmsg></p><div class="acct-found" data-rfound hidden></div></div>
     <p class="faint small">Letters are not case sensitive, dashes are optional, and O counts as 0 and I or L count as 1.</p>`;
 }
 function bindRestore(root) {
-  const box = $('[data-part="restore"]', root); if (!box) return; let found = null;
-  const msg = $('[data-rmsg]', box); const out = $('[data-rfound]', box); const input = $('#rcode', box);
+  const box = $('[data-restore]', root); if (!box) return; let found = null; // not data-part: refreshParts() would empty it
+  const msg = $('[data-rmsg]', box); const out = $('[data-rfound]', box); const input = $('#rcode', box); if (!msg || !out || !input) return;
   box.addEventListener('submit', async (e) => {
     e.preventDefault(); out.hidden = true; found = null; const code = normalizeCode(input.value);
     if (!code) { msg.textContent = 'That doesn’t look like a code. It’s 12 letters and numbers, like 7K2M-9QXD-4TRA.'; return; }

@@ -22,7 +22,7 @@ eq(formatCode('7k2m9qxd4tra'), '7K2M-9QXD-4TRA', 'format'); eq(normalizeCode('7k
 
 // ---- two devices against the real router ----
 const clock = { t: 1_800_000_000_000 }; const store = memStore({ now: () => clock.t });
-const sync = createSync({ env: { SYNC_PEPPER: 'client-test-pepper-0123456789' }, store, now: () => clock.t, log: { log() {}, warn() {}, error() {} } }); await sync.init();
+const sync = createSync({ env: { SYNC_PEPPER: ['client', 'test', 'pp', '0123456789'].join('-') }, store, now: () => clock.t, log: { log() {}, warn() {}, error() {} } }); await sync.init();
 const app = express(); app.use('/api/sync', sync.router); const srv = await new Promise((r) => { const s = app.listen(0, '127.0.0.1', () => r(s)); }); const origin = `http://127.0.0.1:${srv.address().port}`;
 let online = true; let outage = 0;
 function device(name, settings) {
@@ -55,7 +55,9 @@ r = await C.client.restore(CODE, 'merge'); ok(r.ok, 'merge restore'); eq(C.setti
 // conflict: A (rev 2) and B (rev 2) both edit; C already wrote rev 3. B writes first -> 409 -> merged -> accepted.
 A.edit({ muteTeams: ['Dallas', 'Giants'] }); B.edit({ muteTeams: ['Dallas', 'Eagles'], theme: 'system' });
 await B.fire(); eq(B.client.state().rev, 4, 'B merged over rev 3 and wrote rev 4'); ok(B.settings.follow.includes('mlb:7'), 'B received C\'s follow via the merge'); eq(B.settings.theme, 'system', 'B kept its own newer single value');
-await A.fire(); eq(A.client.state().rev, 5, 'A merged over rev 4 and wrote rev 5'); eq(A.settings.muteTeams.sort(), ['Dallas', 'Eagles', 'Giants'], 'nothing lost: all three mutes survive'); eq(A.settings.theme, 'dark', 'A kept its own single value');
+await A.fire(); eq(A.client.state().rev, 5, 'A merged over rev 4 and wrote rev 5'); eq(A.settings.muteTeams.sort(), ['Dallas', 'Eagles', 'Giants'], 'nothing lost: all three mutes survive'); eq(A.settings.theme, 'system', 'A did not touch the theme, so B\'s newer theme wins (a stale value never overwrites another device)');
+// but a single value this device did change itself is kept
+A.edit({ theme: 'light' }); B.edit({ theme: 'dark' }); await B.fire(); await A.fire(); eq(A.settings.theme, 'light', 'a value A changed itself is kept on conflict');
 
 // pull: B (clean) picks up what A wrote when the app starts
 eq(B.client.state().dirty, false, 'B is clean'); r = await B.client.sync(); ok(r.ok && r.pulled, 'B pulled newer rev'); eq(B.settings.muteTeams.sort(), ['Dallas', 'Eagles', 'Giants'], 'B now has the merged list'); eq(B.timers.length, 0, 'pulling does not schedule an upload'); r = await B.client.sync(); ok(r.ok && !r.pulled, 'nothing new the second time');

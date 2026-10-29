@@ -16,8 +16,8 @@ export function pick(settings) {
 }
 const union = (a = [], b = []) => [...new Set([...(a || []), ...(b || [])])];
 // Merge for "Merge with what's on this device" and for 409 conflicts: union of teams, players, mutes, keywords;
-// single-value settings come from `newer` ('local' | 'remote').
-export function merge(local, remote, newer = 'local') {
+// single-value settings come from `newer` ('local' | 'remote'). With `base` (what this device last synced), a single value this device did not change since then is taken from the remote copy, so a stale value never overwrites another device's change.
+export function merge(local, remote, newer = 'local', base = null) {
   const L = pick(local); const R = pick(remote); const win = newer === 'remote' ? R : L; const lose = newer === 'remote' ? L : R;
   const out = { ...lose, ...win };
   for (const k of LISTS) out[k] = union(L[k], R[k]);
@@ -27,7 +27,10 @@ export function merge(local, remote, newer = 'local') {
   out.players = { ...(lose.players || {}), ...(win.players || {}) };
   out.sources = { ...(lose.sources || {}), ...(win.sources || {}) };
   out.watch = { providers: union(L.watch && L.watch.providers, R.watch && R.watch.providers) };
-  for (const k of SCALARS) if (win[k] !== undefined) out[k] = win[k]; else if (lose[k] !== undefined) out[k] = lose[k];
+  for (const k of SCALARS) {
+    if (base && newer === 'local' && R[k] !== undefined && L[k] === base[k]) out[k] = R[k]; // unchanged here since the last sync: keep the other device's value
+    else if (win[k] !== undefined) out[k] = win[k]; else if (lose[k] !== undefined) out[k] = lose[k];
+  }
   out.v = Math.max(L.v || 0, R.v || 0) || undefined;
   if (out.v === undefined) delete out.v;
   return out;
@@ -62,8 +65,8 @@ export function createSyncClient(deps) {
     async serverStatus() { const r = await call('/status'); return r.status === 200 && r.body ? r.body : { enabled: false, ready: false, offline: r.status === 0 }; },
     // Create a new backup from this device's settings. Returns { ok, code } (code shown once to the user, kept here so "Show my code" works).
     async create() {
-      const r = await call('', j('POST', { data: pick(D.getSettings()) })); if (r.status !== 201) return fail(r);
-      save({ code: r.body.code, rev: r.body.rev, syncedAt: D.now(), dirty: false, modifiedAt: D.now() }); last = { status: 'ok', error: '' };
+      const sent = pick(D.getSettings()); const r = await call('', j('POST', { data: sent })); if (r.status !== 201) return fail(r);
+      save({ code: r.body.code, rev: r.body.rev, syncedAt: D.now(), dirty: false, modifiedAt: D.now(), base: sent }); last = { status: 'ok', error: '' };
       return { ok: true, code: r.body.code };
     },
     // What is stored under a code: counts and date only.
@@ -74,7 +77,7 @@ export function createSyncClient(deps) {
       const r = await call('/profile', { method: 'GET' }, c); if (r.status !== 200) return fail(r);
       const next = mode === 'merge' ? overlay(D.getSettings(), merge(D.getSettings(), r.body.data, 'local')) : overlay(D.getSettings(), r.body.data);
       muted++; try { D.applySettings(next); } finally { muted--; }
-      save({ code: formatCode(c), rev: r.body.rev, syncedAt: D.now(), dirty: mode === 'merge', modifiedAt: D.now() });
+      save({ code: formatCode(c), rev: r.body.rev, syncedAt: D.now(), dirty: mode === 'merge', modifiedAt: D.now(), base: pick(r.body.data) });
       if (mode === 'merge') api.markDirty(true);
       last = { status: 'ok', error: '' }; return { ok: true, rev: r.body.rev };
     },
@@ -91,10 +94,10 @@ export function createSyncClient(deps) {
         try {
           for (let attempt = 0; attempt < 2; attempt++) {
             const s = load(); if (!s || !s.code) return { ok: false, error: 'not-linked' };
-            const r = await call('/profile', { ...j('PUT', { data: pick(D.getSettings()) }), headers: { 'Content-Type': 'application/json', 'If-Match': String(s.rev) } }, s.code);
-            if (r.status === 200) { set({ rev: r.body.rev, syncedAt: D.now(), dirty: false }); last = { status: 'ok', error: '' }; return { ok: true, rev: r.body.rev }; }
+            const sent = pick(D.getSettings()); const r = await call('/profile', { ...j('PUT', { data: sent }), headers: { 'Content-Type': 'application/json', 'If-Match': String(s.rev) } }, s.code);
+            if (r.status === 200) { set({ rev: r.body.rev, syncedAt: D.now(), dirty: false, base: sent }); last = { status: 'ok', error: '' }; return { ok: true, rev: r.body.rev }; }
             if (r.status === 409 && r.body && r.body.data) { // another device saved first: union, keep this device's single values, try once more
-              const merged = overlay(D.getSettings(), merge(D.getSettings(), r.body.data, 'local')); muted++; try { D.applySettings(merged); } finally { muted--; }
+              const merged = overlay(D.getSettings(), merge(D.getSettings(), r.body.data, 'local', s.base)); muted++; try { D.applySettings(merged); } finally { muted--; }
               set({ rev: r.body.rev }); continue;
             }
             if (r.status === 404) { save(null); last = { status: 'gone', error: '' }; return { ok: false, error: 'backup-missing' }; } // deleted elsewhere: unlink, keep local settings
@@ -114,7 +117,7 @@ export function createSyncClient(deps) {
       const r = await call('/profile', { method: 'GET' }, s.code);
       if (r.status === 404) { save(null); last = { status: 'gone', error: '' }; return { ok: false, error: 'backup-missing' }; }
       if (r.status !== 200) { last = { status: r.status === 0 ? 'offline' : 'error', error: fail(r).error }; D.onChange(); return fail(r); }
-      if (r.body.rev > s.rev) { muted++; try { D.applySettings(overlay(D.getSettings(), r.body.data)); } finally { muted--; } set({ rev: r.body.rev, syncedAt: D.now(), dirty: false }); last = { status: 'ok', error: '' }; return { ok: true, pulled: true, rev: r.body.rev }; }
+      if (r.body.rev > s.rev) { muted++; try { D.applySettings(overlay(D.getSettings(), r.body.data)); } finally { muted--; } set({ rev: r.body.rev, syncedAt: D.now(), dirty: false, base: pick(r.body.data) }); last = { status: 'ok', error: '' }; return { ok: true, pulled: true, rev: r.body.rev }; }
       set({ syncedAt: D.now() }); last = { status: 'ok', error: '' }; return { ok: true, pulled: false, rev: s.rev };
     },
     // Delete the server copy and forget the code on this device. This device keeps its settings.

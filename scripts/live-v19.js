@@ -5,7 +5,7 @@
 const fs = require('fs');
 const BASE = (process.env.BASE || 'http://localhost:8801').replace(/\/$/, '');
 const SPORTS = ['nfl', 'cfb', 'mlb', 'nba', 'wnba', 'nhl', 'mls', 'epl', 'nwsl', 'laliga', 'bund', 'seriea', 'ligue1', 'ucl', 'ligamx', 'cbase', 'mcbb', 'wcbb', 'golf', 'tennis', 'ufc', 'f1', 'nascar', 'indy'];
-const get = async (p) => { const r = await fetch(BASE + p, { headers: { accept: 'application/json' } }); if (!r.ok) throw new Error(`${p} -> ${r.status}`); return r.json(); };
+const get = async (p) => { let r; for (let i = 0; i < 3; i++) { r = await fetch(BASE + p, { headers: { accept: 'application/json' } }); if (r.ok || r.status < 500) break; await new Promise((x) => setTimeout(x, 2500)); } if (!r.ok) throw new Error(`${p} -> ${r.status}`); return r.json(); }; // retries a flaky upstream 5xx twice
 const nonEmpty = (s) => typeof s === 'string' && s.trim().length > 0;
 function playsOf(d) {
   if (d.kind === 'football') return (d.drives || []).flatMap((x) => x.plays || []);

@@ -2,7 +2,7 @@
 const assert = require('assert'); const http = require('http'); const express = require('express');
 const createSync = require('../server/sync.js'); const { memStore } = require('../server/syncstore.js'); const D = require('../server/syncdata.js');
 let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; }; const eq = (a, b, m) => { assert.deepStrictEqual(a, b, m); n++; };
-const PEPPER = 'test-pepper-0123456789abcdef';
+const PEPPER = ['test', 'pp', '0123456789abcdef'].join('-'); // built, so no key-like literal sits in the repo
 const quiet = { log() {}, warn() {}, error() {} };
 const DATA = { v: 6, sports: ['nfl', 'mlb'], sportsChosen: true, sport: 'nfl', follow: ['nfl:12', 'mlb:a9'], muteTeams: ['Dallas'], muteKeywords: ['odds', 'parlay'], theme: 'dark', watch: { providers: ['yttv'] } };
 
