@@ -1,0 +1,1536 @@
+{
+ "base": "https://straight-sports.onrender.com",
+ "pass": 116,
+ "total": 116,
+ "rows": [
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "McElroy",
+   "want": "Rory McIlroy",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Rory McIlroy",
+    "Dermot Mcelroy",
+    "Jamie McLeary"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "mcilroy",
+   "want": "Rory McIlroy",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Rory McIlroy",
+    "Jamie McLeary",
+    "Dermot Mcelroy"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Rory",
+   "want": "Rory McIlroy",
+   "top": 5,
+   "rank": 1,
+   "got": [
+    "Rory McIlroy",
+    "Rory Sabbatini",
+    "Rory Bourke"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Scheffler",
+   "want": "Scottie Scheffler",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Scottie Scheffler",
+    "Jade Schaeffer-Camels"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "scotty schefler",
+   "want": "Scottie Scheffler",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Scottie Scheffler"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Aberg",
+   "want": "Ludvig Åberg",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Ludvig Åberg",
+    "Michael Berg",
+    "Warren Abery"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "ludvig",
+   "want": "Ludvig Åberg",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Ludvig Åberg",
+    "Michael Ludwig",
+    "Ludwig Nordeklint"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Nelly Korda",
+   "want": "Nelly Korda",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Nelly Korda"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "korda",
+   "want": "Nelly Korda",
+   "top": 3,
+   "rank": 2,
+   "got": [
+    "Jessica Korda",
+    "Nelly Korda",
+    "Jiri jun Korda"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Jon Rahm",
+   "want": "Jon Rahm",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Jon Rahm",
+    "Jonathan Gøth-Rasmussen"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "rahm",
+   "want": "Jon Rahm",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Jon Rahm",
+    "Siddikur Rahman",
+    "Daeng Abdul Rahman"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Bryson",
+   "want": "Bryson DeChambeau",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Bryson DeChambeau",
+    "Bryson Young",
+    "Bryson Nimmer"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "dechambo",
+   "want": "Bryson DeChambeau",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Bryson DeChambeau"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Xander",
+   "want": "Xander Schauffele",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Xander Schauffele",
+    "Bill Sander",
+    "Scott Lander"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "shauffele",
+   "want": "Xander Schauffele",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Xander Schauffele"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Hojgaard",
+   "want": "Højgaard",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Nicolai Højgaard",
+    "Rasmus Højgaard",
+    "Victor Hougaard Sidal Svendsen"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Matsuyama",
+   "want": "Hideki Matsuyama",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Hideki Matsuyama",
+    "Mao Matsuyama",
+    "Daisuke Maruyama"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Lydia Ko",
+   "want": "Lydia Ko",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Lydia Ko"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Jeeno",
+   "want": "Jeeno Thitikul",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Jeeno Thitikul"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Brooks Koepka",
+   "want": "Brooks Koepka",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Brooks Koepka"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Tiger Woods",
+   "want": "Tiger Woods",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Tiger Woods"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Tommy Fleetwood",
+   "want": "Tommy Fleetwood",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Tommy Fleetwood"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "fleetwod",
+   "want": "Tommy Fleetwood",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Tommy Fleetwood"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Hatton",
+   "want": "Tyrrell Hatton",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Tyrrell Hatton",
+    "Brian Hutton",
+    "Patton Kizzire"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Bhatia",
+   "want": "Akshay Bhatia",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Akshay Bhatia",
+    "Shaurya Bhattacharya"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Charley Hull",
+   "want": "Charley Hull",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Charley Hull"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Rose Zhang",
+   "want": "Rose Zhang",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Rose Zhang"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Collin Morikawa",
+   "want": "Collin Morikawa",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Collin Morikawa"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Viktor Hovland",
+   "want": "Viktor Hovland",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Viktor Hovland"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "golf",
+   "q": "Cam Smith",
+   "want": "Cameron Smith",
+   "top": 5,
+   "rank": 1,
+   "got": [
+    "Cameron Smith",
+    "Camiko Smith"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Djokovic",
+   "want": "Novak Djokovic",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Novak Djokovic",
+    "Marko Djokovic",
+    "Mihaela Djakovic"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Djokovich",
+   "want": "Novak Djokovic",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Novak Djokovic",
+    "Marko Djokovic",
+    "Mihaela Djakovic"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Coco Gauff",
+   "want": "Coco Gauff",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Coco Gauff"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "gauf",
+   "want": "Coco Gauff",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Coco Gauff",
+    "Perihan Auf",
+    "Suhani Gaur"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Sinner",
+   "want": "Jannik Sinner",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Jannik Sinner",
+    "Manon Singer"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Alcaraz",
+   "want": "Carlos Alcaraz",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Carlos Alcaraz",
+    "Esther Lopez Alcaraz",
+    "Susana Alcaraz"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "alcarez",
+   "want": "Carlos Alcaraz",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Carlos Alcaraz",
+    "Alejandra Alvarez",
+    "Alejandra Alvarez"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Sabalenka",
+   "want": "Aryna Sabalenka",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Aryna Sabalenka"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Swiatek",
+   "want": "Iga Swiatek",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Iga Swiatek"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Świątek",
+   "want": "Iga Swiatek",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Iga Swiatek"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Medvedev",
+   "want": "Daniil Medvedev",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Daniil Medvedev",
+    "Daniella Medvedeva",
+    "Miroslava Medvedeva"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Zverev",
+   "want": "Alexander Zverev",
+   "top": 2,
+   "rank": 1,
+   "got": [
+    "Alexander Zverev",
+    "Mischa Zverev",
+    "Vlada Zvereva"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Rybakina",
+   "want": "Elena Rybakina",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Elena Rybakina"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Taylor Fritz",
+   "want": "Taylor Fritz",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Taylor Fritz"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "tennis",
+   "q": "Ben Shelton",
+   "want": "Ben Shelton",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Ben Shelton"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "mlb",
+   "q": "Shohei Ohtani",
+   "want": "Shohei Ohtani",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Shohei Ohtani"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "mlb",
+   "q": "otani",
+   "want": "Shohei Ohtani",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Shohei Ohtani",
+    "Michel Otanez"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "mlb",
+   "q": "Aaron Judge",
+   "want": "Aaron Judge",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Aaron Judge"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "mlb",
+   "q": "Acuna",
+   "want": "Ronald Acuña",
+   "top": 3,
+   "rank": 2,
+   "got": [
+    "Luisangel Acuna",
+    "Ronald Acuna Jr.",
+    "Agustin Acuna "
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "mlb",
+   "q": "Julio Rodriguez",
+   "want": "Julio Rodríguez",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Julio Rodriguez",
+    "Julio Rodriguez",
+    "Julio Rodriguez"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nfl",
+   "q": "Patrick Mahomes",
+   "want": "Patrick Mahomes",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Patrick Mahomes"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nfl",
+   "q": "mahomez",
+   "want": "Patrick Mahomes",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Patrick Mahomes"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nfl",
+   "q": "Josh Allen",
+   "want": "Josh Allen",
+   "top": 2,
+   "rank": 1,
+   "got": [
+    "Josh Allen",
+    "Josh Hines-Allen",
+    "Josh Allen"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nfl",
+   "q": "Lamar Jackson",
+   "want": "Lamar Jackson",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Lamar Jackson",
+    "Lamar Jackson"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nfl",
+   "q": "Bo Nix",
+   "want": "Bo Nix",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Bo Nix"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nfl",
+   "q": "Ja'Marr Chase",
+   "want": "Ja'Marr Chase",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Ja'Marr Chase"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nfl",
+   "q": "jamarr chase",
+   "want": "Ja'Marr Chase",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Ja'Marr Chase"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nba",
+   "q": "LeBron James",
+   "want": "LeBron James",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "LeBron James"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nba",
+   "q": "Jokic",
+   "want": "Nikola Jokić",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Nikola Jokic",
+    "Nikola Jovic"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nba",
+   "q": "Giannis",
+   "want": "Giannis Antetokounmpo",
+   "top": 2,
+   "rank": 1,
+   "got": [
+    "Giannis Antetokounmpo"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nba",
+   "q": "antetokounpo",
+   "want": "Giannis Antetokounmpo",
+   "top": 3,
+   "rank": 1,
+   "got": [
+    "Giannis Antetokounmpo"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nba",
+   "q": "Doncic",
+   "want": "Luka Dončić",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Luka Doncic",
+    "Dino Radoncic"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nba",
+   "q": "Wembanyama",
+   "want": "Victor Wembanyama",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Victor Wembanyama"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "wnba",
+   "q": "Caitlin Clark",
+   "want": "Caitlin Clark",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Caitlin Clark"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "wnba",
+   "q": "A'ja Wilson",
+   "want": "A'ja Wilson",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "A'ja Wilson"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nhl",
+   "q": "Connor McDavid",
+   "want": "Connor McDavid",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Connor McDavid"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nhl",
+   "q": "mcdavid",
+   "want": "Connor McDavid",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Connor McDavid"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nhl",
+   "q": "Ovechkin",
+   "want": "Alex Ovechkin",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Alex Ovechkin"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "nhl",
+   "q": "Draisaitl",
+   "want": "Leon Draisaitl",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Leon Draisaitl"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "epl",
+   "q": "Haaland",
+   "want": "Erling Haaland",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Erling Haaland"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "epl",
+   "q": "bruno fernandez",
+   "want": "Bruno Fernandes",
+   "top": 2,
+   "rank": 1,
+   "got": [
+    "Bruno Fernandes"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "laliga",
+   "q": "Mbappe",
+   "want": "Kylian Mbappé",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Kylian Mbappé"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "laliga",
+   "q": "Lamine Yamal",
+   "want": "Lamine Yamal",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Lamine Yamal"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "mls",
+   "q": "Messi",
+   "want": "Lionel Messi",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Lionel Messi",
+    "Ruben Messalles"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "player",
+   "sport": "cfb",
+   "q": "Arch Manning",
+   "want": "Arch Manning",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Arch Manning"
+   ],
+   "pass": true,
+   "err": ""
+  },
+  {
+   "kind": "team",
+   "sport": "nfl",
+   "q": "Niners",
+   "want": "San Francisco 49ers",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "San Francisco 49ers"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "nfl",
+   "q": "Bucs",
+   "want": "Tampa Bay Buccaneers",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Tampa Bay Buccaneers"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "nfl",
+   "q": "broncos",
+   "want": "Denver Broncos",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Denver Broncos"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "nfl",
+   "q": "Pats",
+   "want": "New England Patriots",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "New England Patriots"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "nfl",
+   "q": "packers",
+   "want": "Green Bay Packers",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Green Bay Packers"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "mlb",
+   "q": "red sox",
+   "want": "Boston Red Sox",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Boston Red Sox"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "mlb",
+   "q": "yanks",
+   "want": "New York Yankees",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "New York Yankees"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "mlb",
+   "q": "dbacks",
+   "want": "Arizona Diamondbacks",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Arizona Diamondbacks"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "nba",
+   "q": "Sixers",
+   "want": "Philadelphia 76ers",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Philadelphia 76ers"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "nba",
+   "q": "Cavs",
+   "want": "Cleveland Cavaliers",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Cleveland Cavaliers",
+    "Dallas Mavericks"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "nhl",
+   "q": "Habs",
+   "want": "Montreal Canadiens",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Montreal Canadiens"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "nhl",
+   "q": "montreal",
+   "want": "Montreal Canadiens",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Montreal Canadiens"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "nhl",
+   "q": "Canes",
+   "want": "Carolina Hurricanes",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Carolina Hurricanes"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "epl",
+   "q": "Man Utd",
+   "want": "Manchester United",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Manchester United"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "epl",
+   "q": "Gunners",
+   "want": "Arsenal",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Arsenal"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "laliga",
+   "q": "Barca",
+   "want": "Barcelona",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Barcelona"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "laliga",
+   "q": "atletico",
+   "want": "Atlético Madrid",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Atlético Madrid",
+    "Athletic Club"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "bund",
+   "q": "Bayern Munchen",
+   "want": "Bayern Munich",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Bayern Munich"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "seriea",
+   "q": "Juve",
+   "want": "Juventus",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Juventus"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "ligue1",
+   "q": "PSG",
+   "want": "Paris Saint-Germain",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Paris Saint-Germain"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "Bama",
+   "want": "Alabama Crimson Tide",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Alabama Crimson Tide",
+    "Alabama A&M Bulldogs",
+    "Alabama State Hornets"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "Ole Miss",
+   "want": "Ole Miss Rebels",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Ole Miss Rebels"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "Utah Utes",
+   "want": "Utah Utes",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Utah Utes"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "BYU",
+   "want": "BYU Cougars",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "BYU Cougars"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "Hawaii",
+   "want": "Hawai'i Rainbow Warriors",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Hawai'i Rainbow Warriors"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "montana st",
+   "want": "Montana State Bobcats",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Montana State Bobcats",
+    "North Dakota State Bison",
+    "San José State Spartans"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "North Dakota St",
+   "want": "North Dakota State Bison",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "North Dakota State Bison"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "Montana Grizzlies",
+   "want": "Montana Grizzlies",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Montana Grizzlies"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "Idaho Vandals",
+   "want": "Idaho Vandals",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Idaho Vandals"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "villanova",
+   "want": "Villanova Wildcats",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Villanova Wildcats"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "Yale",
+   "want": "Yale Bulldogs",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Yale Bulldogs"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "Holy Cross",
+   "want": "Holy Cross Crusaders",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Holy Cross Crusaders"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "Jackson St",
+   "want": "Jackson State Tigers",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Jackson State Tigers",
+    "Jacksonville State Gamecocks"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "mcbb",
+   "q": "Zags",
+   "want": "Gonzaga Bulldogs",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Gonzaga Bulldogs"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "mcbb",
+   "q": "st johns",
+   "want": "St. John's Red Storm",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "St. John's Red Storm"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "wcbb",
+   "q": "uconn",
+   "want": "UConn Huskies",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "UConn Huskies"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cbase",
+   "q": "lsu",
+   "want": "LSU Tigers",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "LSU Tigers",
+    "LSU New Orleans Privateers"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "ausl",
+   "q": "Utah Talons",
+   "want": "Utah Talons",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Utah Talons"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "ausl",
+   "q": "talons",
+   "want": "Utah Talons",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Utah Talons"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "ausl",
+   "q": "Bandits",
+   "want": "Chicago Bandits",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Chicago Bandits"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "wnba",
+   "q": "Aces",
+   "want": "Las Vegas Aces",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Las Vegas Aces"
+   ],
+   "pass": true
+  }
+ ]
+}

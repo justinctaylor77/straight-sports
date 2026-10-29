@@ -423,3 +423,6 @@ Third-party image/CDN console noise (ESPN logos) is excluded from console checks
 - **LC/SR filtered rerun** (11:41 PM MT, `QA_ONLY='^(LC-0[1-6]|SR-0[3-8])$'`): 12/12 PASS. SR-01, SR-02, SR-09 were not in this filter; they passed in the full run. This rerun also regenerated the qa-*.png evidence, which earlier filtered reruns had wiped (the harness now wipes only on full runs).
 - **`npm test`** (Oct 28, 2026, about 11:30 PM MT): all suites pass (exit 0). That includes sync-neon (32 assertions, throwaway schema dropped) and fuzzy (27).
 - **Effective status after the fixes:** 210 of 210 cases pass. That combines 208 from the full run with SY-04 and SY-08 from the filtered reruns.
+
+## Deployed to production
+v1.5.0 "Rabbit Ears" deployed Oct 29, 2026 ~4:50 AM MT (Render deploy dep-dbhi9dg473hc73a2q35g, commit 27f0e39). Live: 19/19 live checks pass (ss-v28, sync enabled+ready), live search check 116/116.
