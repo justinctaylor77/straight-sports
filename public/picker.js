@@ -1,5 +1,7 @@
 // Pure helpers for the favorite-teams picker (no DOM): league grouping, location-first names and sorting, search.
 // Used by app.js and unit-tested in tests/picker.test.mjs.
+import { scoreName } from './fuzzy.js?v=28';
+import { aliasesOf } from './aliases.js?v=28';
 
 // League order in the picker: pro leagues first, then college, then everything else the catalog adds later (catalog order).
 export const LEAGUE_ORDER = ['nfl', 'mlb', 'nba', 'wnba', 'nhl', 'mls', 'nwsl', 'epl', 'laliga', 'bund', 'seriea', 'ligue1', 'ucl', 'ligamx', 'cfb', 'mcbb', 'wcbb', 'cbase', 'ausl'];
@@ -24,15 +26,20 @@ export function orderLeagues(sportIds, isTeam = () => true) {
   return ids.slice().sort((a, b) => rank(a) - rank(b));
 }
 
+// v1.5.0: fuzzy — accents/punctuation ignored, typos tolerated, nicknames (aliases.js) understood.
+const extras = (t) => [t.location, t.mascot, t.nick, t.abbr, t.short, t.conference, ...aliasesOf(fullName(t)), ...(t.aliases || [])].filter(Boolean);
+export const teamScore = (t, q) => scoreName(q, fullName(t), extras(t));
 export function matches(t, q) {
   q = norm(q).trim(); if (!q) return true;
   const hay = norm(`${fullName(t)} ${t.location || ''} ${t.mascot || ''} ${t.abbr || ''} ${t.conference || ''}`);
-  return q.split(/\s+/).every((w) => hay.includes(w));
+  return q.split(/\s+/).every((w) => hay.includes(w)) || teamScore(t, q) >= 0.6;
 }
 
-// Teams of one league: filter by search + conference, sorted location-first A to Z.
+// Teams of one league: filter by search + conference. A to Z when browsing; best match first while searching.
 export function leagueTeams(list, { q = '', conf = '' } = {}) {
-  return sortTeams((list || []).filter((t) => (!conf || t.conferenceId === conf) && matches(t, q)));
+  const l = (list || []).filter((t) => (!conf || t.conferenceId === conf) && matches(t, q));
+  if (!String(q).trim()) return sortTeams(l);
+  return l.map((t) => [t, teamScore(t, q)]).sort((a, b) => b[1] - a[1] || cmpName(a[0], b[0])).map((x) => x[0]);
 }
 // Optional conference sub-groups inside a league (each sorted location-first). Falls back to one group if the league has one conference.
 export function subGroups(teams) {

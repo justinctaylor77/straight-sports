@@ -92,12 +92,13 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       'National League East': 'NL East', 'National League Central': 'NL Central', 'National League West': 'NL West' };
     return m[name] || name.replace(/ Conference$/, '');
   }
-  async function getTeams(sport) {
+  async function getTeams(sport, { division } = {}) {
     const sp = SPORTS[sport];
     if (viaAusl(sport)) return AUSL.getTeams();
     if (!CORE_TEAM.includes(sport)) return genericTeams(sport);
-    return cached(`teams:${sport}`, 6 * 3600e3, async () => {
-      const url = sport === 'cfb' ? `${WEB}/${sp.path}/standings?group=80` : `${WEB}/${sp.path}/standings?level=3`;
+    const grp = sport === 'cfb' && division === 'fcs' ? 81 : 80; // v1.5.0: FCS (group 81) for search/follow; the main cfb list stays FBS
+    return cached(`teams:${sport}${grp === 81 ? ':fcs' : ''}`, 6 * 3600e3, async () => {
+      const url = sport === 'cfb' ? `${WEB}/${sp.path}/standings?group=${grp}` : `${WEB}/${sp.path}/standings?level=3`;
       const d = await fetchJSON(url);
       const conferences = []; const teams = [];
       const add = (node, conf) => {
@@ -119,11 +120,12 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
         }
       }
       try {
-        const t = await fetchJSON(`${SITE}/${sp.path}/teams?${sport === 'cfb' ? 'groups=80&' : ''}limit=500`);
+        const t = await fetchJSON(`${SITE}/${sp.path}/teams?${sport === 'cfb' ? `groups=${grp}&` : ''}limit=500`);
         const colors = {};
         for (const x of t.sports[0].leagues[0].teams) colors[x.team.id] = x.team;
         for (const tm of teams) { const c = colors[tm.espnId]; if (c) { tm.color = c.color; tm.alt = c.alternateColor; if (!tm.logo) { tm.logo = logoOf(c, sport); tm.logoDark = logoDarkOf(c, sport); } } }
       } catch { /* colors optional */ }
+      if (grp === 81) for (const tm of teams) tm.division = 'FCS';
       teams.sort((a, b) => a.location.localeCompare(b.location) || a.name.localeCompare(b.name));
       return { sport, conferences, teams };
     });

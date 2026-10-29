@@ -1,6 +1,6 @@
 // Logo contrast (v1.5.0): make every team/league logo readable on whatever surface it sits on, in every theme.
-// Rule (documented in HANDOFF/QA report): a logo PASSES when at least half of its silhouette edge pixels reach 3:1 contrast
-// against the background directly behind it (WCAG 2.x SC 1.4.11 "non-text contrast" threshold for graphical objects).
+// Rule (documented in HANDOFF/QA report): a logo PASSES when at least half of its silhouette edge pixels are visible at 3:1
+// against the background directly behind it (an edge pixel counts if it, or a logo pixel within 2px of it, reaches 3:1) (WCAG 2.x SC 1.4.11 "non-text contrast" threshold for graphical objects).
 // Logos that fail get a thin 1px outline in the opposite tone (light on dark surfaces, dark on light ones), which restores
 // the silhouette without a heavy chip. Pure functions are exported so the audit (scripts/audit-logo-contrast.js) runs the same math.
 export const MIN = 3; export const EDGE_SHARE = 0.5; export const N = 48;
@@ -9,23 +9,33 @@ export const lum = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin
 export const contrast = (a, b) => { const x = lum(a); const y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
 const over = (c, a, bg) => [c[0] * a + bg[0] * (1 - a), c[1] * a + bg[1] * (1 - a), c[2] * a + bg[2] * (1 - a)];
 
-/** pixels (RGBA Uint8ClampedArray, w x h) -> silhouette edge samples + body samples: [[r,g,b,a], ...] */
+export const R = 2; // keyline tolerance: an edge counts as visible if a 3:1 pixel sits within 2px (of 48) inside the silhouette
+
+/** pixels (RGBA Uint8ClampedArray, w x h) -> silhouette samples: opaque pixels + which of them form the silhouette edge */
 export function extract(px, w, h) {
   const A = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : px[(y * w + x) * 4 + 3]);
-  const edge = []; const body = [];
+  const op = new Uint8Array(w * h); const edge = []; let n = 0;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const i = (y * w + x) * 4; const a = px[i + 3]; if (a < 128) continue;
-    const s = [px[i], px[i + 1], px[i + 2], a / 255];
-    if (A(x - 1, y) < 128 || A(x + 1, y) < 128 || A(x, y - 1) < 128 || A(x, y + 1) < 128) edge.push(s); else body.push(s);
+    const k = y * w + x; if (px[k * 4 + 3] < 128) continue; op[k] = 1; n++;
+    if (A(x - 1, y) < 128 || A(x + 1, y) < 128 || A(x, y - 1) < 128 || A(x, y + 1) < 128) edge.push(k);
   }
-  return { edge, body, n: edge.length + body.length };
+  return { w, h, px: Array.from(px), op: Array.from(op), edge, n };
 }
-/** score a logo's samples against a background rgb. edge/body = share of pixels at >= 3:1. */
+/** score a logo against a background rgb. edge = share of silhouette-edge pixels that are visible (>= 3:1 themselves, or a
+ *  3:1 pixel of the logo within R px — so a thin same-colour keyline outside a strong outline doesn't count as invisible);
+ *  body = share of all opaque pixels at >= 3:1. */
 export function score(st, bg) {
   if (!st || !st.n) return { edge: 1, body: 1, pass: true, empty: true };
-  const share = (arr) => (arr.length ? arr.filter((s) => contrast(over(s, s[3], bg), bg) >= MIN).length / arr.length : 0);
-  const edge = share(st.edge); const body = share(st.body);
-  return { edge, body, pass: edge >= EDGE_SHARE };
+  const { w, h, px, op, edge } = st; const vis = new Uint8Array(w * h); let vb = 0;
+  for (let k = 0; k < w * h; k++) if (op[k]) { const i = k * 4; const a = px[i + 3] / 255; if (contrast(over([px[i], px[i + 1], px[i + 2]], a, bg), bg) >= MIN) { vis[k] = 1; vb++; } }
+  let ve = 0;
+  for (const k of edge) {
+    const x0 = k % w; const y0 = (k - x0) / w; let ok = 0;
+    for (let dy = -R; dy <= R && !ok; dy++) for (let dx = -R; dx <= R && !ok; dx++) { const x = x0 + dx; const y = y0 + dy; if (x >= 0 && y >= 0 && x < w && y < h && vis[y * w + x]) ok = 1; }
+    ve += ok;
+  }
+  const e = edge.length ? ve / edge.length : 1;
+  return { edge: e, body: vb / st.n, pass: e >= EDGE_SHARE };
 }
 /** the fix: which outline (if any) and the post-fix edge share (the outline ring becomes the new silhouette edge) */
 export function fixFor(st, bg) {
@@ -74,7 +84,7 @@ function statsOf(img) {
 }
 export function check(img) {
   if (!img || img.tagName !== 'IMG' || !img.complete || !img.naturalWidth) return;
-  if (img.classList.contains('hs') || img.classList.contains('flag') || img.classList.contains('bd-logo') || img.classList.contains('bd-flag')) return;
+  if (img.hasAttribute('data-lt-skip') || img.classList.contains('hs') || img.classList.contains('flag') || img.classList.contains('bd-logo') || img.classList.contains('bd-flag')) return;
   const src = img.currentSrc || img.src; if (!CORS.test(src) || !img.crossOrigin) return;
   const st = statsOf(img); if (!st) return;
   const bg = bgOf(img); const f = fixFor(st, bg);

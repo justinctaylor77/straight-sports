@@ -50,6 +50,7 @@ const fetchJSON = async (url) => JSON.parse(await fetchText(url));
 
 // ---------- sports data (see sports.js) ----------
 const SP = require('./sports')({ cached, cache, fetchJSON });
+const SEARCH = require('./search')({ cached, fetchJSON, SP });
 const SPORT_IDS = Object.keys(SP.SPORTS);
 const WATCH = require('./watch')({ cached, fetchJSON });
 const sportOf = (req) => (SPORT_IDS.includes(String(req.query.sport || req.params.sport || 'cfb')) ? String(req.query.sport || req.params.sport || 'cfb') : null);
@@ -62,9 +63,9 @@ const bad = (msg) => Object.assign(new Error(msg), { status: 400 });
 
 app.get('/api/sports', (req, res) => res.json(Object.values(SP.SPORTS).map(({ id, name, short, kind, group }) => ({ id, name, short, kind, group }))));
 const kindOf = (s) => (SP.SPORTS[s] || {}).kind;
-app.get('/api/teams', wrap((req) => { const s = sportOf(req); if (!s || kindOf(s) !== 'team') throw bad('teams: team sports only'); return SP.getTeams(s); }));
+app.get('/api/teams', wrap((req) => { const s = sportOf(req); if (!s || kindOf(s) !== 'team') throw bad('teams: team sports only'); return SP.getTeams(s, { division: String(req.query.division || '') === 'fcs' ? 'fcs' : '' }); }));
 app.get('/api/roster/:team', wrap((req) => { const m = String(req.params.team).match(/^(?:([a-z0-9]+):)?(\d+)$/); const s = m && (m[1] || 'cfb'); if (!m || kindOf(s) !== 'team') throw bad('bad team id'); return SP.roster(s, m[2]); }));
-app.get('/api/athletes', wrap((req) => { const s = sportOf(req); if (!s || kindOf(s) === 'news') throw bad('unknown sport'); return SP.athleteSearch(s, req.query.q); }));
+app.get('/api/athletes', wrap((req) => { const s = sportOf(req); if (!s || kindOf(s) === 'news') throw bad('unknown sport'); return SEARCH.search(s, req.query.q); })); // v1.5.0: fuzzy over full player lists, merged with ESPN search
 app.get('/api/scoreboard', wrap((req) => {
   const s = sportOf(req); if (!s) throw bad('unknown sport');
   if (kindOf(s) === 'news') return { sport: s, kind: 'news', events: [] };
@@ -259,4 +260,7 @@ const pub = path.join(__dirname, '..', 'public');
 app.use(express.static(pub, { setHeaders: (res, p) => { if (p.endsWith('sw.js') || p.endsWith('.html')) res.set('Cache-Control', 'no-cache'); } }));
 app.get(/^\/(?!api\/).*/, (req, res) => res.sendFile(path.join(pub, 'index.html')));
 
-app.listen(PORT, '0.0.0.0', () => console.log(`Old School Sports listening on 0.0.0.0:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Old School Sports listening on 0.0.0.0:${PORT}`);
+  if (process.env.SEARCH_WARM !== '0') setTimeout(() => SEARCH.warm(['golf', 'tennis']), 15e3).unref(); // full golf/tennis lists ready before the first search
+});

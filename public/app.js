@@ -1,22 +1,25 @@
-import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=27';
+import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=28';
 import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, migrate, onSettingsSaved, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=27';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=28';
 import * as GA from './anim.js?v=18';
-import * as BPL from './bigplay.js?v=27';
-import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=27';
+import * as BPL from './bigplay.js?v=28';
+import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=28';
 import * as BD from './backdrop.js';
-import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=19';
+import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=28';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
-import { createLists, FEED as LIST_FEED } from './lists.js?v=27';
+import { createLists, FEED as LIST_FEED } from './lists.js?v=28';
 import * as LOGOTONE from './logotone.js?v=28';
+import { search as fuzzySearch, scoreName } from './fuzzy.js?v=28';
 const LOGOS = LOGOTONE.install(document); // v1.5.0: measure each logo against the surface it sits on, outline the ones under 3:1
 
 // ---------------- state ----------------
 let S = loadSettings();
 let TEAMS = []; let CONFS = []; let SOURCES = [];
 const TEAMS_BY = {}; const DIVS_BY = {}; // team lists per team sport, loaded on demand
+const XTEAMS_BY = {}; // search-only extras (v1.5.0: college football FCS)
+const searchTeamsBy = (q) => (q ? Object.fromEntries(Object.entries(TEAMS_BY).map(([k, v]) => [k, XTEAMS_BY[k] ? [...v, ...XTEAMS_BY[k]] : v])) : TEAMS_BY);
 const PLAYERS_BY = {}; // golf / tennis player lists, loaded on demand
 const SP = () => S.sport; const SPI = () => SPORTS[S.sport];
 const teamSport = (sp) => (SPORTS[sp] || {}).kind === 'team';
@@ -24,9 +27,12 @@ const eventSport = (sp) => (SPORTS[sp] || {}).kind === 'event';
 const newsSport = (sp) => (SPORTS[sp] || {}).kind === 'news';
 async function ensureTeams(sp) {
   if (!teamSport(sp) || (TEAMS_BY[sp] && TEAMS_BY[sp].length)) return;
-  if (!ensureTeams[sp]) ensureTeams[sp] = api(`/api/teams?sport=${sp}`, 36e5).then((d) => {
+  if (!ensureTeams[sp]) ensureTeams[sp] = Promise.all([api(`/api/teams?sport=${sp}`, 36e5),
+    sp === 'cfb' ? api('/api/teams?sport=cfb&division=fcs', 36e5).catch(() => null) : null]).then(([d, x]) => {
     TEAMS_BY[sp] = d.teams.map((t) => ({ ...t, sport: sp })); DIVS_BY[sp] = d.conferences || [];
-    TEAMS = Object.values(TEAMS_BY).flat(); if (sp === 'cfb') CONFS = DIVS_BY.cfb;
+    // v1.5.0: FCS teams are searchable and followable (kept out of the FBS browse list, conference tiles and polls)
+    if (x && x.teams) XTEAMS_BY[sp] = x.teams.map((t) => ({ ...t, sport: sp, fcs: true, conference: `${t.conference || 'FCS'} · FCS` }));
+    TEAMS = [...Object.values(TEAMS_BY).flat(), ...Object.values(XTEAMS_BY).flat()]; if (sp === 'cfb') CONFS = DIVS_BY.cfb;
   }).catch(() => { TEAMS_BY[sp] = TEAMS_BY[sp] || []; DIVS_BY[sp] = DIVS_BY[sp] || []; }).finally(() => { ensureTeams[sp] = null; });
   return ensureTeams[sp];
 }
@@ -1032,7 +1038,7 @@ function teamRows(teams, f) {
 }
 const lgMeta = (g, q) => `${q ? `${g.teams.length} of ${g.total}` : `${g.total || ''} teams`.trim()}${g.followed ? ` · ${g.followed} following` : ''}`;
 function allGrid(f, q) { // every league you picked, collapsible, each sorted location-first
-  const groups = buildGroups({ sportIds: S.sports, isTeam: teamSport, sports: SPORTS, teamsBy: TEAMS_BY, followedIn: (sp) => followsIn(sp).filter((id) => !isAthleteId(id)).length, q, conf: '' });
+  const groups = buildGroups({ sportIds: S.sports, isTeam: teamSport, sports: SPORTS, teamsBy: searchTeamsBy(q), followedIn: (sp) => followsIn(sp).filter((id) => !isAthleteId(id)).length, q, conf: '' });
   if (pickOpen === null) pickOpen = new Set(groups.length ? [groups[0].sport] : []);
   const searching = q.length >= 1;
   const need = groups.filter((g) => !g.loaded && (searching || pickOpen.has(g.sport)));
@@ -1086,7 +1092,7 @@ function partHTML(p) {
         const tname = (id) => (teamById(id) || {}).short || '';
         if (q.length >= 2) {
           const r = searchAthletes(sp, teamQ.trim());
-          if (r === 'loading') return '<div class="empty">Searching ESPN…</div>';
+          if (r === 'loading') return '<div class="empty">Searching every roster…</div>';
           return r.map((p) => playerRow(p, esc([p.pos, p.team || tname(p.teamId)].filter(Boolean).join(' · ')))).join('') || '<div class="empty">No players match. Try a last name.</div>';
         }
         if (browseTeam) {
@@ -1099,21 +1105,26 @@ function partHTML(p) {
       }
       if (eventSport(sp)) {
         if (!PLAYERS_BY[sp]) { loadPlayers(sp, pickRoot()); return '<div class="empty">Loading…</div>'; }
-        const list = PLAYERS_BY[sp].filter((p) => !q || `${p.name} ${p.country || ''} ${p.team || ''}`.toLowerCase().includes(q));
+        const list = q ? fuzzySearch(PLAYERS_BY[sp], teamQ.trim(), { extra: (p) => [p.country || '', p.team || ''], limit: 0 }) : PLAYERS_BY[sp];
         let extra = '';
-        if (q.length >= 3) { const r = searchAthletes(sp, teamQ.trim()); if (Array.isArray(r)) { const have = new Set(list.map((p) => p.id)); extra = r.filter((p) => !have.has(p.id)).map((p) => playerRow(p, 'ESPN search')).join(''); } else extra = '<div class="empty small">Searching ESPN…</div>'; }
+        if (q.length >= 2) { const r = searchAthletes(sp, teamQ.trim()); if (Array.isArray(r)) { const have = new Set(list.map((p) => p.id)); extra = r.filter((p) => !have.has(p.id)).map((p) => playerRow(p, 'ESPN search')).join(''); } else extra = '<div class="empty small">Searching…</div>'; }
         const show = list.slice(0, q ? 120 : 60);
         return (show.map((p) => playerRow(p, esc([p.country, p.team].filter(Boolean).join(' · ') || 'On a current card'))).join('') + extra) || `<div class="empty">${q ? 'No match.' : `No ${esc(SPORTS[sp].what)} on current cards — search by name.`}</div>`;
       }
       if (!teamSport(sp)) {
         if (!PLAYERS_BY[sp]) { loadPlayers(sp, document.querySelector('#onb') || view); return '<div class="empty">Loading players…</div>'; }
-        const list = PLAYERS_BY[sp].filter((p) => !q || `${p.name} ${p.country}`.toLowerCase().includes(q));
+        // v1.5.0: the loaded list is only the current card / rankings, so searches also hit the server's full tour index
+        // (PGA TOUR, LIV, LPGA, DP World; every ESPN tennis player) with accent-insensitive, typo-tolerant matching.
+        let list = q ? fuzzySearch(PLAYERS_BY[sp], teamQ.trim(), { extra: (p) => [p.country || ''], limit: 0 }) : PLAYERS_BY[sp]; let note = '';
+        if (q.length >= 2) { const r = searchAthletes(sp, teamQ.trim());
+          if (Array.isArray(r)) { const ids = new Set(r.map((p) => p.id)); list = [...r.map((p) => ({ ...p, flag: p.flag || (/countries/.test(p.headshot || '') ? p.headshot : '') })), ...list.filter((p) => !ids.has(p.id))]; }
+          else note = `<div class="empty small">Searching every ${sp === 'golf' ? 'PGA TOUR, LIV, LPGA and DP World' : 'ATP and WTA'} player…</div>`; }
         const show = q ? list.slice(0, 120) : list.slice(0, 60);
         return show.map((p) => `<button class="pick-row ${f(p.id) ? 'on' : ''}" data-tfollow="${p.id}" data-pname="${esc(p.name)}" data-pflag="${esc(p.flag || '')}" aria-pressed="${f(p.id)}"><img src="${esc(p.flag || '')}" alt="" class="flag" loading="lazy" /><span class="nm"><b>${esc(p.name)}</b><small>${esc(p.tour || '')}${p.rank ? ` · No. ${p.rank}` : ''}${p.country ? ` · ${esc(p.country)}` : ''}</small></span>${CHECK}</button>`).join('')
-          + (list.length > show.length ? `<div class="empty small">Showing ${show.length} of ${list.length} — search to find more.</div>` : '') || '<div class="empty">No players match.</div>';
+          + (list.length > show.length ? `<div class="empty small">Showing ${show.length} of ${list.length} — search to find more.</div>` : '') + note || '<div class="empty">No players match.</div>';
       }
       const TL = TEAMS_BY[sp]; if (!TL) return '<div class="empty">Loading teams…</div>';
-      const list = leagueTeams(TL, { q: teamQ, conf: teamConf });
+      const list = leagueTeams(teamQ.trim() && !teamConf && XTEAMS_BY[sp] ? [...TL, ...XTEAMS_BY[sp]] : TL, { q: teamQ, conf: teamConf });
       return teamRows(list, f) || '<div class="empty">No teams match.</div>';
     }
     case 'confs': return CONFS.map((c) => {
@@ -1135,7 +1146,7 @@ function partHTML(p) {
       const q = muteQ.trim().toLowerCase(); if (q.length < 2) return '';
       S.sports.filter((k) => !teamSport(k) && !newsSport(k)).forEach((k) => loadPlayers(k, document.querySelector('#onb') || view));
       const pool = [...TEAMS.filter((t) => S.sports.includes(t.sport)), ...S.sports.filter((k) => !teamSport(k) && !newsSport(k)).flatMap((k) => (PLAYERS_BY[k] || []).map((p) => ({ ...p, short: p.name, logo: p.flag, logoDark: p.flag, player: true })))];
-      return pool.filter((t) => t.name.toLowerCase().includes(q) && !S.muteTeams.includes(t.id)).slice(0, 10).map((t) => `<button class="chip lg" data-mute="${t.id}" ${t.player ? `data-pname="${esc(t.name)}" data-pflag="${esc(t.flag || '')}"` : ''}><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />Mute ${esc(t.player ? t.short : fullName(t))}<small>${esc((SPORTS[t.sport] || {}).short || '')}</small></button>`).join('') || '<span class="faint small">No match.</span>';
+      return pool.filter((t) => !S.muteTeams.includes(t.id) && (t.name.toLowerCase().includes(q) || scoreName(q, t.name, [t.short || '', t.abbr || '']) >= 0.6)).slice(0, 10).map((t) => `<button class="chip lg" data-mute="${t.id}" ${t.player ? `data-pname="${esc(t.name)}" data-pflag="${esc(t.flag || '')}"` : ''}><img crossorigin="anonymous" src="${esc(logo(t))}" alt="" class="${t.player ? 'flag' : ''}" />Mute ${esc(t.player ? t.short : fullName(t))}<small>${esc((SPORTS[t.sport] || {}).short || '')}</small></button>`).join('') || '<span class="faint small">No match.</span>';
     }
     case 'outlets': { const b = S.blockOutlets || []; return [...b.map((x) => `<button class="chip lg mute on" data-unblock="${esc(x)}">🚫 ${esc(x)} <span class="x">✕</span></button>`), ...OUTLET_SUGGEST.filter((x) => !b.includes(x)).map((x) => `<button class="chip lg ghost" data-block="${esc(x)}">+ ${esc(x)}</button>`)].join(''); }
     case 'sources': return S.sports.map((k) => `<div class="group-lbl">${SPORTS[k].emoji} ${esc(SPORTS[k].name)}</div><div class="list card">${sportSources(k).map((s) => `<label class="row"><span class="rt"><b>${esc(s.name)}</b><small>${esc(s.kind)}${s.via ? ` · via ${esc(s.via)}` : ''}</small></span><span class="switch"><input type="checkbox" data-src="${s.id}" ${sourceOn(s.id) ? 'checked' : ''} /></span></label>`).join('')}</div>`).join('');
@@ -1463,7 +1474,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=27" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=28" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
