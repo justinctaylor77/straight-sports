@@ -2,7 +2,7 @@
 // Every renderer returns '' or a calm "no data" card when ESPN doesn't provide the numbers, so the screen never breaks.
 // Selection state (which play / at-bat / filter) lives in `st` (castState) and is changed through [data-gcset="key=value"] buttons.
 
-import { playBlock, playText, whoChips } from './whoplay.js?v=29';
+import { playBlock, playText, whoChips } from './whoplay.js?v=30';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const hex = (c, fb) => (c && /^[0-9a-f]{6}$/i.test(c) ? `#${c}` : fb);
 const f1 = (n) => (Math.round(n * 10) / 10).toString();

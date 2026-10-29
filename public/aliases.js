@@ -1,6 +1,6 @@
 // Team nicknames people actually type (v1.5.0). Keyed by the team's full ESPN name, folded (see fuzzy.js fold()).
 // Only well-known, public nicknames/short forms; matching also covers location, mascot, abbreviation and typos.
-import { fold } from './fuzzy.js?v=29';
+import { fold } from './fuzzy.js?v=30';
 const RAW = {
   // NFL
   'San Francisco 49ers': ['Niners', 'Forty Niners', 'SF'], 'New England Patriots': ['Pats'], 'Tampa Bay Buccaneers': ['Bucs'], 'Green Bay Packers': ['Pack', 'GB'],

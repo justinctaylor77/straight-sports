@@ -1,7 +1,7 @@
 // Pure helpers for the favorite-teams picker (no DOM): league grouping, location-first names and sorting, search.
 // Used by app.js and unit-tested in tests/picker.test.mjs.
-import { scoreName } from './fuzzy.js?v=29';
-import { aliasesOf } from './aliases.js?v=29';
+import { scoreName } from './fuzzy.js?v=30';
+import { aliasesOf } from './aliases.js?v=30';
 
 // League order in the picker: pro leagues first, then college, then everything else the catalog adds later (catalog order).
 export const LEAGUE_ORDER = ['nfl', 'mlb', 'nba', 'wnba', 'nhl', 'mls', 'nwsl', 'epl', 'laliga', 'bund', 'seriea', 'ligue1', 'ucl', 'ligamx', 'cfb', 'mcbb', 'wcbb', 'cbase', 'ausl'];

@@ -32,6 +32,7 @@ const FX = path.join(__dirname, 'fixtures', 'hsfb');
   ok(HS.isFootballGame('Skyridge vs. Lone Peak - 6A Football Semifinal'), 'football game title');
   ok(!HS.isFootballGame('WATCH LIVE: The KSL Sports Zone'), 'show is not a game'); ok(!HS.isFootballGame('A vs. B - 4A Girls Volleyball'), 'volleyball');
   ok(!HS.isFootballGame('Utah football mailbag'), 'no matchup');
+  ok(!HS.isFootballGame('Sitting at 6-1 ahead of Arizona State match up, when will BYU football lose a game again?'), 'v1.6.1: BYU talk title is not a game'); ok(!HS.isFootballGame('Hour 2: What is Trending | Sitting at 6-1 ahead of Arizona State match up, when will BYU football...'), 'v1.6.1: show segment'); ok(!HS.isFootballGame('Utah vs. BYU Football Highlights'), 'v1.6.1: college game has no HS class'); ok(HS.isFootballGame('Skyridge at Lone Peak - 6A Football'), 'v1.6.1: at with class'); ok(HS.isFootballGame('Lone Peak vs. Corner Canyon - High School Football'), 'v1.6.1: high school wording');
   const fv = HS.kslVideos(feed.items.map((i) => ({ ...i, title: i.title.replace('Girls Volleyball', 'Football') })));
   ok(fv.length >= 10 && fv.every((v) => /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/.test(v.url) && v.score === null), 'video links');
   // ---- badge index ----

@@ -15,7 +15,12 @@ const OTHER_SPORTS = /\b(volleyball|soccer|basketball|baseball|softball|wrestlin
 // "Team A vs. Team B - 6A Football Quarterfinal" style game titles; football only.
 function isFootballGame(title) {
   const t = String(title || '');
-  return /\bfootball\b/i.test(t) && /\s(vs\.?|at|@)\s/i.test(t) && !OTHER_SPORTS.test(t);
+  // v1.6.1: a game title must name a high school class (1A-6A) or say "high school", have "vs." / "at" / "@" between two
+  // teams at the start of the title (talk titles like "Sitting at 6-1 ... BYU" fail the class check), and not be a question or a show segment.
+  if (!/\bfootball\b/i.test(t) || OTHER_SPORTS.test(t)) return false;
+  if (!/\b[1-6]A\b/.test(t) && !/\bhigh school\b/i.test(t)) return false;
+  if (/\?|^\s*hour\s*\d|\b(BYU|Utes|college|NFL|Big 12|podcast|show)\b/i.test(t)) return false;
+  return /^[^-|:]+?\s(vs\.?|at|@)\s[^-|:]+/i.test(t);
 }
 function splitTeams(name) {
   const m = String(name || '').match(/^(.+?)\s+(?:vs\.?|at|@)\s+(.+?)$/i);

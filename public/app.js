@@ -1,18 +1,18 @@
-import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=29';
+import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=30';
 import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, allSportsFor, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, migrate, onSettingsSaved, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=29';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=30';
 import * as GA from './anim.js?v=18';
-import * as BPL from './bigplay.js?v=29';
-import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=29';
+import * as BPL from './bigplay.js?v=30';
+import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=30';
 import * as BD from './backdrop.js';
-import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=29';
+import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=30';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
-import { createLists, FEED as LIST_FEED } from './lists.js?v=29';
-import * as LOGOTONE from './logotone.js?v=29';
-import { search as fuzzySearch, scoreName } from './fuzzy.js?v=29';
-import * as HS from './hsfb.js?v=29';
+import { createLists, FEED as LIST_FEED } from './lists.js?v=30';
+import * as LOGOTONE from './logotone.js?v=30';
+import { search as fuzzySearch, scoreName } from './fuzzy.js?v=30';
+import * as HS from './hsfb.js?v=30';
 const LOGOS = LOGOTONE.install(document); // v1.5.0: measure each logo against the surface it sits on, outline the ones under 3:1
 
 // ---------------- state ----------------
@@ -1551,7 +1551,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=29" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=30" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
