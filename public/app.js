@@ -41,6 +41,11 @@ async function ensureTeams(sp) {
 const view = document.getElementById('view');
 let refreshTimer = null;
 let SILENT = false; // true during background refreshes (no skeleton flash)
+// v1.6.0 stale-route guard: route() bumps ROUTE_N; an async view takes rt() at its start and checks isStale() before any
+// paint that follows an await, so a slow view never paints over the page the user has already moved on to.
+let ROUTE_N = 0;
+const rt = () => ROUTE_N;
+const isStale = (n) => n !== ROUTE_N;
 const mem = new Map();
 const ITEMS = new Map(); const GROUPS = new Map(); let POOL = [];
 
@@ -258,11 +263,14 @@ async function newsColumn(html, news, title = 'Top stories for you') {
 }
 
 async function viewHome() {
+  const rn = rt();
   await viewHomeBase();
+  if (isStale(rn)) return;
   if (view.querySelector(".lb-promo")) return;
   const lt = view.querySelector('.lt'); if (lt) lt.insertAdjacentHTML('afterend', LISTS.hubPromo());
 }
 async function viewHomeBase() {
+  const rn = rt();
   setBar('Home');
   const sp = S.sport;
   const today = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
@@ -314,12 +322,14 @@ async function viewHomeBase() {
     html += `</section>`;
   } else html += LT(SPORTS[sp].name, today) + `${errBox(sb.reason)}<div class="cols"><section></section>`;
   html = await newsColumn(html, news);
+  if (isStale(rn)) return;
   view.innerHTML = html + '</div>';
   scheduleRefresh(sb.status === 'fulfilled' && sb.value.events.some((e) => e.state === 'in'));
 }
 
 // event sports (UFC, F1, NASCAR, IndyCar): your fighters/drivers first, then live, upcoming, latest
 async function homeEvents(today) {
+  const rn = rt();
   const sp = S.sport;
   const [eb, news] = await Promise.allSettled([api(sbPath(sp), 10e3), api(newsPath(), 5 * 60e3)]);
   let html = LT(SPORTS[sp].name, today) + '<div class="cols"><section>';
@@ -339,6 +349,7 @@ async function homeEvents(today) {
   } else html += errBox(eb.reason);
   html += '</section>';
   html = await newsColumn(html, news);
+  if (isStale(rn)) return;
   view.innerHTML = html + '</div>';
   scheduleRefresh(anyLive);
 }
@@ -346,24 +357,30 @@ async function homeEvents(today) {
 // v1.6.0 High School Football: ESPN's national TV list and KSL game videos (never scores), then headlines
 const hsData = () => api('/api/hsfb', 5 * 60e3).catch(() => ({ tv: { error: 'unavailable' }, ksl: { error: 'unavailable' } }));
 async function homeHsfb(today) {
+  const rn = rt();
   const [d, news] = await Promise.allSettled([hsData(), api(newsPath(), 5 * 60e3)]);
   let html = LT(SPORTS.hsfb.name, today) + `<div class="cols"><section class="hs-home">${HS.tvSection(d.value.tv, 4)}${HS.kslSection(d.value.ksl, 4)}<p class="small hs-more"><a href="#/scores">All games and videos ›</a> <a href="#/rankings">Utah and other links ›</a></p></section>`;
   html = await newsColumn(html, news, 'Top stories');
+  if (isStale(rn)) return;
   view.innerHTML = html + '</div>';
 }
 async function scoresHsfb() {
+  const rn = rt();
   if (!SILENT) paint(LT('Scores') + SK.games(3));
   const d = await hsData();
+  if (isStale(rn)) return;
   view.innerHTML = LT('Scores', 'No scores feed: TV listings and game videos only') + `<div class="hs-page">${HS.tvSection(d.tv)}${HS.kslSection(d.ksl)}${HS.notAvailableCard()}</div>`;
 }
 function linksHsfb(lbl) {
   view.innerHTML = LT(lbl, 'Links out: nothing here is copied into the app') + `<div class="hs-page">${HS.utahCard()}${HS.findMoreCard()}${HS.notAvailableCard()}</div>`;
 }
 async function homeNewsOnly(today) {
+  const rn = rt();
   const sp = S.sport;
   const news = (await Promise.allSettled([api(newsPath(), 5 * 60e3)]))[0];
   let html = LT(SPORTS[sp].name, today) + `<div class="cols"><section><h2>Scores</h2><div class="card empty">${esc(SPORTS[sp].name)} is headlines-only: ESPN’s free feeds don’t carry live ${esc(SPORTS[sp].name.toLowerCase())} results.</div></section>`;
   html = await newsColumn(html, news, 'Top stories');
+  if (isStale(rn)) return;
   view.innerHTML = html + '</div>';
 }
 
@@ -380,6 +397,7 @@ function golfTourCard(t, n = 10) {
     <div class="meta"><span class="gc-go">Full leaderboard & scorecards ›</span></div></div>`;
 }
 async function homeGolf(today) {
+  const rn = rt();
   const [gb, news] = await Promise.allSettled([api(sbPath('golf'), 10e3), api(newsPath(), 5 * 60e3)]);
   let html = LT('Golf', today) + '<div class="cols"><section>';
   if (gb.status === 'fulfilled') {
@@ -390,11 +408,13 @@ async function homeGolf(today) {
   } else html += errBox(gb.reason);
   html += '</section>';
   html = await newsColumn(html, news);
+  if (isStale(rn)) return;
   view.innerHTML = html + '</div>';
   scheduleRefresh(gb.status === 'fulfilled' && gb.value.tournaments.some((t) => t.state === 'in'));
 }
 // tennis: your players' matches, live matches, latest results
 async function homeTennis(today) {
+  const rn = rt();
   const [tb, news] = await Promise.allSettled([api(sbPath('tennis'), 10e3), api(newsPath(), 5 * 60e3)]);
   let html = LT('Tennis', today) + '<div class="cols"><section>';
   const ctx = castCtx(); const mf = muteFilter();
@@ -415,12 +435,14 @@ async function homeTennis(today) {
   } else html += errBox(tb.reason);
   html += '</section>';
   html = await newsColumn(html, news);
+  if (isStale(rn)) return;
   view.innerHTML = html + '</div>';
   scheduleRefresh(anyLive);
 }
 
 let scoresMode = null; let scoresWeek = ''; let golfLeague = 'pga'; let tennisT = ''; let tennisDraw = "Men's Singles";
 async function viewScores(quick) {
+  const rn = rt();
   const sp = S.sport;
   setBar('Scores');
   if (sp === 'golf') return scoresGolf(quick);
@@ -429,13 +451,15 @@ async function viewScores(quick) {
   if (hsSport(sp)) return scoresHsfb();
   if (newsSport(sp)) { view.innerHTML = LT('Scores') + `<div class="card empty">${esc(SPORTS[sp].name)} is headlines-only — ESPN’s free feeds have no ${esc(SPORTS[sp].name.toLowerCase())} scoreboard. <a href="#/news">Read the news ›</a></div>`; return; }
   await ensureTeams(sp);
+  if (isStale(rn)) return;
   const weekly = !SPORTS[sp].daily;
   if (!scoresMode) scoresMode = S.conferences.length ? 'conf' : 'all';
   const wk = scoresWeek && weekly ? `&week=${scoresWeek.split(':')[1]}&seasontype=${scoresWeek.split(':')[0]}` : '';
   const path = sbPath(sp, wk);
   if (!quick) paint(LT('Scores', SK.sub()) + `<div class="toolbar sticky"><span class="sk w30 btnlike"></span><span class="sk w40 btnlike"></span></div><h2>Your teams</h2>${SK.games(3)}<h2><span class="sk w15 sm inline"></span></h2>${SK.games(6)}`);
   let sb;
-  try { sb = await api(path, 30e3); } catch (e) { view.innerHTML = LT('Scores') + errBox(e); return; }
+  try { sb = await api(path, 30e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = LT('Scores') + errBox(e); return; }
+  if (isStale(rn)) return;
   const mf = muteFilter();
   const all = sb.events; const evs = all.filter((e) => !mf.game(e)); const mutedCount = all.length - evs.length;
   const mine = evs.filter(isMineEv).sort(sortGames);
@@ -484,9 +508,11 @@ async function viewScores(quick) {
   scheduleRefresh(!scoresWeek && evs.some((e) => e.state === 'in'));
 }
 async function scoresEvents(quick) {
+  const rn = rt();
   const sp = S.sport;
   if (!quick) paint(LT('Events', SK.sub()) + SK.games(4));
-  let eb; try { eb = await api(sbPath(sp), 10e3); } catch (e) { view.innerHTML = LT('Events') + errBox(e); return; }
+  let eb; try { eb = await api(sbPath(sp), 10e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = LT('Events') + errBox(e); return; }
+  if (isStale(rn)) return;
   const ctx = castCtx(); const evs = (eb.events || []).slice();
   const mine = evs.filter(isMineEv); const rest = evs.filter((e) => !mine.includes(e));
   const o = { in: 0, pre: 1, post: 2 };
@@ -498,8 +524,10 @@ async function scoresEvents(quick) {
   scheduleRefresh(evs.some((e) => e.state === 'in'));
 }
 async function scoresGolf(quick) {
+  const rn = rt();
   if (!quick) paint(LT('Leaderboard', SK.sub()) + `<div class="toolbar sticky"><span class="sk w40 btnlike"></span></div>${SK.rows(14)}`);
-  let gb; try { gb = await api(sbPath('golf'), 10e3); } catch (e) { view.innerHTML = LT('Leaderboard') + errBox(e); return; }
+  let gb; try { gb = await api(sbPath('golf'), 10e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = LT('Leaderboard') + errBox(e); return; }
+  if (isStale(rn)) return;
   const ts = gb.tournaments; if (!ts.find((t) => t.league === golfLeague) && ts[0]) golfLeague = ts[0].league;
   const t = ts.find((x) => x.league === golfLeague);
   if (!t) { view.innerHTML = LT('Leaderboard') + '<div class="card empty">No tournament this week.</div>'; return; }
@@ -517,8 +545,10 @@ async function scoresGolf(quick) {
   scheduleRefresh(t.state === 'in');
 }
 async function scoresTennis(quick) {
+  const rn = rt();
   if (!quick) paint(LT('Draws', SK.sub()) + `<div class="toolbar sticky"><span class="sk w40 btnlike"></span></div>${SK.games(6)}`);
-  let tb; try { tb = await api(sbPath('tennis'), 10e3); } catch (e) { view.innerHTML = LT('Draws') + errBox(e); return; }
+  let tb; try { tb = await api(sbPath('tennis'), 10e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = LT('Draws') + errBox(e); return; }
+  if (isStale(rn)) return;
   const ts = tb.tournaments; if (!ts.length) { view.innerHTML = LT('Draws') + '<div class="card empty">No tournaments this week.</div>'; return; }
   let t = ts.find((x) => x.id === tennisT) || ts[0]; tennisT = t.id;
   if (!t.draws.includes(tennisDraw)) tennisDraw = t.draws.find((d) => /Singles/.test(d)) || t.draws[0];
@@ -546,11 +576,13 @@ async function scoresTennis(quick) {
 
 let newsMode = 'mine'; let newsQuery = ''; let newsLimit = 60;
 async function viewNews() {
+  const rn = rt();
   setBar('News');
   const n = sportSources().filter((s) => sourceOn(s.id)).length;
   paint(LT('News', `Gathering headlines from ${n} sources…`) + `<div class="toolbar sticky"><span class="sk w50 btnlike"></span><span class="sk w30 btnlike"></span></div><h2><span class="sk w30 sm inline"></span></h2>${SK.news(3)}${SK.news(6)}`);
   let data;
-  try { data = await api(newsPath(), 5 * 60e3); } catch (e) { view.innerHTML = LT('News') + errBox(e); return; }
+  try { data = await api(newsPath(), 5 * 60e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = LT('News') + errBox(e); return; }
+  if (isStale(rn)) return;
   const render = () => {
     const { items, hidden } = filterNews(data.items);
     let list = newsMode === 'mine' && followsIn(S.sport).length ? items.filter((i) => i.mine.length) : items;
@@ -608,12 +640,15 @@ const LISTS = createLists({ view, api, mem, setBar, LT, paint, SK, tick, S, SPOR
 // v1.2.0: every sport's Rankings tab gets a link to its top list + bracket; the new pages live under #/rankings/{lists|list|playoffs}
 async function viewRankings(quick) {
   if (LISTS.show(quick)) return;
+  const rn = rt();
   await viewRankingsBase(quick);
+  if (isStale(rn)) return;
   if (!/^#\/rankings\/?$/.test(location.hash || '')) return;
   const lt = view.querySelector('.lt'); if (!lt || view.querySelector('.lb-promo')) return;
   lt.insertAdjacentHTML('afterend', LISTS.promo(S.sport) + (LIST_FEED.includes(S.sport) ? LISTS.hubPromo().replace('class="card gk-promo lb-promo"', 'class="card gk-promo lb-promo lb-promo2"') : ''));
 }
 async function viewRankingsBase(quick) {
+  const rn = rt();
   const sp = S.sport; const lbl = SPI().tab4;
   if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/bracket')) return viewBracket(quick);
   if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/grok/how')) return viewGrokHow(quick);
@@ -622,7 +657,8 @@ async function viewRankingsBase(quick) {
   if (hsSport(sp)) return linksHsfb(lbl);
   if (newsSport(sp)) { view.innerHTML = LT(lbl) + `<div class="card empty">ESPN’s free feeds have no ${esc(SPI().name)} rankings.${LIST_FEED.includes(sp) ? ' The top list and bracket below come from NCAA.com and other public sources.' : ''} <a href="#/news">Read the news ›</a></div>`; return; }
   if (!quick) paint(LT(lbl, SK.sub()) + `<div class="toolbar sticky"><span class="sk w40 btnlike"></span></div>${SK.rows(12)}`);
-  let d; try { d = await api(`/api/rankings?sport=${sp}`, 10 * 60e3); } catch (e) { view.innerHTML = LT(lbl) + errBox(e); return; }
+  let d; try { d = await api(`/api/rankings?sport=${sp}`, 10 * 60e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = LT(lbl) + errBox(e); return; }
+  if (isStale(rn)) return;
   const mf = muteFilter();
   if (d.cols && d.groups) {
     const lg = [...new Set(d.groups.map((g) => g.league || ''))];
@@ -763,6 +799,7 @@ function brBody(v, d) {
 const BR_TIMEOUT = 25000; // Render's free tier can take a while to wake up: show a loading state, then a clear error with Retry
 const brError = (msg) => `<div class="card empty br-err" role="alert"><b>Couldn’t load the bracket.</b><p>${esc(msg)}</p><button class="btn" data-brretry="1">Try again</button></div>`;
 async function viewBracket(quick) {
+  const rn = rt();
   const m = (location.hash || '').match(/^#\/rankings\/bracket\/?(jt|ap|cfp)?/); if (m) brView = m[1] || (quick ? brView : 'jt'); // entering from a button/promo always starts on My Bracket
   setBar('Playoff Bracket', { back: '#/rankings' });
   const head = LT('Playoff Bracket', '12-team College Football Playoff');
@@ -772,7 +809,8 @@ async function viewBracket(quick) {
   let d;
   try {
     d = await Promise.race([api('/api/brackets', 5 * 60e3), new Promise((_, rej) => setTimeout(() => rej(new Error('The server is taking too long to respond. It may be waking up; try again in a moment.')), BR_TIMEOUT))]);
-  } catch (e) { showErr(e.message || 'Network error.'); return; }
+  } catch (e) { if (!isStale(rn)) showErr(e.message || 'Network error.'); return; }
+  if (isStale(rn)) return;
   try {
     const tabs = [['jt', 'My Bracket'], ['ap', 'AP Projected'], ['cfp', 'Official CFP']];
     const v = d[brView] || d.jt || d.ap || d.cfp; if (!v) throw new Error('No bracket data came back.');
@@ -788,9 +826,11 @@ async function viewBracket(quick) {
 // bracket rules come from the app. Résumé sub-factors are not published by the automation, so they're left general.
 const JT_ABOUT = 'Justin’s weekly college football ranking, rebuilt every Sunday morning from a hybrid score: 60% résumé and 40% predictive, with no manual overrides and no brand bias. Each team is shown next to its AP, Coaches and CFP ranking.';
 async function viewGrokHow(quick) {
+  const rn = rt();
   setBar('How it’s calculated', { back: '#/rankings/grok' });
   if (!quick) paint(LT('How it’s calculated', SK.sub()) + SK.rows(6));
   let g = null; try { g = await api('/api/grok-top25', 10 * 60e3); } catch {}
+  if (isStale(rn)) return;
   const m = g?.method || {};
   const pct = (w, d) => `${Math.round((typeof w === 'number' ? w : d) * 100)}%`;
   const R = pct(m.resumeWeight, 0.6); const Pd = pct(m.predictiveWeight, 0.4);
@@ -812,9 +852,11 @@ async function viewGrokHow(quick) {
     <a class="btn" href="#/rankings/grok">Back to JT Top 25</a>`;
 }
 async function viewGrok(quick) {
+  const rn = rt();
   setBar('JT Top 25', { back: '#/rankings' });
   if (!quick) paint(LT('JT Top 25', SK.sub()) + SK.rows(12));
-  let g; try { g = await api(`/api/grok-top25${grokDate ? `?date=${grokDate}` : ''}`, 10 * 60e3); } catch (e) { view.innerHTML = LT('JT Top 25') + errBox(e); return; }
+  let g; try { g = await api(`/api/grok-top25${grokDate ? `?date=${grokDate}` : ''}`, 10 * 60e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = LT('JT Top 25') + errBox(e); return; }
+  if (isStale(rn)) return;
   const lp = g.livePolls || {}; const my = myTeamIds();
   const P = (n, v, cfp) => `<span>${n} <b>${v || (cfp && !lp.cfpReleased ? '—' : 'NR')}</b></span>`;
   const mv = (r) => r.move === 'new' ? '<span class="mv new">New</span>' : r.move == null ? '' : `<span class="mv ${r.move > 0 ? 'up' : r.move < 0 ? 'dn' : 'eq'}">${r.move ? (r.move > 0 ? '▲' + r.move : '▼' + -r.move) : '–'}</span>`;
@@ -852,10 +894,12 @@ const watchHTML = (ev, opts) => watchButtons(ev, myProviders(), opts);
 const castCtx = () => { const mf = muteFilter(); return { logo, follows, muted: (id) => mf.teamId(id), watch: watchHTML }; };
 let castLive = false;
 async function viewGame(sp, id, quick) {
+  const rn = rt();
   if (castState.sport !== sp || castState.id !== id) { const keep = castState.player; Object.assign(castState, { tab: 'summary', player: sp === 'golf' ? keep : null, sport: sp, id, fp: null, fd: null, ab: null, sf: 'all' }); }
   setBar('Gamecast', { back: `#/${lastTab}` });
   if (!quick) paint(`<div class="card gc-head"><div class="sk w30 sm"></div><div class="sk w70"></div><div class="sk w50 sm"></div></div>${SK.games(1)}${SK.rows(8)}`);
-  let d; try { d = await api(`/api/game/${sp}/${id}`, 10e3); } catch (e) { view.innerHTML = errBox(e); return; }
+  let d; try { d = await api(`/api/game/${sp}/${id}`, 10e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = errBox(e); return; }
+  if (isStale(rn)) return;
   if (!location.hash.startsWith(`#/game/${sp}/${id}`)) return;
   setBar(castTitle(d), { back: `#/${lastTab}` });
   const y = window.scrollY;
@@ -894,7 +938,9 @@ let teamTab = 'schedule'; let teamTabFor = ''; let schedAll = { up: false, past:
 const TEAM_TABS = [['schedule', 'Schedule'], ['stats', 'Stats'], ['news', 'News'], ['roster', 'Roster']];
 async function viewSchedule(id) { return viewTeam(id, 'schedule'); } // #/schedule/<id> = the team page, opened on its Schedule tab
 async function viewTeam(id, forceTab) {
+  const rn = rt();
   await ensureTeams(sportOfId(id));
+  if (isStale(rn)) return;
   const meta = teamById(id) || {}; const sp = meta.sport || sportOfId(id);
   if (teamTabFor !== id) { teamTabFor = id; teamTab = 'schedule'; schedAll = { up: false, past: false }; }
   if (forceTab) teamTab = forceTab;
@@ -904,7 +950,8 @@ async function viewTeam(id, forceTab) {
   teamTheme(meta);
   paint(`<div class="card team-hero" style="--team:#${esc(meta.color || '1f6f5c')}">${meta.logo ? `<img crossorigin="anonymous" src="${esc(meta.logo || logo(meta))}" alt="" />` : '<span class="sk logo big"></span>'}<div><h1>${esc(meta.name || '')}</h1><div class="sk w30 sm"></div></div></div>
     <div class="toolbar sticky"><div class="seg">${TEAM_TABS.map(([k, l]) => `<button class="${k === teamTab ? 'on' : ''}" disabled>${l}</button>`).join('')}</div></div>${SK.rows(8)}`);
-  let d; try { d = await api(`/api/team/${id}`, 2 * 60e3); } catch (e) { view.innerHTML = errBox(e); return; }
+  let d; try { d = await api(`/api/team/${id}`, 2 * 60e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = errBox(e); return; }
+  if (isStale(rn)) return;
   const t = d.team;
   if (!here()) return;
   teamTheme({ ...meta, ...t });
@@ -934,7 +981,7 @@ async function viewTeam(id, forceTab) {
   view.querySelectorAll('[data-ttab]').forEach((b) => (b.onclick = () => { tick(); teamTab = b.dataset.ttab; if (location.hash.startsWith('#/schedule/')) history.replaceState(null, '', `#/team/${id}`); view.querySelectorAll('[data-ttab]').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-selected', on); }); paintTab(); scrollTo(0, Math.min(scrollY, 0)); }));
   const loadSched = async () => {
     let sd; try { sd = await api(`/api/schedule/team/${encodeURIComponent(id)}`, 2 * 60e3); } catch (e) { sd = null; }
-    if (!here() || teamTab !== 'schedule' || !$('#team-sched')) return;
+    if (isStale(rn) || !here() || teamTab !== 'schedule' || !$('#team-sched')) return;
     if (!sd || !sd.events) { // fall back to the (ticket-less) list that came with the team feed
       const rows = (d.schedule || []).map((ev) => schedItemLite(ev, t, sp)).join('');
       $('#team-sched').innerHTML = `<div class="notice">Couldn’t load the full schedule just now — showing the basic list.</div><div class="card panel">${rows || '<div class="empty">No schedule on ESPN yet.</div>'}</div>`;
@@ -950,12 +997,12 @@ async function viewTeam(id, forceTab) {
   const loadNews = async () => {
     try {
       const n = await api(newsPath(t.id, sp), 5 * 60e3);
-      if (!$('#team-news')) return;
+      if (isStale(rn) || !$('#team-news')) return;
       const m = teamMatcher(meta.id ? meta : t, TEAMS, sp);
       const { items } = filterNews(n.items);
       const mine = items.filter((i) => m(itemText(i))).slice(0, 15);
       $('#team-news').innerHTML = `<div class="card panel news-list">${mine.map(newsItem).join('') || `<div class="empty">${muted ? 'This team is muted, so its news is hidden.' : 'No recent straight-news stories.'}</div>`}</div>`;
-    } catch (e) { if ($('#team-news')) $('#team-news').innerHTML = errBox(e); }
+    } catch (e) { if (!isStale(rn) && $('#team-news')) $('#team-news').innerHTML = errBox(e); }
   };
   function paintTab() {
     if (teamTab !== 'schedule') scheduleRefresh(false);
@@ -1003,11 +1050,13 @@ function renderPlayer() {
   bindSched();
 }
 async function viewPlayer(id) {
+  const rn = rt();
   const known = S.players[id] || {};
   if (!PLAYER || PLAYER.id !== id) { PLAYER = null; PSCHED = null; playerTab = null; }
   setBar(known.short || known.name || 'Player', { back: HIST.length > 1 ? HIST[HIST.length - 2] : `#/${lastTab}` });
   if (!PLAYER) paint(`<div class="card team-hero"><span class="sk logo big"></span><div><div class="sk w50"></div><div class="sk w30 sm"></div></div></div>${SK.rows(8)}`);
-  let p; try { p = await api(`/api/player/${encodeURIComponent(id)}`, 5 * 60e3); } catch (e) { view.innerHTML = errBox(e); return; }
+  let p; try { p = await api(`/api/player/${encodeURIComponent(id)}`, 5 * 60e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = errBox(e); return; }
+  if (isStale(rn)) return;
   if (!location.hash.startsWith('#/player/')) return;
   teamTheme(p.team ? { ...(teamById(p.team.id) || {}), ...p.team } : null);
   PLAYER = p; setBar(p.short || p.name, { back: HIST.length > 1 ? HIST[HIST.length - 2] : `#/${lastTab}` });
@@ -1015,7 +1064,7 @@ async function viewPlayer(id) {
   renderPlayer();
   if (p.team && !PSCHED) {
     try { PSCHED = await api(`/api/schedule/team/${encodeURIComponent(p.team.id)}`, 2 * 60e3); } catch (e) { PSCHED = { error: e.message }; }
-    if (location.hash.startsWith('#/player/') && PLAYER === p && playerTab === 'schedule') renderPlayer();
+    if (!isStale(rn) && location.hash.startsWith('#/player/') && PLAYER === p && playerTab === 'schedule') renderPlayer();
   }
 }
 
@@ -1791,6 +1840,7 @@ function scheduleRefresh(live, ms = 15e3) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden && refreshLive) liveTick(); });
 const HIST = []; let prevDepth = 0; let lastTab = 'home';
 async function route(silent) {
+  const rn = ++ROUTE_N; // newer route() calls make this one stale
   if (!silent) { clearInterval(refreshTimer); try { BPL.hide(); } catch { /* no overlay */ } }
   if (!silent && $('#sheet')) { $('#sheet').remove(); document.body.classList.remove('modal-open'); }
   view.onclick = view.onchange = view.oninput = view.onsubmit = null;
@@ -1821,7 +1871,8 @@ async function route(silent) {
     else if (name === 'game' && arg2) await viewGame(arg, decodeURIComponent(arg2), silent);
     else if (name === 'settings') viewSettings(arg);
     else await viewHome();
-  } catch (e) { console.error(e); view.innerHTML = errBox(e); }
+  } catch (e) { console.error(e); if (!isStale(rn)) view.innerHTML = errBox(e); }
+  if (isStale(rn)) return; // a newer route owns SILENT, scroll and onboarding now
   SILENT = false;
   if (silent) scrollTo(0, y);
   if (!S.onboarded && !$('#onb')) openOnboarding(0);
