@@ -309,17 +309,17 @@ SY-09 and SY-10 had the direction of the "Straight news only" toggle backwards (
 
 - **Pushed:** `origin/main` = `1d9b70c` (Wed Oct 28, 2026, about 7:50 PM MT).
 - **Deploy:** `dep-dbhaet0473hc739dmmh0`, commit `1d9b70c`, started 7:55:00 PM MT, build finished 7:55:38 PM MT, status `live` at 7:56 PM MT. The deploy was started by the Render MCP environment-variable update (which triggers a deploy by itself), so no second deploy was triggered. The push alone did not start one.
-- **Env vars set on Render:** `SYNC_PEPPER` (64 hex chars, generated on the box, copy only in a mode-600 file on the box; never print or rotate) and an attempt at `NEON_DATABASE_URL`. `SYNC_SCHEMA` was not set.
-- **BLOCKER (sync is OFF in production):** the Render MCP's file-reference mechanism substituted a 10-byte placeholder for the real database URL (a 147-byte value; plain test files of other contents were passed through at full length), so the live server logs `sync: disabled (no database url)` and `/api/sync/status` returns `{"enabled":false,"ready":false}`. The app fails soft: Settings shows "Sync not available" (no Create button), everything else works. Fix needed from Justin: paste the Neon connection string into the Render dashboard as `NEON_DATABASE_URL`. **The live sync smoke test (create, write, read, restore, delete the test account) was therefore NOT run, and no test data was written to the production database.** No rollback was done: the failure is configuration, not a regression, and the previous pages are unchanged.
-- **Run:** `node scripts/live-verify-v21.js` against https://straight-sports.onrender.com (Chromium 390x844 @2x touch emulation, not real iOS Safari), Oct 28, 2026, about 8:05 PM MT. Raw results: `live-verify-v21.json` (not committed).
-- **Result: 18 PASS / 1 FAIL of 19.** The one FAIL is LV-03b (sync enabled and ready), caused by the blocker above.
+- **Env vars set on Render:** `SYNC_PEPPER` (64 hex chars, generated on the box, copy only in a mode-600 file on the box; never print or rotate) and `NEON_DATABASE_URL`. `SYNC_SCHEMA` was not set.
+- **First pass (7:56 PM MT) found sync OFF:** the Render MCP's file-reference mechanism replaced the database URL with a 10-byte placeholder, so the live server logged `sync: disabled (no database url)` and the card said "Sync not available". Justin then added `NEON_DATABASE_URL` himself in the Render dashboard (Oct 28, 2026, before 8:36 PM MT); `/api/sync/status` now returns `{"enabled":true,"ready":true}`. No rollback was needed.
+- **Run:** `node scripts/live-verify-v21.js` against https://straight-sports.onrender.com (Chromium 390x844 @2x touch emulation, not real iOS Safari), Oct 28, 2026, about 8:05 PM MT and re-run after the fix at about 8:37 PM MT. Raw results: `live-verify-v21.json` (not committed).
+- **Result: first pass 18 PASS / 1 FAIL of 19 (LV-03b, sync not yet enabled); after Justin set `NEON_DATABASE_URL`: 19 PASS / 0 FAIL of 19.**
 
 | ID | Check | Actual | Result |
 |---|---|---|---|
 | LV-01 | /sw.js is ss-v27 | ss-v27 | PASS |
 | LV-02 | index.html loads app.js?v=27 | app.js?v=27 | PASS |
 | LV-03 | /api/sync/status answers with enabled and ready | {"enabled":false,"ready":false} | PASS |
-| LV-03b | sync enabled and ready | {"enabled":false,"ready":false} | **FAIL** (database URL not set) |
+| LV-03b | sync enabled and ready | first pass {"enabled":false,"ready":false} (FAIL); after fix {"enabled":true,"ready":true} | PASS (re-run) |
 | LV-04 | /api/health | ok | PASS |
 | LV-SC-nfl/cfb/mlb/nba/nhl/epl/ausl | scores for 7 sports | all HTTP 200 | PASS |
 | LV-05 | news | HTTP 200 | PASS |
@@ -327,7 +327,27 @@ SY-09 and SY-10 had the direction of the "Straight news only" toggle backwards (
 | LV-07 | playoff brackets, 10 sports | all 200 | PASS |
 | LV-08 | /api/brackets | 200 | PASS |
 | LV-09 | /api/jt-top25 legacy bracket field | 200 | PASS |
-| LV-10 | Settings > Account card at 390px | renders; "Sync not available"; no page errors | PASS (`screenshots/v21/live-settings-account-390.png`) |
+| LV-10 | Settings > Account card at 390px | renders; no page errors (first pass showed "Sync not available"; with sync on the card offers Create / I already have a code, see the smoke test) | PASS (`screenshots/v21/live-settings-account-390.png`) |
 | LV-11 | Rankings > NFL > Bracket highlights NFL (saved sport is CFB) | NFL chip highlighted | PASS (`screenshots/v21/live-nfl-bracket-390.png`) |
 
 The app version 1.4.0 is only in `package.json` (not served); the live build is identified by commit `1d9b70c`, `app.js?v=27` and `ss-v27`.
+
+### Live sync smoke test (production, one throwaway account)
+
+`node scripts/live-sync-smoke-v21.js`, Oct 28, 2026, about 8:38 PM MT, Chromium 390x844 @2x. One test account was created through the real UI, used, and deleted. The recovery code was held in memory only (never printed or saved; blurred in screenshots). **11 PASS / 0 FAIL of 11.**
+
+| ID | Check | Actual | Result |
+|---|---|---|---|
+| LS-01 | Live Settings > Account card offers "Create my recovery code" | card offers Create and "I already have a code" | PASS (`screenshots/v21/live-sync-account-card-390.png`) |
+| LS-02 | Create: code shown once as XXXX-XXXX-XXXX, Done disabled until acknowledged | shape ok; Done disabled | PASS (`screenshots/v21/live-sync-code-sheet-390.png`, code blurred) |
+| LS-03 | After Done: "Backed up · On", code linked on device | yes | PASS |
+| LS-04 | Read back from the server: favorites and prefs | HTTP 200; theme light; sports nfl,mlb,nba; follow nfl:12; rev 1 | PASS |
+| LS-05 | Write with If-Match: theme dark + added favorite read back | PUT 200; rev 1 to 2 | PASS |
+| LS-06 | Stale write refused | HTTP 409 with current data | PASS |
+| LS-07 | Restore on a fresh browser profile (390px) with "Use the backup" | summary shown; theme dark, sports and favorites restored; card Backed up | PASS (`screenshots/v21/live-sync-restore-found-390.png`, `live-sync-restored-card-390.png`) |
+| LS-08 | Wrong code | "No backup found", nothing linked | PASS (`screenshots/v21/live-sync-wrong-code-390.png`) |
+| LS-09 | DELETE the account | DELETE 204; GET 404; lookup 404 | PASS |
+| LS-10 | In the app the deleted code cannot restore | "No backup found" | PASS |
+| LS-11 | Cleanup: no test account remains | final GET 404 | PASS |
+
+No test data remains in the production database (the only profile written was deleted and verified gone).
