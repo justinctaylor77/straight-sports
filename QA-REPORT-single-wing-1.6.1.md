@@ -29,3 +29,6 @@ If no game videos are in KSL's latest uploads, the card says so plainly with a l
 - Title-based matching: a real game titled without a class or "high school" would be left out (preferred over showing non-games).
 
 **QA sign-off:** ✅ 228/228. **Business sign-off (Justin):** ⏳ pending.
+
+## Deployed to production
+v1.6.1 deployed Oct 29, 2026 ~11:52 AM MT (Render dep-dbhof4gn74is73ek2lmg, commit 89bd4c5). Live: 19/19 checks, ss-v30, KSL list 0 non-game videos (BYU clips gone), ESPN TV list 7 games, YouTube key ok.
