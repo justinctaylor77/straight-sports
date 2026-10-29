@@ -144,6 +144,11 @@ app.get('/api/watch', wrap(async (req) => { const s = sportOf(req); if (!s) thro
 const parser = new Parser({ timeout: 9000, headers: { 'User-Agent': UA },
   customFields: { item: [['media:content', 'mediaContent', { keepArray: false }], ['media:thumbnail', 'mediaThumb'], ['source', 'gsource']] } });
 
+// ---------- routes: high school football (v1.6.0; see hsfb.js) ----------
+const HSFB = require('./hsfb')({ cached, fetchJSON, fetchText, parser, UA });
+app.get('/api/hsfb', wrap(() => HSFB.all()));
+app.get('/api/hsfb/status', wrap(() => HSFB.status())); // { youtubeKey: true/false, ... } — never the key value
+
 function cleanText(s = '') { return String(s).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#0?39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim(); }
 
 function normItem(it, src) {

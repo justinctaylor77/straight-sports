@@ -1,17 +1,18 @@
-import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=28';
-import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, migrate, onSettingsSaved, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
+import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=29';
+import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, allSportsFor, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, migrate, onSettingsSaved, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=28';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=29';
 import * as GA from './anim.js?v=18';
-import * as BPL from './bigplay.js?v=28';
-import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=28';
+import * as BPL from './bigplay.js?v=29';
+import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=29';
 import * as BD from './backdrop.js';
-import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=28';
+import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=29';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
-import { createLists, FEED as LIST_FEED } from './lists.js?v=28';
-import * as LOGOTONE from './logotone.js?v=28';
-import { search as fuzzySearch, scoreName } from './fuzzy.js?v=28';
+import { createLists, FEED as LIST_FEED } from './lists.js?v=29';
+import * as LOGOTONE from './logotone.js?v=29';
+import { search as fuzzySearch, scoreName } from './fuzzy.js?v=29';
+import * as HS from './hsfb.js?v=29';
 const LOGOS = LOGOTONE.install(document); // v1.5.0: measure each logo against the surface it sits on, outline the ones under 3:1
 
 // ---------------- state ----------------
@@ -25,6 +26,7 @@ const SP = () => S.sport; const SPI = () => SPORTS[S.sport];
 const teamSport = (sp) => (SPORTS[sp] || {}).kind === 'team';
 const eventSport = (sp) => (SPORTS[sp] || {}).kind === 'event';
 const newsSport = (sp) => (SPORTS[sp] || {}).kind === 'news';
+const hsSport = (sp) => (SPORTS[sp] || {}).provider === 'hsfb'; // v1.6.0: TV listings + KSL videos + links, no scores
 async function ensureTeams(sp) {
   if (!teamSport(sp) || (TEAMS_BY[sp] && TEAMS_BY[sp].length)) return;
   if (!ensureTeams[sp]) ensureTeams[sp] = Promise.all([api(`/api/teams?sport=${sp}`, 36e5),
@@ -268,6 +270,7 @@ async function viewHomeBase() {
   if (sp === 'golf') return homeGolf(today);
   if (sp === 'tennis') return homeTennis(today);
   if (eventSport(sp)) return homeEvents(today);
+  if (hsSport(sp)) return homeHsfb(today);
   if (newsSport(sp)) return homeNewsOnly(today);
   await ensureTeams(sp);
   const [sb, news] = await Promise.allSettled([api(sbPath(sp), 10e3), api(newsPath(), 5 * 60e3)]);
@@ -340,6 +343,22 @@ async function homeEvents(today) {
   scheduleRefresh(anyLive);
 }
 // news-only sports (boxing): ESPN has no usable scoreboard, so headlines only
+// v1.6.0 High School Football: ESPN's national TV list and KSL game videos (never scores), then headlines
+const hsData = () => api('/api/hsfb', 5 * 60e3).catch(() => ({ tv: { error: 'unavailable' }, ksl: { error: 'unavailable' } }));
+async function homeHsfb(today) {
+  const [d, news] = await Promise.allSettled([hsData(), api(newsPath(), 5 * 60e3)]);
+  let html = LT(SPORTS.hsfb.name, today) + `<div class="cols"><section class="hs-home">${HS.tvSection(d.value.tv, 4)}${HS.kslSection(d.value.ksl, 4)}<p class="small hs-more"><a href="#/scores">All games and videos ›</a> <a href="#/rankings">Utah and other links ›</a></p></section>`;
+  html = await newsColumn(html, news, 'Top stories');
+  view.innerHTML = html + '</div>';
+}
+async function scoresHsfb() {
+  if (!SILENT) paint(LT('Scores') + SK.games(3));
+  const d = await hsData();
+  view.innerHTML = LT('Scores', 'No scores feed: TV listings and game videos only') + `<div class="hs-page">${HS.tvSection(d.tv)}${HS.kslSection(d.ksl)}${HS.notAvailableCard()}</div>`;
+}
+function linksHsfb(lbl) {
+  view.innerHTML = LT(lbl, 'Links out: nothing here is copied into the app') + `<div class="hs-page">${HS.utahCard()}${HS.findMoreCard()}${HS.notAvailableCard()}</div>`;
+}
 async function homeNewsOnly(today) {
   const sp = S.sport;
   const news = (await Promise.allSettled([api(newsPath(), 5 * 60e3)]))[0];
@@ -407,6 +426,7 @@ async function viewScores(quick) {
   if (sp === 'golf') return scoresGolf(quick);
   if (sp === 'tennis') return scoresTennis(quick);
   if (eventSport(sp)) return scoresEvents(quick);
+  if (hsSport(sp)) return scoresHsfb();
   if (newsSport(sp)) { view.innerHTML = LT('Scores') + `<div class="card empty">${esc(SPORTS[sp].name)} is headlines-only — ESPN’s free feeds have no ${esc(SPORTS[sp].name.toLowerCase())} scoreboard. <a href="#/news">Read the news ›</a></div>`; return; }
   await ensureTeams(sp);
   const weekly = !SPORTS[sp].daily;
@@ -599,6 +619,7 @@ async function viewRankingsBase(quick) {
   if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/grok/how')) return viewGrokHow(quick);
   if (sp === 'cfb' && (location.hash || '').startsWith('#/rankings/grok')) return viewGrok(quick);
   setBar(lbl);
+  if (hsSport(sp)) return linksHsfb(lbl);
   if (newsSport(sp)) { view.innerHTML = LT(lbl) + `<div class="card empty">ESPN’s free feeds have no ${esc(SPI().name)} rankings.${LIST_FEED.includes(sp) ? ' The top list and bracket below come from NCAA.com and other public sources.' : ''} <a href="#/news">Read the news ›</a></div>`; return; }
   if (!quick) paint(LT(lbl, SK.sub()) + `<div class="toolbar sticky"><span class="sk w40 btnlike"></span></div>${SK.rows(12)}`);
   let d; try { d = await api(`/api/rankings?sport=${sp}`, 10 * 60e3); } catch (e) { view.innerHTML = LT(lbl) + errBox(e); return; }
@@ -1064,7 +1085,7 @@ function partHTML(p) {
   const f = (id) => S.follow.includes(id);
   switch (p) {
     case 'sportseg': return S.sports.length > 1 ? `<div class="chips sport-chips">${teamSportIds().length > 1 ? `<button class="chip lg ${allMode() ? 'on' : ''}" data-psport="all" aria-pressed="${allMode()}">🏟️ All leagues<span class="cnt">${S.follow.filter((id) => !isAthleteId(id) && teamSport(sportOfId(id))).length || ''}</span></button>` : ''}${S.sports.map((k) => `<button class="chip lg ${!allMode() && k === pSport() ? 'on' : ''}" data-psport="${k}">${SPORTS[k].emoji} ${esc(SPORTS[k].short)}<span class="cnt">${followsIn(k).length || ''}</span></button>`).join('')}</div>` : '';
-    case 'sports': return (S.sportsChosen ? '<div class="sports-note"><button class="btn small" data-allsports="1">Show all sports</button></div>' : '<p class="sports-note faint small">Showing every sport until you pick some. Tap a sport to show only the ones you choose.</p>') + SPORT_GROUPS.map((g) => { const ks = SPORT_IDS.filter((k) => SPORTS[k].group === g); return ks.length ? `<div class="group-lbl tiles-lbl">${esc(g)}</div>${ks.map((k) => { const on = S.sports.includes(k); const v = SPORTS[k]; return `<button class="tile sport ${on ? 'on' : ''}" data-sport="${k}" aria-pressed="${on}" style="--sa:${v.accent}"><span class="em">${v.emoji}</span><span><b>${esc(v.name)}</b><small>${esc(v.blurb || '')}${v.kind === 'news' ? ' · headlines only' : ''}</small></span>${CHECK}</button>`; }).join('')}` : ''; }).join('');
+    case 'sports': return (S.sportsChosen ? '<div class="sports-note"><button class="btn small" data-allsports="1">Show all sports</button></div>' : '<p class="sports-note faint small">Showing every sport until you pick some. Tap a sport to show only the ones you choose. High School Football stays off until you turn it on.</p>') + SPORT_GROUPS.map((g) => { const ks = SPORT_IDS.filter((k) => SPORTS[k].group === g); return ks.length ? `<div class="group-lbl tiles-lbl">${esc(g)}</div>${ks.map((k) => { const on = S.sports.includes(k); const v = SPORTS[k]; return `<button class="tile sport ${on ? 'on' : ''}" data-sport="${k}" aria-pressed="${on}" style="--sa:${v.accent}"><span class="em">${v.emoji}</span><span><b>${esc(v.name)}</b><small>${esc(v.blurb || '')}${v.kind === 'news' && !v.provider ? ' · headlines only' : ''}${v.optIn && !on ? ' · off unless picked' : ''}</small></span>${CHECK}</button>`; }).join('')}` : ''; }).join('');
     case 'pmode': { const sp = pSport(); if (allMode() || !teamSport(sp) || sp === 'ausl') return '';
       return `<div class="seg pmode"><button data-pmode="teams" class="${pickMode === 'teams' ? 'on' : ''}" aria-pressed="${pickMode === 'teams'}">Teams</button><button data-pmode="players" class="${pickMode === 'players' ? 'on' : ''}" aria-pressed="${pickMode === 'players'}">Players</button></div>`; }
     case 'quicklbl': return (allMode() ? S.sports.includes('cfb') : pSport() === 'cfb') && TEAMS_BY.cfb && UTAH().length ? 'Popular in Utah' : '';
@@ -1190,13 +1211,20 @@ function prefClick(e, root) {
     if (d.prov === 'none') next = cur.includes('none') ? [] : ['none'];
     else next = cur.includes(d.prov) ? cur.filter((x) => x !== d.prov) : [...cur.filter((x) => x !== 'none'), d.prov];
     S.watch = { ...(S.watch || {}), providers: next };
+  } else if (d.sport && !S.sportsChosen && SPORTS[d.sport].optIn) {
+    // v1.6.0: an opt-in sport (High School Football) is added to / removed from "every sport" without ending the all-sports mode
+    const on = S.sports.includes(d.sport);
+    S.sports = allSportsFor(on ? S.sports.filter((x) => x !== d.sport) : [...S.sports, d.sport]);
+    if (!S.sports.includes(S.sport)) S.sport = S.sports[0];
+    pickSport = on ? null : d.sport; teamQ = ''; teamConf = ''; browseTeam = '';
+    syncSportUI();
   } else if (d.sport && !S.sportsChosen) {
     // first explicit pick while showing everything: show just this sport (tap more to add them)
     S.sports = [d.sport]; S.sportsChosen = true; S.sport = d.sport; pickSport = d.sport; teamQ = ''; teamConf = ''; browseTeam = '';
     ensureTeams(d.sport).then(() => refreshParts(root));
     syncSportUI();
   } else if (d.allsports) {
-    S.sportsChosen = false; S.sports = SPORT_IDS.slice(); pickSport = null; syncSportUI();
+    S.sportsChosen = false; S.sports = allSportsFor(S.sports); pickSport = null; syncSportUI();
   } else if (d.sport) {
     const on = S.sports.includes(d.sport);
     if (on && S.sports.length === 1) { toast('Keep at least one sport'); return true; }
@@ -1474,7 +1502,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=28" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=29" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>

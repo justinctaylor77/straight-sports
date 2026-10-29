@@ -1,7 +1,7 @@
 // Saved-state upgrade test: an existing v2 install keeps exactly its sports, follows and players.
 import assert from 'node:assert/strict';
 globalThis.localStorage = { m: {}, getItem(k) { return this.m[k] ?? null; }, setItem(k, v) { this.m[k] = v; } };
-const { migrate, DEFAULTS, sportOfId, teamMatcher, buildMuteFilter, SPORTS, SPORT_IDS } = await import('../public/lib.js');
+const { migrate, DEFAULTS, sportOfId, teamMatcher, buildMuteFilter, SPORTS, SPORT_IDS, DEFAULT_SPORT_IDS, allSportsFor } = await import('../public/lib.js');
 const v2 = { v: 2, onboarded: true, sports: ['cfb', 'nfl', 'mlb', 'golf', 'tennis'], sport: 'nfl', players: { 'golf:9478': { name: 'Scottie Scheffler', flag: 'x' }, 'tennis:3623': { name: 'Jannik Sinner', flag: 'y' } },
   conferences: ['9'], follow: ['252', 'nfl:12', 'mlb:19', 'golf:9478', 'tennis:3623'], muteTeams: ['nfl:21'], muteLeagues: ['nba', 'wnba', 'betting'], muteKeywords: ['LeBron'],
   sources: { 'cfb:espn': true }, straightOnly: true, sportOnly: true, theme: 'dark' };
@@ -21,8 +21,14 @@ const s2 = migrate({ ...structuredClone(v2), muteLeagues: [] });
 assert.deepEqual(s2.muteLeagues, ['nba', 'wnba']); assert.deepEqual(s2.sports, v2.sports);
 // fresh install: no NBA anywhere
 const f = migrate({});
-assert.deepEqual(f.sports, SPORT_IDS, 'fresh install: every sport until the user picks'); assert.equal(f.sportsChosen, false); assert.deepEqual(f.muteLeagues, []); assert.equal(f.onboarded, false);
-assert.deepEqual(DEFAULTS.sports, SPORT_IDS); assert.ok(SPORT_IDS.length > 15 && SPORT_IDS.includes('nba') && SPORT_IDS.includes('epl'));
+assert.deepEqual(f.sports, DEFAULT_SPORT_IDS, 'fresh install: every sport (except opt-in High School Football) until the user picks'); assert.equal(f.sportsChosen, false); assert.deepEqual(f.muteLeagues, []); assert.equal(f.onboarded, false);
+assert.deepEqual(DEFAULTS.sports, DEFAULT_SPORT_IDS);
+// v1.6.0: High School Football is opt-in — never on by default, kept once picked (all-sports mode or explicit)
+assert.ok(SPORT_IDS.includes('hsfb') && !DEFAULT_SPORT_IDS.includes('hsfb') && SPORTS.hsfb.optIn === true); assert.equal(DEFAULT_SPORT_IDS.length, SPORT_IDS.length - 1);
+assert.ok(migrate({ v: 6, sportsChosen: false, sports: SPORT_IDS.slice() }).sports.includes('hsfb'), 'all-sports + picked hsfb keeps it');
+assert.ok(!migrate({ v: 6, sportsChosen: false, sports: ['cfb'] }).sports.includes('hsfb'), 'all-sports without hsfb: stays off');
+assert.deepEqual(migrate({ v: 6, sportsChosen: true, sports: ['hsfb', 'cfb'] }).sports, ['hsfb', 'cfb'], 'explicit pick kept');
+assert.deepEqual(allSportsFor(['hsfb']), [...DEFAULT_SPORT_IDS.slice(0, DEFAULT_SPORT_IDS.length), 'hsfb'].sort((a, b) => SPORT_IDS.indexOf(a) - SPORT_IDS.indexOf(b)), 'allSportsFor keeps an opt-in in catalog order'); assert.ok(SPORT_IDS.length > 15 && SPORT_IDS.includes('nba') && SPORT_IDS.includes('epl'));
 assert.deepEqual(f.watch, { providers: [] }, 'fresh install picks during setup'); assert.deepEqual(DEFAULTS.watch, { providers: [] });
 // v3 user (current) → v4: sports/follows untouched, YouTube TV added; an explicit choice is kept
 const v3 = { ...structuredClone(v2), v: 3 }; const s3 = migrate(structuredClone(v3));
@@ -55,7 +61,7 @@ console.log('migrate.test: all assertions passed');
 // ---- v5: all sports by default ----
 // stale default: v4 install that only has the old default ['cfb'] never chose -> everything (and the auto-added NBA/WNBA mutes go away)
 const stale = migrate({ v: 4, onboarded: true, sports: ['cfb'], sport: 'cfb', muteLeagues: ['nba', 'wnba'], watch: { providers: ['yttv'] }, follow: ['252'] });
-assert.deepEqual(stale.sports, SPORT_IDS); assert.equal(stale.sportsChosen, false); assert.deepEqual(stale.muteLeagues, []); assert.deepEqual(stale.follow, ["252"], "follows untouched"); assert.equal(stale.v, 6);
+assert.deepEqual(stale.sports, DEFAULT_SPORT_IDS); assert.equal(stale.sportsChosen, false); assert.deepEqual(stale.muteLeagues, []); assert.deepEqual(stale.follow, ["252"], "follows untouched"); assert.equal(stale.v, 6);
 // a user who picked sports (anything beyond the default) keeps exactly those; NBA/WNBA mutes untouched
 const picked = migrate({ v: 4, onboarded: true, sports: ['nfl', 'golf'], sport: 'nfl', muteLeagues: ['nba'] });
 assert.deepEqual(picked.sports, ['nfl', 'golf']); assert.equal(picked.sportsChosen, true); assert.deepEqual(picked.muteLeagues, ['nba']); assert.equal(picked.sport, 'nfl');
@@ -64,7 +70,7 @@ const only = migrate({ v: 5, onboarded: true, sports: ['cfb'], sportsChosen: tru
 assert.deepEqual(only.sports, ['cfb']); assert.equal(only.sportsChosen, true);
 // v5 unchosen stays everything even if a stale subset was saved; round trip is stable
 const r = migrate(structuredClone(migrate({ v: 5, sportsChosen: false, sports: ['cfb'] })));
-assert.deepEqual(r.sports, SPORT_IDS); assert.deepEqual(migrate(structuredClone(r)), r);
+assert.deepEqual(r.sports, DEFAULT_SPORT_IDS); assert.deepEqual(migrate(structuredClone(r)), r);
 // Justin's own saved settings (cfb, nfl, mlb, golf, tennis) are untouched by v5
 const j = migrate(structuredClone({ ...v2, v: 4 })); assert.deepEqual(j.sports, ['cfb', 'nfl', 'mlb', 'golf', 'tennis']); assert.equal(j.sportsChosen, true);
 console.log('migrate v5 (all-sports default): ok');

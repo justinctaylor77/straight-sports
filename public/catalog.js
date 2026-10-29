@@ -17,6 +17,10 @@ export const CATALOG = {
   tennis: { group: 'Tennis', name: 'Tennis', short: 'Tennis', emoji: '🎾', kind: 'tennis', family: 'tennis', tab4: 'Rankings', what: 'players', accent: '#d9ec3c', blurb: 'ATP & WTA draws, results, rankings', own: '\\b(tennis|ATP|WTA|Grand Slam|Wimbledon|US Open|Roland Garros|Australian Open|Davis Cup)\\b' },
 
   // ---- optional catalog (off unless a user picks them) ----
+  // v1.6.0 "Single Wing": optIn = off in feeds even under the all-sports default (sportsChosen=false); only on once picked.
+  // No free scores feed: ESPN TV listings, KSL Sports game videos and links out (see server/hsfb.js).
+  hsfb:   { group: 'Football', name: 'High School Football', short: 'HSFB', emoji: '🏫', kind: 'news', provider: 'hsfb', optIn: true, family: 'football', tab4: 'Links', what: 'teams', accent: '#eab308', blurb: 'National TV games, Utah links and KSL videos (no scores)',
+    own: '\\b(high school football|prep football|UHSAA)\\b', news: { ap: 'high school football', must: '\\b(high school|prep|UHSAA)\\b', extra: [{ id: 'ksl', name: 'KSL.com (via Google News)', site: 'ksl.com', q: '"high school football"' }, { id: 'deseret', name: 'Deseret News (via Google News)', site: 'deseret.com', q: '"high school football"' }] } },
   nba:    { group: 'Basketball', name: 'NBA', short: 'NBA', emoji: '🏀', kind: 'team', family: 'basketball', path: 'basketball/nba', espn: 'nba', daily: true, tab4: 'Standings', what: 'teams', accent: '#ff8a3d', blurb: 'Scores, standings, box scores',
     own: '\\b(NBA|basketball)\\b', news: { cbs: 'nba', yahoo: 'nba', nyt: 'ProBasketball', guardian: 'sport/nba', ap: 'NBA', must: '\\b(NBA|basketball)\\b' } },
   wnba:   { group: 'Basketball', name: 'WNBA', short: 'WNBA', emoji: '🏀', kind: 'team', family: 'basketball', path: 'basketball/wnba', espn: 'wnba', daily: true, tab4: 'Standings', what: 'teams', accent: '#ff6f3c', blurb: 'Scores, standings, box scores',

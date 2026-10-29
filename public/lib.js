@@ -9,6 +9,7 @@ export const LEAGUE_MUTES = {
   betting:{ label: 'Betting & odds', words: ['odds', 'betting', 'sportsbook', 'parlay', 'best bets', 'point spread', 'against the spread', 'promo code'] },
   recruiting:{ label: 'Recruiting', words: ['recruit', 'recruiting', 'recruits', 'commitment', 'commits', 'decommit', 'decommits', 'four-star', 'five-star', 'three-star'] },
   portal:{ label: 'Transfer portal', words: ['transfer portal'] },
+  hsfb:  { label: 'High school football', words: ['high school football', 'prep football', 'UHSAA'] }, // v1.6.0: works in all-sports mode too
 };
 
 import { CATALOG, CORE } from './catalog.js';
@@ -16,9 +17,13 @@ import { CATALOG, CORE } from './catalog.js';
 // NBA / WNBA are ordinary opt-in entries that are off by default and never pre-selected.
 export const SPORTS = Object.fromEntries(Object.entries(CATALOG).map(([id, c]) => [id, { id, ...c, own: new RegExp(c.own, 'i') }]));
 export const SPORT_IDS = Object.keys(SPORTS);
+// v1.6.0: opt-in sports (catalog `optIn: true`, e.g. High School Football) stay out of the all-sports default; they are on only
+// when the person turns them on. allSportsFor(cur) = the all-sports list plus any opt-in sport already in `cur`.
+export const DEFAULT_SPORT_IDS = SPORT_IDS.filter((k) => !SPORTS[k].optIn);
+export const allSportsFor = (cur = []) => SPORT_IDS.filter((k) => !SPORTS[k].optIn || cur.includes(k));
 export { CATALOG, CORE };
 // League mute that corresponds to a sport (so turning a sport on can lift its old mute, and its own feed isn't muted).
-export const LEAGUE_OF = { nba: 'nba', wnba: 'wnba', nhl: 'nhl', mcbb: 'cbb', wcbb: 'cbb', mls: 'soccer', nwsl: 'soccer', epl: 'soccer', laliga: 'soccer', bund: 'soccer', seriea: 'soccer', ligue1: 'soccer', ucl: 'soccer', ligamx: 'soccer' };
+export const LEAGUE_OF = { nba: 'nba', wnba: 'wnba', nhl: 'nhl', mcbb: 'cbb', wcbb: 'cbb', mls: 'soccer', nwsl: 'soccer', epl: 'soccer', laliga: 'soccer', bund: 'soccer', seriea: 'soccer', ligue1: 'soccer', ucl: 'soccer', ligamx: 'soccer', hsfb: 'hsfb' };
 const SPORT_WORDS = /\b(basketball|baseball|softball|volleyball|soccer|hockey|golf|tennis|gymnastics|wrestling|track and field|cross country|swimming|lacrosse|NBA|WNBA|MLB|NHL|NFL|PGA|LPGA|ATP|WTA|UFC|MMA|NASCAR|IndyCar|Formula 1|Formula One|football)\b/gi;
 // Ids: "252" = CFB team; "<sport>:<id>" = team in that sport; "<sport>:a<id>" = athlete; golf/tennis players are "<sport>:<id>".
 export const sportOfId = (id) => { const m = /^([a-z0-9]+):/.exec(String(id)); return m && SPORTS[m[1]] ? m[1] : 'cfb'; };
@@ -27,7 +32,7 @@ export const isAthleteId = (id) => /^[a-z0-9]+:a\d+$/.test(String(id)) || /^(gol
 export const DEFAULTS = {
   v: 6, onboarded: false,
   // sportsChosen=false means "never picked": every sport in the catalog is shown. Picking sports (onboarding or Settings) sets it true.
-  sports: SPORT_IDS.slice(), sportsChosen: false, sport: 'cfb', players: {},
+  sports: DEFAULT_SPORT_IDS.slice(), sportsChosen: false, sport: 'cfb', players: {},
   // muteUnselected (v6): when true AND sportsChosen, every catalog sport you did not pick is muted from news/scores/schedule. Derived at read time, never stored in muteLeagues.
   muteUnselected: false,
   conferences: [], follow: [], muteTeams: [], muteLeagues: [], muteKeywords: [],
@@ -78,7 +83,7 @@ export function migrate(raw) {
   s.muteUnselected = s.muteUnselected === true;
   s.watch = { providers: [...new Set(((s.watch && s.watch.providers) || []).filter((x) => typeof x === 'string'))] };
   s.sports = (s.sports || []).filter((x) => SPORTS[x]);
-  if (!s.sportsChosen) s.sports = SPORT_IDS.slice(); // never picked: everything (also picks up sports added to the catalog later)
+  if (!s.sportsChosen) s.sports = allSportsFor(s.sports); // never picked: everything (also picks up sports added to the catalog later), opt-in sports only if turned on
   else if (!s.sports.length) s.sports = ['cfb'];
   if (!s.sports.includes(s.sport)) s.sport = s.sports[0];
   s.players = s.players || {};
@@ -108,6 +113,7 @@ export const MUTE_WORDS = {
   ucl: ['Champions League', 'soccer'], ligamx: ['Liga MX', 'soccer'], cbase: ['College World Series', 'baseball'], softball: ['softball', 'WCWS'],
   gymnastics: ['gymnastics', 'gymnast'], ufc: ['UFC', 'MMA', 'mixed martial arts'], boxing: ['boxing', 'boxer'], f1: ['F1', 'Formula 1', 'Formula One', 'Grand Prix'],
   nascar: ['NASCAR'], indy: ['IndyCar', 'Indy 500'], ausl: ['AUSL', 'Athletes Unlimited', 'softball'],
+  hsfb: ['high school football', 'prep football', 'UHSAA'],
 };
 const AMBIGUOUS = new Set(['playoff', 'bowl', 'masters', 'liv', 'bout', 'grand slam', 'us open', 'football', 'birdie', 'bogey', 'pitcher', 'inning', 'home run', 'quarterback', 'touchdown', 'heavyweight', 'welterweight', 'middleweight']);
 export function muteWordsFor(id) {

@@ -7,7 +7,7 @@ const LEAGUES = {
   cfb: ['NCAA Football'], nfl: ['NFL'], mlb: ['MLB'], nhl: ['NHL'], nba: ['NBA'], wnba: ['WNBA'],
   mcbb: ["NCAA Men's Basketball"], wcbb: ["NCAA Women's Basketball"], laliga: ['Spanish LALIGA'], nwsl: ['NWSL'],
   golf: ['PGA Tour'], cbase: ['NCAA Baseball'], mls: ['MLS'], epl: ['English Premier League'], bund: ['German Bundesliga'],
-  ucl: ['UEFA Champions League'], ufc: ['UFC'], f1: ['Formula 1'], nascar: ['NASCAR Cup Series'], indy: ['IndyCar'], tennis: ['Tennis'],
+  hsfb: ['High School Football'], ucl: ['UEFA Champions League'], ufc: ['UFC'], f1: ['Formula 1'], nascar: ['NASCAR Cup Series'], indy: ['IndyCar'], tennis: ['Tennis'],
 };
 
 module.exports = function makeWatch({ cached, fetchJSON }) {

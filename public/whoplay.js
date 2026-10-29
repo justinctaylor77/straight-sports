@@ -2,7 +2,7 @@
 // The server (server/playwho.js) attaches to each play: what (short label), desc (one plain sentence) and who[]
 // ({role, name, id, team, jersey, pos}); headshots come once per game in d.heads (id → url). Nothing here invents a name:
 // if a play has no `who` the chips are simply omitted and the raw ESPN text is shown, never a blank.
-import { bpBadge } from './bigplay.js?v=28';
+import { bpBadge } from './bigplay.js?v=29';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initials = (n) => String(n || '').split(/\s+/).filter(Boolean).map((x) => x[0]).slice(0, 2).join('').toUpperCase();
 

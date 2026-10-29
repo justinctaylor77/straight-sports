@@ -16,7 +16,7 @@ eq(b.muteLeagues, ['betting'], 'derived mutes are not written into muteLeagues')
 // exactly the unselected sports, none of the selected
 const ms = mutedSports(b); ok(!ms.includes('nfl') && !ms.includes('mlb') && !ms.includes('golf')); eq(ms.length, SPORT_IDS.length - 3);
 // dormant while nothing was chosen (v1.1.0 all-sports default): nothing to mute
-const dormant = migrate({ v: 6, onboarded: true, sportsChosen: false, muteUnselected: true }); eq(dormant.sports, SPORT_IDS); eq(mutedSports(dormant), []); eq(mutedSportWords(dormant), []);
+const dormant = migrate({ v: 6, onboarded: true, sportsChosen: false, muteUnselected: true }); eq(dormant.sports, L.DEFAULT_SPORT_IDS); eq(mutedSports(dormant), []); eq(mutedSportWords(dormant), []);
 ok(buildMuteFilter(dormant, [], 'nfl').item(item('NBA: Celtics beat Pistons')), 'show-everything user still sees NBA even with the box ticked');
 // once they pick sports the saved box takes effect
 eq(mutedSports({ ...dormant, sportsChosen: true, sports: ['nfl'] }).length, SPORT_IDS.length - 1);
@@ -46,4 +46,9 @@ for (const id of SPORT_IDS) ok(MUTE_WORDS[id] && MUTE_WORDS[id].length, `${id} h
 const v5 = { v: 5, onboarded: true, sportsChosen: true, sports: ['cfb', 'nfl'], follow: ['252'], muteLeagues: ['nba'], watch: { providers: ['yttv'] } };
 const m5 = migrate(structuredClone(v5)); eq(m5.v, 6); eq(m5.muteUnselected, false); eq(m5.sports, v5.sports); eq(m5.follow, v5.follow); eq(m5.muteLeagues, v5.muteLeagues);
 eq(migrate(structuredClone(m5)), m5, 'idempotent'); eq(migrate({ ...m5, muteUnselected: 'yes' }).muteUnselected, false, 'junk value → false'); eq(migrate({ ...m5, muteUnselected: true }).muteUnselected, true);
+// v1.6.0: High School Football mute chip works even in all-sports mode (where mute-unselected is off), and never mutes the HSFB feed itself
+{ const hs = migrate({ v: 6, onboarded: true, sportsChosen: false, muteLeagues: ['hsfb'] }); eq(hs.muteLeagues, ['hsfb'], 'hsfb league mute kept');
+  ok(buildMuteFilter(hs, [], 'cfb').item(item('High school football: Skyridge beats Lone Peak')), 'muted on the CFB feed');
+  eq(buildMuteFilter(hs, [], 'hsfb').item(item('High school football: Skyridge beats Lone Peak')), null, 'own feed not muted');
+  ok(MUTE_WORDS.hsfb.includes('UHSAA')); eq(mutedSports(hs), [], 'all-sports mode: mute-unselected stays dormant'); }
 console.log(`mute-unselected.test: ${n} assertions passed`);

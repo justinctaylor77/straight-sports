@@ -1,0 +1,173 @@
+{
+ "source": "WatchESPN catalog \"High School Football\" (league 14743839-07ed-3b13-8feb-08378027f4e4), captured 2026-10-29, trimmed",
+ "page": {
+  "buckets": [
+   {
+    "name": "On Demand",
+    "contents": [
+     {
+      "id": "b251e3ca-5550-46a9-a546-923f939864e6",
+      "eventId": 401877220,
+      "status": "replay",
+      "name": "Blue Springs (MO) vs. Liberty (MO)",
+      "shortName": "Blue Springs vs. Liberty (MO)",
+      "subtitle": "ESPN+ \u2022 High School Football",
+      "utc": "2026-10-23T20:00:00-04:00",
+      "date": "Friday, October 23",
+      "time": "8:00 PM",
+      "streams": [
+       {
+        "status": "replay",
+        "source": {
+         "id": "ESPN_DTC",
+         "name": "ESPN+"
+        },
+        "links": {
+         "web": "https://www.espn.com/watch/player?id=b251e3ca-5550-46a9-a546-923f939864e6"
+        }
+       }
+      ]
+     },
+     {
+      "id": "c1f64b46-231a-414b-b6de-df528be49087",
+      "eventId": 401877223,
+      "status": "replay",
+      "name": "Lee's Summit West (MO) vs. Liberty North (MO)",
+      "shortName": "Lee's Summit West (MO) vs. Liberty North",
+      "subtitle": "ESPN+ \u2022 High School Football",
+      "utc": "2026-10-23T20:00:00-04:00",
+      "date": "Friday, October 23",
+      "time": "8:00 PM",
+      "streams": [
+       {
+        "status": "replay",
+        "source": {
+         "id": "ESPN_DTC",
+         "name": "ESPN+"
+        },
+        "links": {
+         "web": "https://www.espn.com/watch/player?id=c1f64b46-231a-414b-b6de-df528be49087"
+        }
+       }
+      ]
+     },
+     {
+      "id": "7c7749ad-aa51-40da-a1ce-0d9fe8b11b7c",
+      "eventId": 401877218,
+      "status": "replay",
+      "name": "Grandview (MO) vs. Kearney (MO)",
+      "shortName": "Grandview (MO) vs. Kearney (MO)",
+      "subtitle": "ESPN+ \u2022 High School Football",
+      "utc": "2026-10-16T20:00:00-04:00",
+      "date": "Friday, October 16",
+      "time": "8:00 PM",
+      "streams": [
+       {
+        "status": "replay",
+        "source": {
+         "id": "ESPN_DTC",
+         "name": "ESPN+"
+        },
+        "links": {
+         "web": "https://www.espn.com/watch/player?id=7c7749ad-aa51-40da-a1ce-0d9fe8b11b7c"
+        }
+       }
+      ]
+     },
+     {
+      "id": "d6301232-6db4-46c2-ad5b-0a04a43c7006",
+      "eventId": 401929578,
+      "status": "replay",
+      "name": "NFL Academy (UK) vs. IMG Academy (FL)",
+      "shortName": "NFL Academy (UK) vs. IMG Academy",
+      "subtitle": "ESPN2 \u2022 High School Football",
+      "utc": "2026-10-16T17:00:00-04:00",
+      "date": "Friday, October 16",
+      "time": "5:00 PM",
+      "streams": [
+       {
+        "status": "replay",
+        "source": {
+         "id": "ESPN2",
+         "name": "ESPN2"
+        },
+        "links": {
+         "web": "https://www.espn.com/watch/player?id=d6301232-6db4-46c2-ad5b-0a04a43c7006"
+        }
+       }
+      ]
+     },
+     {
+      "id": "1c458dc1-d699-40e5-b7d1-52a7fbe56817",
+      "eventId": 401877221,
+      "status": "replay",
+      "name": "Oak Park (MO) vs. Liberty (MO)",
+      "shortName": "Oak Park (MO) vs. Liberty (MO)",
+      "subtitle": "ESPN+ \u2022 High School Football",
+      "utc": "2026-10-09T20:00:00-04:00",
+      "date": "Friday, October 09",
+      "time": "8:00 PM",
+      "streams": [
+       {
+        "status": "replay",
+        "source": {
+         "id": "ESPN_DTC",
+         "name": "ESPN+"
+        },
+        "links": {
+         "web": "https://www.espn.com/watch/player?id=1c458dc1-d699-40e5-b7d1-52a7fbe56817"
+        }
+       }
+      ]
+     },
+     {
+      "id": "fb035de2-7792-4811-b921-5072e8d3b039",
+      "eventId": 401877222,
+      "status": "replay",
+      "name": "Lee's Summit (MO) vs. Liberty North (MO)",
+      "shortName": "Lee's Summit (MO) vs. Liberty North",
+      "subtitle": "ESPN+ \u2022 High School Football",
+      "utc": "2026-10-09T20:00:00-04:00",
+      "date": "Friday, October 09",
+      "time": "8:00 PM",
+      "streams": [
+       {
+        "status": "replay",
+        "source": {
+         "id": "ESPN_DTC",
+         "name": "ESPN+"
+        },
+        "links": {
+         "web": "https://www.espn.com/watch/player?id=fb035de2-7792-4811-b921-5072e8d3b039"
+        }
+       }
+      ]
+     },
+     {
+      "id": "298d8f5e-3407-4b67-b457-f79a4920cecc",
+      "eventId": 401877219,
+      "status": "replay",
+      "name": "Park Hill (MO) vs. Liberty (MO)",
+      "shortName": "Park Hill (MO) vs. Liberty (MO)",
+      "subtitle": "ESPN+ \u2022 High School Football",
+      "utc": "2026-10-02T20:00:00-04:00",
+      "date": "Friday, October 02",
+      "time": "8:00 PM",
+      "streams": [
+       {
+        "status": "replay",
+        "source": {
+         "id": "ESPN_DTC",
+         "name": "ESPN+"
+        },
+        "links": {
+         "web": "https://www.espn.com/watch/player?id=298d8f5e-3407-4b67-b457-f79a4920cecc"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

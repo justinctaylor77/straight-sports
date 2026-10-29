@@ -4,9 +4,9 @@
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ord = (n) => (n == null ? '' : `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)]}`);
 const fmtWhen = (iso) => { const d = new Date(iso); return `${d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`; };
-import { playBlock, latestBanner, whoChips, playText } from './whoplay.js?v=28';
-import { bigChips } from './bigplay.js?v=28';
-import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=28';
+import { playBlock, latestBanner, whoChips, playText } from './whoplay.js?v=29';
+import { bigChips } from './bigplay.js?v=29';
+import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=29';
 const hex = (c, fb) => (c && /^[0-9a-f]{6}$/i.test(c) ? `#${c}` : fb);
 
 export const castState = { tab: 'summary', player: null, sport: null, id: null, fp: null, fd: null, ab: null, sf: 'all' };
