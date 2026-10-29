@@ -1,9 +1,11 @@
 // Logo contrast (v1.5.0): make every team/league logo readable on whatever surface it sits on, in every theme.
 // Rule (documented in HANDOFF/QA report): a logo PASSES when at least half of its silhouette edge pixels are visible at 3:1
-// against the background directly behind it (an edge pixel counts if it, or a logo pixel within 2px of it, reaches 3:1) (WCAG 2.x SC 1.4.11 "non-text contrast" threshold for graphical objects).
+// against the background directly behind it (an edge pixel counts if it, or a logo pixel within 2px of it, reaches 3:1) (WCAG 2.x SC 1.4.11 "non-text contrast" threshold for graphical objects)
+// AND at least 15% of the logo's own pixels reach 3:1 (otherwise only a thin sliver shows and the mark reads as a ghost —
+// e.g. the Panthers' black-and-blue panther on navy: 66% edge but 9% body).
 // Logos that fail get a thin 1px outline in the opposite tone (light on dark surfaces, dark on light ones), which restores
 // the silhouette without a heavy chip. Pure functions are exported so the audit (scripts/audit-logo-contrast.js) runs the same math.
-export const MIN = 3; export const EDGE_SHARE = 0.5; export const N = 48;
+export const MIN = 3; export const EDGE_SHARE = 0.5; export const BODY_MIN = 0.15; export const N = 48;
 const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
 export const lum = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
 export const contrast = (a, b) => { const x = lum(a); const y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
@@ -35,7 +37,7 @@ export function score(st, bg) {
     ve += ok;
   }
   const e = edge.length ? ve / edge.length : 1;
-  return { edge: e, body: vb / st.n, pass: e >= EDGE_SHARE };
+  const body = vb / st.n; return { edge: e, body, pass: e >= EDGE_SHARE && body >= BODY_MIN };
 }
 /** the fix: which outline (if any) and the post-fix edge share (the outline ring becomes the new silhouette edge) */
 export function fixFor(st, bg) {
