@@ -2,7 +2,7 @@
 // Servers: :8799 normal (live data), :8796 NCAA.com + Road to Nationals unreachable, :8794 AUSL sources (Wikipedia + MLB API) unreachable.
 const { chromium } = require('playwright-core'); const fs = require('fs'); const path = require('path'); const cp = require('child_process');
 const ROOT = path.join(__dirname, '..'); const OUT = path.join(ROOT, 'screenshots', 'v22'); fs.mkdirSync(OUT, { recursive: true });
-for (const f of fs.readdirSync(OUT)) if (/^qa-.*\.png$/.test(f)) fs.unlinkSync(path.join(OUT, f));
+if (!process.env.QA_ONLY) for (const f of fs.readdirSync(OUT)) if (/^qa-.*\.png$/.test(f)) /* filtered reruns keep the full run's evidence */ fs.unlinkSync(path.join(OUT, f));
 const NEW = 'http://localhost:8799', DOWN = 'http://localhost:8796', DOWN2 = 'http://localhost:8794'; const KEY = 'straightcfb.settings.v1'; const results = []; const rel = (f) => `screenshots/v22/${f}`;
 const J = (u) => fetch(u).then(async (r) => ({ status: r.status, body: await r.json().catch(() => null) }));
 let browser; const ctxOpts = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, colorScheme: 'dark' };

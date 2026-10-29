@@ -2,6 +2,28 @@
 
 Releases get a vintage-sports nickname plus a version label (service-worker cache version in parentheses).
 
+## v1.5.0 "Rabbit Ears" (ss-v28) — 2026-10-28
+
+**LOCAL ONLY: not pushed, not deployed, waiting for Justin's approval.** Live is still v1.4.0 "Hail Mary" (ss-v27). QA: full run 208/210; the 2 failures (SY-04 outdated expectation, SY-08 flaky tap) were fixed and pass in filtered reruns. Report: `QA-REPORT-rabbit-ears.md`.
+
+### Added / changed
+- **Logo contrast (Justin: Panthers/Raiders vanish on the Broncos schedule's navy backdrop).** New `public/logotone.js` measures every team logo against the surface it sits on, in the browser (canvas, cached). A logo passes when at least 50% of its silhouette edge reaches **3:1** (WCAG 2.x SC 1.4.11; a pixel within 2 px at 48 px scale counts, so thin keylines aren't penalised) **and** at least 15% of its pixels reach 3:1. When a logo fails, it gets a 1px opposite-tone outline: `img.lt-lift` on dark surfaces, `img.lt-sink` on light. Logos that pass are untouched. Dark surfaces use ESPN's `500-dark` art; the team header keeps its white tile. `data-lt-skip` opts an image out.
+  - Audit across all three surfaces (dark, light, team backdrop): 1612 logos, 1482 pass everywhere, 127 outlined, 0 under 3:1 after the fix. 3 crests can't be measured because their hosts send no CORS headers.
+  - Files: `scripts/audit-logo-contrast.js` produces `docs/logo-audit.{json,md}` and `screenshots/v22/logo-contact-sheet.png`.
+- **Search.** `server/search.js` builds a server-side index, merged with ESPN's athlete search. It covers:
+  - golf: full PGA TOUR, LIV, LPGA and DP World lists;
+  - tennis: ESPN's ATP and WTA list;
+  - every NFL, MLB, NBA, WNBA, NHL and soccer roster;
+  - college teams, including all 128 FCS teams via `/api/teams?sport=cfb&division=fcs` (searchable and followable);
+  - AUSL.
+- **Matching.** `public/fuzzy.js` and `public/aliases.js` make search accent- and punctuation-insensitive and tolerant of 1–2 typos (with a consonant-skeleton guard). They also recognise team nicknames such as Niners, Habs, Bama and Talons.
+- **Golf ranking.** Players with an ESPN bio rank higher, so "McElroy" returns Rory McIlroy first.
+- Tests: `tests/fuzzy.test.mjs`; `scripts/search-check.mjs` (116 known names, 116/116); browser QA `scripts/qa-v22.sh` adds LC-* and SR-* cases. Version 1.5.0, `?v=28`.
+
+### Fixed
+- Golf search index silently empty: a code line had been swallowed by a comment. It now logs a warning on load failure.
+- QA: SY-04 no longer expects `public.profiles` to be absent, since the live app owns it after the v1.4.0 deploy. It now checks, read-only, that row count and max(updated_at) are unchanged and that no QA code hashes appear. `tests/sync-neon.test.js` was relaxed the same way. SY-08's submit tap has been hardened.
+
 ## v1.4.0 "Hail Mary" (ss-v27) — 2026-10-28
 
 **Deployed Oct 28, 2026 (about 7:55 PM MT) as commit `1d9b70c` (Render deploy `dep-dbhaet0473hc739dmmh0`). Recovery-code sync is ENABLED in production (`/api/sync/status` = enabled, ready) as of Oct 28, 2026, about 8:36 PM MT, after Justin set `NEON_DATABASE_URL` in the Render dashboard; live smoke test 11/11 and live checks 19/19 (see QA-REPORT-hail-mary.md).**

@@ -1,7 +1,7 @@
 {
- "base": "http://localhost:8811",
- "pass": 115,
- "total": 115,
+ "base": "http://localhost:8799",
+ "pass": 116,
+ "total": 116,
  "rows": [
   {
    "kind": "player",
@@ -1333,6 +1333,20 @@
    "rank": 1,
    "got": [
     "Hawai'i Rainbow Warriors"
+   ],
+   "pass": true
+  },
+  {
+   "kind": "team",
+   "sport": "cfb",
+   "q": "montana st",
+   "want": "Montana State Bobcats",
+   "top": 1,
+   "rank": 1,
+   "got": [
+    "Montana State Bobcats",
+    "North Dakota State Bison",
+    "San José State Spartans"
    ],
    "pass": true
   },
