@@ -29,7 +29,7 @@ const T = [ // [sport, query, expected full team name, topN]
   ['nhl', 'Habs', 'Montreal Canadiens', 1], ['nhl', 'montreal', 'Montreal Canadiens', 1], ['nhl', 'Canes', 'Carolina Hurricanes', 1], ['epl', 'Man Utd', 'Manchester United', 1], ['epl', 'Gunners', 'Arsenal', 1],
   ['laliga', 'Barca', 'Barcelona', 1], ['laliga', 'atletico', 'Atlético Madrid', 1], ['bund', 'Bayern Munchen', 'Bayern Munich', 1], ['seriea', 'Juve', 'Juventus', 1], ['ligue1', 'PSG', 'Paris Saint-Germain', 1],
   ['cfb', 'Bama', 'Alabama Crimson Tide', 1], ['cfb', 'Ole Miss', 'Ole Miss Rebels', 1], ['cfb', 'Utah Utes', 'Utah Utes', 1], ['cfb', 'BYU', 'BYU Cougars', 1], ['cfb', 'Hawaii', "Hawai'i Rainbow Warriors", 1],
-  ['cfb', 'North Dakota St', 'North Dakota State Bison', 1], ['cfb', 'Montana Grizzlies', 'Montana Grizzlies', 1], ['cfb', 'Idaho Vandals', 'Idaho Vandals', 1], ['cfb', 'villanova', 'Villanova Wildcats', 1], ['cfb', 'Yale', 'Yale Bulldogs', 1],
+  ['cfb', 'montana st', 'Montana State Bobcats', 1], ['cfb', 'North Dakota St', 'North Dakota State Bison', 1], ['cfb', 'Montana Grizzlies', 'Montana Grizzlies', 1], ['cfb', 'Idaho Vandals', 'Idaho Vandals', 1], ['cfb', 'villanova', 'Villanova Wildcats', 1], ['cfb', 'Yale', 'Yale Bulldogs', 1],
   ['cfb', 'Holy Cross', 'Holy Cross Crusaders', 1], ['cfb', 'Jackson St', 'Jackson State Tigers', 1], ['mcbb', 'Zags', 'Gonzaga Bulldogs', 1], ['mcbb', "st johns", "St. John's Red Storm", 1], ['wcbb', 'uconn', 'UConn Huskies', 1],
   ['cbase', 'lsu', 'LSU Tigers', 1], ['ausl', 'Utah Talons', 'Utah Talons', 1], ['ausl', 'talons', 'Utah Talons', 1], ['ausl', 'Bandits', 'Chicago Bandits', 1], ['wnba', 'Aces', 'Las Vegas Aces', 1],
 ];
