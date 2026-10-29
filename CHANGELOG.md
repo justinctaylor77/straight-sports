@@ -2,7 +2,9 @@
 
 Releases get a vintage-sports nickname plus a version label (service-worker cache version in parentheses).
 
-## v1.4.0 (release name TBD) (ss-v27) — 2026-10-28
+## v1.4.0 "Hail Mary" (ss-v27) — 2026-10-28
+
+**Deployed Oct 28, 2026 (about 7:55 PM MT) as commit `1d9b70c` (Render deploy `dep-dbhaet0473hc739dmmh0`). Recovery-code sync is built in but stays OFF in production ("Sync not available") until `NEON_DATABASE_URL` is set correctly on Render; see HANDOFF.md.**
 
 Three things from Justin: big-play Gamecast animations, accounts that survive clearing the browser (recovery code on Neon Postgres), and a Rankings tab/data mismatch he reported from his iPhone. Not yet deployed.
 

@@ -304,3 +304,30 @@ SY-09 and SY-10 had the direction of the "Straight news only" toggle backwards (
 **Process notes:** nothing was pushed or deployed. The QA's sync cases use only a throwaway database schema (`sync_test_<random>`) that the harness drops at the end and verifies (`remaining=0`); the database URL was never printed or written to a file.
 
 **Not tested / limits:** real iOS Safari; Render free-plan cold start; the live site (nothing deployed); live big-play behaviour in a real in-progress game (no live game; fixtures and injected plays only). Full run: **194 pass / 1 fail / 0 skip of 195** on the committed code.
+
+## Live verification (production, after deploy)
+
+- **Pushed:** `origin/main` = `1d9b70c` (Wed Oct 28, 2026, about 7:50 PM MT).
+- **Deploy:** `dep-dbhaet0473hc739dmmh0`, commit `1d9b70c`, started 7:55:00 PM MT, build finished 7:55:38 PM MT, status `live` at 7:56 PM MT. The deploy was started by the Render MCP environment-variable update (which triggers a deploy by itself), so no second deploy was triggered. The push alone did not start one.
+- **Env vars set on Render:** `SYNC_PEPPER` (64 hex chars, generated on the box, copy only in a mode-600 file on the box; never print or rotate) and an attempt at `NEON_DATABASE_URL`. `SYNC_SCHEMA` was not set.
+- **BLOCKER (sync is OFF in production):** the Render MCP's file-reference mechanism substituted a 10-byte placeholder for the real database URL (a 147-byte value; plain test files of other contents were passed through at full length), so the live server logs `sync: disabled (no database url)` and `/api/sync/status` returns `{"enabled":false,"ready":false}`. The app fails soft: Settings shows "Sync not available" (no Create button), everything else works. Fix needed from Justin: paste the Neon connection string into the Render dashboard as `NEON_DATABASE_URL`. **The live sync smoke test (create, write, read, restore, delete the test account) was therefore NOT run, and no test data was written to the production database.** No rollback was done: the failure is configuration, not a regression, and the previous pages are unchanged.
+- **Run:** `node scripts/live-verify-v21.js` against https://straight-sports.onrender.com (Chromium 390x844 @2x touch emulation, not real iOS Safari), Oct 28, 2026, about 8:05 PM MT. Raw results: `live-verify-v21.json` (not committed).
+- **Result: 18 PASS / 1 FAIL of 19.** The one FAIL is LV-03b (sync enabled and ready), caused by the blocker above.
+
+| ID | Check | Actual | Result |
+|---|---|---|---|
+| LV-01 | /sw.js is ss-v27 | ss-v27 | PASS |
+| LV-02 | index.html loads app.js?v=27 | app.js?v=27 | PASS |
+| LV-03 | /api/sync/status answers with enabled and ready | {"enabled":false,"ready":false} | PASS |
+| LV-03b | sync enabled and ready | {"enabled":false,"ready":false} | **FAIL** (database URL not set) |
+| LV-04 | /api/health | ok | PASS |
+| LV-SC-nfl/cfb/mlb/nba/nhl/epl/ausl | scores for 7 sports | all HTTP 200 | PASS |
+| LV-05 | news | HTTP 200 | PASS |
+| LV-06 | rankings lists, 10 sports | all 200 | PASS |
+| LV-07 | playoff brackets, 10 sports | all 200 | PASS |
+| LV-08 | /api/brackets | 200 | PASS |
+| LV-09 | /api/jt-top25 legacy bracket field | 200 | PASS |
+| LV-10 | Settings > Account card at 390px | renders; "Sync not available"; no page errors | PASS (`screenshots/v21/live-settings-account-390.png`) |
+| LV-11 | Rankings > NFL > Bracket highlights NFL (saved sport is CFB) | NFL chip highlighted | PASS (`screenshots/v21/live-nfl-bracket-390.png`) |
+
+The app version 1.4.0 is only in `package.json` (not served); the live build is identified by commit `1d9b70c`, `app.js?v=27` and `ss-v27`.
