@@ -1,0 +1,2282 @@
+[
+ {
+  "id": "U-01",
+  "area": "Static",
+  "desc": "Every JS file parses (node --check; ESM public/*.js via .mjs copy)",
+  "steps": "node --check on all tracked/new .js/.mjs files",
+  "expected": "No syntax errors",
+  "actual": "113 files OK",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-02",
+  "area": "Unit",
+  "desc": "JT Power Rankings (v1.2.0 regression)",
+  "steps": "node tests/rank-lists.test.js",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "rank-lists: 12 tests passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-03",
+  "area": "Unit",
+  "desc": "Pro brackets (v1.2.0 regression)",
+  "steps": "node tests/postseason.test.js",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "postseason: 12 tests passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-04",
+  "area": "Unit",
+  "desc": "Feed states (v1.2.0 regression)",
+  "steps": "node tests/feeds.test.js",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "feeds: 16 tests passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-05",
+  "area": "Unit",
+  "desc": "NCAA.com normalizers + highlighting (regression)",
+  "steps": "node tests/ncaa.test.js",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "ncaa+highlight: 9 tests passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-06",
+  "area": "Unit",
+  "desc": "Client list render helpers (regression)",
+  "steps": "node tests/lists-render.test.mjs",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "lists-render: 12 tests passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-07",
+  "area": "Unit",
+  "desc": "CFB bracket (regression)",
+  "steps": "node tests/brackets.test.js",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "brackets.test.js: 10 groups passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-08",
+  "area": "Unit",
+  "desc": "Settings migration to schema v6 + all-sports default",
+  "steps": "node tests/migrate.test.mjs",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "migrate.test: all assertions passed | migrate v5 (all-sports default): ok",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-09",
+  "area": "Unit",
+  "desc": "Sports-only news filter (regression)",
+  "steps": "node tests/news-filter.test.js",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "news-filter ok",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-10",
+  "area": "Unit",
+  "desc": "ITEM 1: team picker grouping, location-first full names, A–Z sort, search, college names, every league in the live catalog",
+  "steps": "node tests/picker.test.mjs",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "picker.test: 486 assertions passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-11",
+  "area": "Unit",
+  "desc": "ITEM 2: \"mute every sport I haven't selected\": derived mute, restore, dormant with all-sports default, later-added sports, shared words",
+  "steps": "node tests/mute-unselected.test.mjs",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "mute-unselected.test: 79 assertions passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-12",
+  "area": "Unit",
+  "desc": "NEW: AUSL provider: game-log parser, computed standings, bracket, season states (preseason/live/complete), source-down snapshot fallback, attribution, never-invent",
+  "steps": "node tests/ausl.test.mjs",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "ausl.test.mjs: 30 passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-13",
+  "area": "Unit",
+  "desc": "ITEM 4: server play + who explainer over real ESPN fixtures for every sport family, never invents a player, raw-text fallback",
+  "steps": "node tests/playwho.test.js",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "playwho.test: 1835 assertions passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-14",
+  "area": "Unit",
+  "desc": "ITEM 4: client who/what renderers: escaping, https-only headshots, never blank",
+  "steps": "node tests/whoplay.test.mjs",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "whoplay.test: 24 assertions passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-15",
+  "area": "Static",
+  "desc": "npm test runs all suites green",
+  "steps": "npm test",
+  "expected": "Exit 0",
+  "actual": "tabsport.test.mjs: 11 assertions passed | whoplay.test: 24 assertions passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-16",
+  "area": "Static",
+  "desc": "Versions agree: package 1.6.0, SW ss-v29, ?v=29 on changed assets, no leftover ?v=28 on them; storage key / package name untouched",
+  "steps": "grep version strings",
+  "expected": "All consistent",
+  "actual": "package 1.6.0, lock 1.6.0, name straight-sports, SW ss-v29, leftover ?v=28 refs in 0 files",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-17",
+  "area": "Static",
+  "desc": "No secrets in tracked or new files; run.json not tracked",
+  "steps": "grep for the SeatGeek id value and key-looking literals; git ls-files",
+  "expected": "No match",
+  "actual": "key-like literals: none; SeatGeek value in files: none; YouTube/Neon/pepper values in files: none (1 set); run.json tracked: false",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "U-17b",
+  "area": "Static",
+  "desc": "The Neon connection string and the sync pepper never appear in tracked or new files (value match, not just pattern)",
+  "steps": "grep -F for the environment values over git ls-files -co",
+  "expected": "No file contains either value",
+  "actual": "2 secret value(s) checked across tracked/new files: none found",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "PK-01",
+  "area": "Item 1 picker",
+  "desc": "Picker is broken out by league: one collapsible group per league the user picked, with the team count",
+  "steps": "Open Settings › Teams (5 leagues picked)",
+  "expected": "5 league headers in the user's order, each \"N teams\"; the first is expanded; no horizontal scroll",
+  "actual": "nfl[true] 🏈 NFL 32 teams | mlb[false] ⚾ MLB 30 teams | nba[false] 🏀 NBA 30 teams | nhl[false] 🏒 NHL 32 teams | cfb[false] 🏈 College Football 138 teams",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-picker-groups.png"
+ },
+ {
+  "id": "PK-02",
+  "area": "Item 1 picker",
+  "desc": "MLB group lists teams as location + nickname (\"Boston Red Sox\") sorted alphabetically by that name",
+  "steps": "Expand MLB",
+  "expected": "30 teams; \"Boston Red Sox\", \"Chicago Cubs\", \"New York Yankees\"; every name starts with its location; sorted A–Z",
+  "actual": "30 teams; first 4: Arizona Diamondbacks, Athletics, Atlanta Braves, Baltimore Orioles; Boston Red Sox at #5; sorted=true",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-picker-mlb.png"
+ },
+ {
+  "id": "PK-03",
+  "area": "Item 1 picker",
+  "desc": "League groups collapse and expand (aria-expanded, rows hidden)",
+  "steps": "Tap the MLB header twice",
+  "expected": "Collapsed: 0 rows, aria-expanded=false; expanded again: 30 rows",
+  "actual": "collapsed {\"e\":\"false\",\"n\":0}; reopened {\"e\":\"true\",\"n\":30}",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "PK-04-nfl",
+  "area": "Item 1 picker",
+  "desc": "NFL group: location-first names, A–Z",
+  "steps": "Expand nfl",
+  "expected": "Known teams present by full name; sorted A–Z",
+  "actual": "32 teams; found Dallas Cowboys, Philadelphia Eagles, Kansas City Chiefs; sorted=true; first: Arizona Cardinals, Atlanta Falcons, Baltimore Ravens",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "PK-04-nba",
+  "area": "Item 1 picker",
+  "desc": "NBA group: location-first names, A–Z",
+  "steps": "Expand nba",
+  "expected": "Known teams present by full name; sorted A–Z",
+  "actual": "30 teams; found Boston Celtics, Utah Jazz, Golden State Warriors; sorted=true; first: Atlanta Hawks, Boston Celtics, Brooklyn Nets",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "PK-04-nhl",
+  "area": "Item 1 picker",
+  "desc": "NHL group: location-first names, A–Z",
+  "steps": "Expand nhl",
+  "expected": "Known teams present by full name; sorted A–Z",
+  "actual": "32 teams; found Boston Bruins, Utah Mammoth, Vegas Golden Knights; sorted=true; first: Anaheim Ducks, Boston Bruins, Buffalo Sabres",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "PK-05",
+  "area": "Item 1 picker",
+  "desc": "College teams use the school name as the location (\"Utah Utes\", \"BYU Cougars\"), sorted A–Z, with conference sub-grouping available",
+  "steps": "Expand College Football; read names; switch to By conference",
+  "expected": "Utah Utes and BYU Cougars present; A–Z; sub-headers in conference mode",
+  "actual": "138 FBS teams; Utah Utes=true, BYU Cougars=true; sorted=true; 11 conference sub-headers e.g. ACC, American, Big 12, Big Ten",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-picker-cfb.png"
+ },
+ {
+  "id": "PK-06",
+  "area": "Item 1 picker",
+  "desc": "Search works across leagues by location or nickname; groups show \"x of y\"; groups with no match are hidden",
+  "steps": "Type \"boston\", then \"red sox\"",
+  "expected": "\"boston\": Red Sox, Celtics, Bruins (+ any other Boston team); \"red sox\": only the Red Sox; non-matching leagues hidden",
+  "actual": "\"boston\" → Boston Red Sox, Boston Celtics, Boston Bruins, Boston College Eagles in /////////mlb/nba/nhl/cfb (1 of 30; 1 of 30; 1 of 32; 1 of 266); \"red sox\" → Boston Red Sox",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-picker-search-boston.png"
+ },
+ {
+  "id": "PK-07",
+  "area": "Item 1 picker",
+  "desc": "Following a team from the picker saves it and updates the group header count; unfollowing removes it",
+  "steps": "Tap Boston Red Sox in MLB; read header + storage; tap again",
+  "expected": "Header shows \"1 following\"; storage has the MLB id; removed on second tap",
+  "actual": "after tap: \"30 teams · 1 following\" follow=mlb:2; after untap: \"30 teams\" follow=0",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-picker-followed.png"
+ },
+ {
+  "id": "PK-08",
+  "area": "Item 1 picker",
+  "desc": "Single-league view (tap a league chip) also shows location-first A–Z names and the same search",
+  "steps": "Tap the NBA chip; search \"uta\"",
+  "expected": "Names location-first; sorted; \"Utah Jazz\" found",
+  "actual": "30 NBA teams sorted=true; \"uta\" → Utah Jazz",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-picker-single-nba.png"
+ },
+ {
+  "id": "PK-09",
+  "area": "Item 1 picker",
+  "desc": "Picker markup is accessible and escaped (buttons with aria-pressed, headers with aria-expanded, no raw HTML in names)",
+  "steps": "Inspect DOM",
+  "expected": "All pick rows are buttons with aria-pressed; headers have aria-expanded; no <script>/<img onerror> from data",
+  "actual": "{\"rows\":262,\"bad\":0,\"hd\":0,\"inj\":0}",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "C-01",
+  "area": "Console",
+  "desc": "Console clean through all picker checks",
+  "steps": "Review diagnostics",
+  "expected": "No page/console errors, no 4xx/5xx from the app origin",
+  "actual": "no console/page errors, no failed app requests (third-party CDN noise ignored: 0)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "MU-01",
+  "area": "Item 2 mute",
+  "desc": "Mute page has the checkbox \"Mute every sport I haven't selected\" with a one-line explanation underneath",
+  "steps": "Open Settings › Mute (NFL picked)",
+  "expected": "Labelled checkbox, enabled, unticked; explanation visible and not truncated; no horizontal scroll",
+  "actual": "{\"label\":\"Mute every sport I haven’t selected\",\"sub\":\"Hides every sport you didn’t pick, even ones added later. Untick to bring them back.\",\"dis\":false,\"chk\":false,\"clipped\":false}",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-mute-unticked.png"
+ },
+ {
+  "id": "MU-02",
+  "area": "Item 2 mute",
+  "desc": "Ticking it saves muteUnselected=true, explains how many sports are muted, and does not touch the user's own mute lists",
+  "steps": "Tick the box; read storage + note",
+  "expected": "muteUnselected true; muteLeagues/muteKeywords/muteTeams unchanged (empty); note \"Muting N sports…outside NFL\"",
+  "actual": "{\"mu\":true,\"ml\":[],\"kw\":[],\"mt\":[],\"v\":6,\"note\":\"Muting 28 sports: news and games outside NFL are hidden.\"}",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-mute-ticked.png"
+ },
+ {
+  "id": "MU-03",
+  "area": "Item 2 mute",
+  "desc": "With the box ticked, news about sports the user did not pick is hidden from the feed; picked-sport news stays",
+  "steps": "Serve 6 headlines (NFL, NBA, NHL, EPL, UFC, F1) to Home/News; read what renders",
+  "expected": "Only the NFL headline is visible",
+  "actual": "visible: NFL: Chiefs beat Bills in overtime thriller",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-mute-feed-ticked.png"
+ },
+ {
+  "id": "MU-04",
+  "area": "Item 2 mute",
+  "desc": "Unticking brings every muted headline back (previous mute state restored exactly)",
+  "steps": "Untick on the Mute page; open News",
+  "expected": "All 6 headlines visible again (the user's own mute lists were never changed)",
+  "actual": "muteUnselected=false, own mutes 0/0; 6/6 headlines visible",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-mute-feed-unticked.png"
+ },
+ {
+  "id": "MU-05",
+  "area": "Item 2 mute",
+  "desc": "The setting survives a reload and a stored v5 profile migrates safely (field added, nothing lost)",
+  "steps": "Tick; reload; then seed a v5 profile without the field and load",
+  "expected": "Still ticked after reload; v5 profile loads as v6 with muteUnselected=false and its sports/follows intact",
+  "actual": "reload kept=true; migrated v6, muteUnselected=false, sports nfl,golf, follow cfb:254, muteLeagues betting",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "C-02",
+  "area": "Console",
+  "desc": "Console clean through the mute checks",
+  "steps": "Review diagnostics",
+  "expected": "No errors",
+  "actual": "no console/page errors, no failed app requests (CDN noise 0)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "MU-06",
+  "area": "Item 2 mute",
+  "desc": "v1.1.0 all-sports default: while no favorites are picked the box is disabled with \"Pick favorite sports first\" and nothing is muted (even if a saved value is true)",
+  "steps": "Fresh/no-picks profile with muteUnselected=true saved; open Mute; open News with 6 headlines",
+  "expected": "Checkbox disabled and unchecked; hint text; link to pick sports; all 6 headlines visible",
+  "actual": "disabled=true, checked=false, hint \"Pick favorite sports first\", link=true; news visible 6/6",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-mute-disabled.png"
+ },
+ {
+  "id": "MU-07",
+  "area": "Item 2 mute",
+  "desc": "Picking sports activates the saved choice; \"Show all sports\" returns to the dormant state",
+  "steps": "Pick NFL on Settings › Sports; open Mute",
+  "expected": "Box enabled and ticked (saved value), 5+ sports reported muted",
+  "actual": "{\"dis\":false,\"chk\":true,\"note\":\"Muting 28 sports: news and games outside NFL are hidden.\"}",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-mute-activated.png"
+ },
+ {
+  "id": "C-03",
+  "area": "Console",
+  "desc": "Console clean through the dormant/activate checks",
+  "steps": "Review diagnostics",
+  "expected": "No errors",
+  "actual": "no console/page errors, no failed app requests (CDN noise 0)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AS-01",
+  "area": "Item 3 proposal",
+  "desc": "PROPOSAL-account-sync.md covers options A/B/C (flow, stored data, privacy, effort, cost), storage evaluation, data model, API sketch, security, cost to Justin and a clear recommendation",
+  "steps": "Read the document",
+  "expected": "All sections present; recommendation = B (recovery code); Neon/Turso/Supabase/Cloudflare KV/Render Postgres/Render disk each evaluated with official-doc URLs",
+  "actual": "170 lines, 24 required items present",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AS-02",
+  "area": "Item 3 proposal",
+  "desc": "Five 390px mockups exist as static HTML + PNG (signed out, signed in, save-your-code dialog, restore, optional email) and PNGs are 390px wide @2x",
+  "steps": "Check docs/mocks and screenshots/v19",
+  "expected": "5 html + 5 png in each place; PNG 780×1688",
+  "actual": "all present; sizes 780x1688",
+  "status": "PASS",
+  "evidence": "screenshots/v23/mock-account-signed-out.png screenshots/v23/mock-account-signed-in.png screenshots/v23/mock-account-save-code.png screenshots/v23/mock-account-restore.png"
+ },
+ {
+  "id": "AS-03",
+  "area": "Item 3 proposal",
+  "desc": "Mock pages are static (no scripts), open from file:// without errors, and show the right screens",
+  "steps": "Open each docs/mocks/account-*.html from file://",
+  "expected": "No <script>; no page errors; expected headings/buttons present",
+  "actual": "signed-out: scripts=0 ok=true · signed-in: scripts=0 ok=true · save-code: scripts=0 ok=true · restore: scripts=0 ok=true · email-later: scripts=0 ok=true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AS-04",
+  "area": "Item 3 sync",
+  "desc": "Account sync (Option B) is confined and optional: database code only in server/db.js + server/sync*.js, only the Neon HTTP driver (no pg/TCP driver), driver required lazily, no secret or connection string in tracked files, run.json untracked",
+  "steps": "grep server/ public/ package.json; git ls-files",
+  "expected": "neondatabase only required in db.js; /api/sync only in server/sync*.js and index.js mount; no pg dependency; no postgres:// literals; run.json not tracked",
+  "actual": "@neondatabase in: server/db.js; lazy require=true; other db deps: none; /api/sync in: public/app.js,public/sw.js,public/sync.js,server/index.js,server/sync.js; connection-string literals in code: none; run.json tracked: no",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AS-05",
+  "area": "Item 3 proposal",
+  "desc": "Every image the proposal embeds exists",
+  "steps": "Resolve ![](docs/mocks/…) links",
+  "expected": "All files exist",
+  "actual": "5 images, missing: none",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-nfl",
+  "area": "Item 4 live API",
+  "desc": "NFL: live/latest-final game from today's feed has a human-readable description on every play (DAL @ PHI [week 7])",
+  "steps": "GET /api/game/nfl/401873009",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "football, post, 187 plays, 154 with players, blank 0, source ESPN; roles: Kicker 14, Returner 10, Tackled by 142, Rusher 64, Passer 65, Target 62 · e.g. Field goal good: Brandon Aubrey 55-yard field goal is good [Kicker: Brandon Aubrey]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-cfb",
+  "area": "Item 4 live API",
+  "desc": "CFB: live/latest-final game from today's feed has a human-readable description on every play (JXST @ NMSU)",
+  "steps": "GET /api/game/cfb/401871057",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "football, post, 150 plays, 140 with players, blank 0, source ESPN; roles: Rusher 81, Tackled by 114, Kicker 10, Passer 39, Target 36, Quarterback 2 · e.g. Interception: Caden Creel pass intercepted by Josiah Charles, tackled by Deondre Johnson [Passer: Caden Creel; Interception: Josiah Charles; Tackled b",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-mlb",
+  "area": "Item 4 live API",
+  "desc": "MLB: live/latest-final game from today's feed has a human-readable description on every play (MIL @ TB (World Series - Game 5))",
+  "steps": "GET /api/game/mlb/401908046",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "baseball, post, 85 plays, 81 with players, blank 0, source ESPN; roles: Pitcher 81, Batter 70, Runner on 3rd 6, Runner on 2nd 3 · e.g. Strikeout: Chourio struck out looking. (Jackson Chourio batting against Drew Rasmussen) [Pitcher: Drew Rasmussen; Batter: Jackson Chourio]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-nba",
+  "area": "Item 4 live API",
+  "desc": "NBA: live/latest-final game from today's feed has a human-readable description on every play (LAL @ LAC)",
+  "steps": "GET /api/game/nba/401909892",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 172 plays, 166 with players, blank 0, source ESPN; roles: Shooter 126, Foul on 8, Rebound 18, Assist 33, Turnover 4, Steal 4 · e.g. Made 3-pointer: Matisse Thybulle makes 24-foot three point jumper (Austin Reaves assists) [Shooter: Matisse Thybulle; Assist: Austin Reaves]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-wnba",
+  "area": "Item 4 live API",
+  "desc": "WNBA: live/latest-final game from today's feed has a human-readable description on every play (GS @ ATL (WNBA Finals - Game 6))",
+  "steps": "GET /api/game/wnba/401918310",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, in, 82 plays, 75 with players, blank 0, source ESPN; roles: Shooter 37, Subbed in 8, Subbed out 8, Turnover 6, Foul on 8, Assist 13 · e.g. Made jump shot: Veronica Burton makes 17-foot step back jumpshot [Shooter: Veronica Burton]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-nhl",
+  "area": "Item 4 live API",
+  "desc": "NHL: live/latest-final game from today's feed has a human-readable description on every play (TOR @ SEA)",
+  "steps": "GET /api/game/nhl/401892599",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 86 plays, 73 with players, blank 0, source ESPN; roles: Shot 21, Goalie 14, Won faceoff 15, Lost faceoff 15, Goal 9, Assist 17 · e.g. Goal: Berkly Catton Goal (4) Backhand, assists: Mackie Samoskevich (2) [Goal: Berkly Catton; Assist: Mackie Samoskevich]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-mls",
+  "area": "Item 4 live API",
+  "desc": "MLS: live/latest-final game from today's feed has a human-readable description on every play (COL @ SJ)",
+  "steps": "GET /api/game/mls/761917",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 34 plays, 22 with players, blank 0, source ESPN; roles: Comes on 9, Goes off 9, Booked 7, Scorer 4, Assist 4, Sent off 2 · e.g. Goal - Header: Goal! San Jose Earthquakes 1, Colorado Rapids 0. Reid Roberts (San Jose Earthquakes) header from very close range to the top left corne",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-epl",
+  "area": "Item 4 live API",
+  "desc": "EPL: live/latest-final game from today's feed has a human-readable description on every play (LEE @ SUN)",
+  "steps": "GET /api/game/epl/401878764",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 27 plays, 11 with players, blank 0, source ESPN; roles: Comes on 8, Goes off 8, Booked 3 · e.g. Yellow Card: Ethan Ampadu (Leeds United) is shown the yellow card for a bad foul. [Booked: Ethan Ampadu]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-nwsl",
+  "area": "Item 4 live API",
+  "desc": "NWSL: live/latest-final game from today's feed has a human-readable description on every play (BOS @ SD)",
+  "steps": "GET /api/game/nwsl/401854094",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 44 plays, 16 with players, blank 0, source ESPN; roles: Booked 2, Comes on 10, Goes off 10, Scorer 3, Assist 2, Own goal 1 · e.g. Substitution: Substitution, Boston Legacy. Nicolette Hernández replaces Lilly Reale. [Comes on: Nicki Hernández; Goes off: Lilly Reale]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-laliga",
+  "area": "Item 4 live API",
+  "desc": "LALIGA: live/latest-final game from today's feed has a human-readable description on every play (OSA @ SEV)",
+  "steps": "GET /api/game/laliga/401882828",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 22 plays, 14 with players, blank 0, source ESPN; roles: Comes on 9, Goes off 9, Scorer 2, Assist 2, Booked 3 · e.g. Goal: Goal! Sevilla 1, Osasuna 0. Isaac Romero (Sevilla) left footed shot from outside the box to the bottom left corner. Assisted by Youssouf Fofana.",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-bund",
+  "area": "Item 4 live API",
+  "desc": "BUND: live/latest-final game from today's feed has a human-readable description on every play (MUN @ SCF)",
+  "steps": "GET /api/game/bund/401884759",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 33 plays, 17 with players, blank 0, source ESPN; roles: Scorer 3, Comes on 9, Goes off 9, Booked 4, Own goal 1, Assist 2 · e.g. Goal: Goal! Freiburg 0, Bayern Munich 1. Dayot Upamecano (Bayern Munich) right footed shot from the centre of the box to the centre of the goal. Assis",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-seriea",
+  "area": "Item 4 live API",
+  "desc": "SERIEA: live/latest-final game from today's feed has a human-readable description on every play (JUV @ GEN)",
+  "steps": "GET /api/game/seriea/401874988",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 17 plays, 13 with players, blank 0, source ESPN; roles: Comes on 10, Goes off 10, Booked 1, Scorer 2, Assist 1 · e.g. Goal: Goal! Genoa 1, Juventus 0. Kingsley Ehizibue (Genoa) right footed shot from the right side of the box to the top right corner. Assisted by Tomma",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-ligue1",
+  "area": "Item 4 live API",
+  "desc": "LIGUE1: live/latest-final game from today's feed has a human-readable description on every play (LYON @ PSG)",
+  "steps": "GET /api/game/ligue1/401876422",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 34 plays, 14 with players, blank 0, source ESPN; roles: Comes on 9, Goes off 9, Scorer 2, Assist 2, Booked 3 · e.g. Yellow Card: Vitinha (Paris Saint Germain) is shown the yellow card for a bad foul. [Booked: Vitinha]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-ucl",
+  "area": "Item 4 live API",
+  "desc": "UCL: live/latest-final game from today's feed has a human-readable description on every play (VFK @ AVL)",
+  "steps": "GET /api/game/ucl/401915394",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 26 plays, 14 with players, blank 0, source ESPN; roles: Comes on 10, Goes off 10, Scorer 3, Assist 2, Own goal 1 · e.g. Goal - Header: Goal! Aston Villa 1, Viking 0. Ross Barkley (Aston Villa) header from the left side of the six yard box to the top left corner. Assiste",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-ligamx",
+  "area": "Item 4 live API",
+  "desc": "LIGAMX: live/latest-final game from today's feed has a human-readable description on every play (TIJ @ AME)",
+  "steps": "GET /api/game/ligamx/401876986",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "generic, post, 33 plays, 19 with players, blank 0, source ESPN; roles: Booked 6, Sent off 1, Comes on 10, Goes off 10, Scorer 2, Assist 2 · e.g. Goal: Goal! Club América 0, Club Tijuana 1. Elias Manoel (Club Tijuana) left footed shot from outside the box to the bottom left corner. Assisted by A",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-cbase",
+  "area": "Item 4 live API",
+  "desc": "CBASE: live/latest-final game from today's feed has a human-readable description on every play (OU @ UNC (Men's College World Series Championship Final - Game 3))",
+  "steps": "GET /api/game/cbase/401874453",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "baseball, post, 226 plays, 187 with players, blank 0, source ESPN; roles: Pitcher 187, Batter 172, Runner on 2nd 14, Runner on 3rd 11 · e.g. At-bat starts: J. Rose pitches to J. Walk [Pitcher: Jackson Rose; Batter: Jason Walk]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-mcbb",
+  "area": "Item 4 live API",
+  "desc": "MCBB: live/latest-final game from today's feed has a human-readable description on every play (no game)",
+  "steps": "GET /api/game/mcbb/…",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "NO-GAME nothing live or final in the current feed (off-season / between events) (no live or final game in the feed)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-wcbb",
+  "area": "Item 4 live API",
+  "desc": "WCBB: live/latest-final game from today's feed has a human-readable description on every play (no game)",
+  "steps": "GET /api/game/wcbb/…",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "NO-GAME nothing live or final in the current feed (off-season / between events) (no live or final game in the feed)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-golf",
+  "area": "Item 4 live API",
+  "desc": "GOLF: live/latest-final game from today's feed has a human-readable description on every play (VidantaWorld Mexico Open)",
+  "steps": "GET /api/game/golf/pga-401850978",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "golf, in, 12 plays, 12 with players, blank 0, source ESPN; roles: Player 12 · e.g. Birdie: Trent Phillips made a birdie (3) on hole 9 (par 4); now E through 9 [Player: Trent Phillips]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-tennis",
+  "area": "Item 4 live API",
+  "desc": "TENNIS: live/latest-final game from today's feed has a human-readable description on every play (Francesca Jones v Marjorie Souza (Curitiba Open))",
+  "steps": "GET /api/game/tennis/wta-185770",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "tennis, in, 1 plays, 1 with players, blank 0, source ESPN; roles: Player 2 · e.g. Set 1 in progress: Francesca Jones vs Marjorie Souza (Round 2). Set 1: Francesca Jones won 3-2. (1) Francesca Jones (GBR) leads Marjorie Souza (BRA) 3",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-ufc",
+  "area": "Item 4 live API",
+  "desc": "UFC: live/latest-final game from today's feed has a human-readable description on every play (UFC 333: Volkanovski vs. Evloev)",
+  "steps": "GET /api/game/ufc/600061267",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "event, post, 14 plays, 14 with players, blank 0, source ESPN; roles: Winner 14, Opponent 14 · e.g. Result: Iasmin Lucindo defeated Nicolle Caliari, round 3 at 5:00 [Winner: Iasmin Lucindo; Opponent: Nicolle Caliari]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-f1",
+  "area": "Item 4 live API",
+  "desc": "F1: live/latest-final game from today's feed has a human-readable description on every play (MSC Cruises United States Grand Prix)",
+  "steps": "GET /api/game/f1/600057446",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "event, post, 5 plays, 5 with players, blank 0, source ESPN; roles: P1 4, P2 5, P3 5, Winner 1 · e.g. Result: 1. Kimi Antonelli, 2. Charles Leclerc, 3. Max Verstappen [Winner: Kimi Antonelli; P2: Charles Leclerc; P3: Max Verstappen]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-nascar",
+  "area": "Item 4 live API",
+  "desc": "NASCAR: live/latest-final game from today's feed has a human-readable description on every play (NASCAR Cup Series at Talladega)",
+  "steps": "GET /api/game/nascar/202610250041",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "event, post, 1 plays, 1 with players, blank 0, source ESPN; roles: Winner 1, P2 1, P3 1 · e.g. Result: 1. Kyle Larson, 2. William Byron, 3. Ricky Stenhouse Jr. [Winner: Kyle Larson; P2: William Byron; P3: Ricky Stenhouse Jr.]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-L-indy",
+  "area": "Item 4 live API",
+  "desc": "INDY: live/latest-final game from today's feed has a human-readable description on every play (Grand Prix of Monterey)",
+  "steps": "GET /api/game/indy/202609061784",
+  "expected": "Every play non-blank with a \"what\"; players with roles where ESPN provides them; honest NO-GAME only for off-season sports",
+  "actual": "event, post, 1 plays, 1 with players, blank 0, source ESPN; roles: Winner 1, P2 1, P3 1 · e.g. Result: 1. Scott McLaughlin, 2. Kyle Kirkwood, 3. Alexander Rossi [Winner: Scott McLaughlin; P2: Kyle Kirkwood; P3: Alexander Rossi]",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-UI-nfl",
+  "area": "Item 4 UI",
+  "desc": "NFL Gamecast shows what happened and who was involved (banner/play list) at 390px",
+  "steps": "Open #/game/nfl/401873009",
+  "expected": "Latest/final-play banner with sentence + player chips (role + name + team); play list entries each with a sentence; no \"undefined\"; no horizontal scroll",
+  "actual": "12 play sentences, 28 player chips (roles: Passer, Target, Tackled by, Kicker, Rusher, Extra point), banner=true, scrollWidth 390; e.g. \"Tanner McKee pass complete to Elijah Mitchell for no gain, tackled by Justin Barron and Juanyeh Thomas\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-nfl.png"
+ },
+ {
+  "id": "GC-UI-cfb",
+  "area": "Item 4 UI",
+  "desc": "CFB Gamecast shows what happened and who was involved (banner/play list) at 390px",
+  "steps": "Open #/game/cfb/401871057",
+  "expected": "Latest/final-play banner with sentence + player chips (role + name + team); play list entries each with a sentence; no \"undefined\"; no horizontal scroll",
+  "actual": "6 play sentences, 14 player chips (roles: Rusher, Tackled by, Extra point, Kicker, Passer, Target), banner=true, scrollWidth 390; e.g. \"Lucas Farrington rush for a loss of 1 yard, tackled by Zhakius Thomas and Tory Gethers\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-cfb.png"
+ },
+ {
+  "id": "GC-UI-mlb",
+  "area": "Item 4 UI",
+  "desc": "MLB Gamecast shows what happened and who was involved (banner/play list) at 390px",
+  "steps": "Open #/game/mlb/401908046",
+  "expected": "Latest/final-play banner with sentence + player chips (role + name + team); play list entries each with a sentence; no \"undefined\"; no horizontal scroll",
+  "actual": "7 play sentences, 17 player chips (roles: Pitcher, Batter, Runner on 3rd, Runner on 2nd), banner=true, scrollWidth 390; e.g. \"Palacios grounded out to second. (Richie Palacios batting against Trevor Megill)\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-mlb.png"
+ },
+ {
+  "id": "GC-UI-nba",
+  "area": "Item 4 UI",
+  "desc": "NBA Gamecast shows what happened and who was involved (banner/play list) at 390px",
+  "steps": "Open #/game/nba/401909892",
+  "expected": "Latest/final-play banner with sentence + player chips (role + name + team); play list entries each with a sentence; no \"undefined\"; no horizontal scroll",
+  "actual": "2 play sentences, 1 player chips (roles: Shooter), banner=true, scrollWidth 390; e.g. \"End of Game\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-nba.png"
+ },
+ {
+  "id": "GC-UI-nhl",
+  "area": "Item 4 UI",
+  "desc": "NHL Gamecast shows what happened and who was involved (banner/play list) at 390px",
+  "steps": "Open #/game/nhl/401892599",
+  "expected": "Latest/final-play banner with sentence + player chips (role + name + team); play list entries each with a sentence; no \"undefined\"; no horizontal scroll",
+  "actual": "11 play sentences, 28 player chips (roles: Shot, Goalie, Goal, Assist), banner=true, scrollWidth 390; e.g. \"Game End\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-nhl.png"
+ },
+ {
+  "id": "GC-UI-epl",
+  "area": "Item 4 UI",
+  "desc": "EPL Gamecast shows what happened and who was involved (banner/play list) at 390px",
+  "steps": "Open #/game/epl/401878764",
+  "expected": "Latest/final-play banner with sentence + player chips (role + name + team); play list entries each with a sentence; no \"undefined\"; no horizontal scroll",
+  "actual": "2 play sentences, 1 player chips (roles: Shooter), banner=true, scrollWidth 390; e.g. \"Second Half ends, Sunderland 0, Leeds United 0.\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-epl.png"
+ },
+ {
+  "id": "GC-UI-cbase",
+  "area": "Item 4 UI",
+  "desc": "CBASE Gamecast shows what happened and who was involved (banner/play list) at 390px",
+  "steps": "Open #/game/cbase/401874453",
+  "expected": "Latest/final-play banner with sentence + player chips (role + name + team); play list entries each with a sentence; no \"undefined\"; no horizontal scroll",
+  "actual": "13 play sentences, 32 player chips (roles: Pitcher, Batter, Runner on 2nd, Runner on 3rd), banner=true, scrollWidth 390; e.g. \"End of the 9th inning\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-cbase.png"
+ },
+ {
+  "id": "GC-UI-golf",
+  "area": "Item 4 UI",
+  "desc": "GOLF view tells the story with named players (no point-by-point exists in ESPN's feed for tennis; golf/UFC/F1 use leaderboard/result stories)",
+  "steps": "Open #/game/golf/pga-401850978",
+  "expected": "At least one story sentence naming real players/drivers/fighters; no \"undefined\"; no horizontal scroll",
+  "actual": "24 story/player elements, page 5490 chars, scrollWidth 390; e.g. \"Denny McCarthy made a +e (4) on hole 18 (par 4); now E through 15\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-golf.png"
+ },
+ {
+  "id": "GC-UI-tennis",
+  "area": "Item 4 UI",
+  "desc": "TENNIS view tells the story with named players (no point-by-point exists in ESPN's feed for tennis; golf/UFC/F1 use leaderboard/result stories)",
+  "steps": "Open #/game/tennis/wta-185770",
+  "expected": "At least one story sentence naming real players/drivers/fighters; no \"undefined\"; no horizontal scroll",
+  "actual": "3 story/player elements, page 1484 chars, scrollWidth 390; e.g. \"Francesca Jones vs Marjorie Souza (Round 2). Set 1: Francesca Jones won 3-2. Francesca Jones to serve. (1) Francesca Jon\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-tennis.png"
+ },
+ {
+  "id": "GC-UI-ufc",
+  "area": "Item 4 UI",
+  "desc": "UFC view tells the story with named players (no point-by-point exists in ESPN's feed for tennis; golf/UFC/F1 use leaderboard/result stories)",
+  "steps": "Open #/game/ufc/600061267",
+  "expected": "At least one story sentence naming real players/drivers/fighters; no \"undefined\"; no horizontal scroll",
+  "actual": "14 story/player elements, page 2245 chars, scrollWidth 390; e.g. \"Alexander Volkanovski defeated Movsar Evloev, round 2 at 4:54\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-ufc.png"
+ },
+ {
+  "id": "GC-UI-f1",
+  "area": "Item 4 UI",
+  "desc": "F1 view tells the story with named players (no point-by-point exists in ESPN's feed for tennis; golf/UFC/F1 use leaderboard/result stories)",
+  "steps": "Open #/game/f1/600057446",
+  "expected": "At least one story sentence naming real players/drivers/fighters; no \"undefined\"; no horizontal scroll",
+  "actual": "1 story/player elements, page 835 chars, scrollWidth 390; e.g. \"1. Kimi Antonelli, 2. Charles Leclerc, 3. Max Verstappen\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-f1.png"
+ },
+ {
+  "id": "GC-02",
+  "area": "Item 4 fallback",
+  "desc": "Missing data: when ESPN gives no player/description for a play, the raw ESPN play text is shown, never a blank row, and no invented players",
+  "steps": "Intercept /api/game, strip who/desc/what from every play, open the game",
+  "expected": "Plays still render their raw text; zero player chips; no blank sentences",
+  "actual": "11 plays shown with raw text, blank 0, chips 0; e.g. \"(No Huddle, Shotgun) T.McKee pass short right to E.Mitchell to 50 for no gain (J.Barron; J\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-gc-fallback-raw.png"
+ },
+ {
+  "id": "GC-03",
+  "area": "Item 4 safety",
+  "desc": "Hostile data is escaped: script in a player name, javascript: and http: headshot URLs never become live markup/links",
+  "steps": "Inject <img onerror>, javascript: headshot, http: headshot into a play's who",
+  "expected": "Nothing executes; no javascript:/http: src rendered; name shown as text",
+  "actual": "{\"x\":0,\"inj\":0,\"bad\":0,\"text\":true}",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "C-04",
+  "area": "Console",
+  "desc": "Console clean through every Gamecast check",
+  "steps": "Review diagnostics",
+  "expected": "No page errors / app-origin errors (expected 4xx from deliberately stripped intercepts excluded)",
+  "actual": "no console/page errors, no failed app requests (CDN noise 0)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "GC-04",
+  "area": "Item 4 fallback",
+  "desc": "NCAA.com outage: college baseball Gamecast still returns plays (ESPN first, NCAA.com only a fallback) and never 500s",
+  "steps": "GET /api/game/cbase/<id> on the :8796 server",
+  "expected": "HTTP 200, plays with descriptions",
+  "actual": "HTTP 200, 226 plays",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-01",
+  "area": "AUSL API",
+  "desc": "AUSL is in the sport catalog as a team sport and /api/teams returns the six real franchises with location-first names, logos and one league group",
+  "steps": "GET /api/sports, /api/teams?sport=ausl",
+  "expected": "ausl kind=team; 6 teams exactly as the league lists them; logos https; each name starts with its city",
+  "actual": "catalog AUSL Pro Softball (team, Baseball); teams: Carolina Blaze, Chicago Bandits, Oklahoma City Spark, Portland Cascade, Texas Volts, Utah Talons",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-02",
+  "area": "AUSL API",
+  "desc": "Scoreboard (offseason): the last 8 real games of the most recent season with an honest offseason notice, attribution and a link to the league; nothing invented",
+  "steps": "GET /api/scoreboard?sport=ausl",
+  "expected": "8 final games ending with the 2026 Championship Series; notice mentions Offseason and that the next dates are not available; attribution + link present",
+  "actual": "8 events, season 2026/complete; newest UTA @ CHI 6-1; notice: Offseason. The 2026 AUSL season is over; here are its last games. The league plays in the …",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-03",
+  "area": "AUSL API",
+  "desc": "Standings are computed from the regular-season game log (6 teams, W-L adds up) and labelled as computed, not official",
+  "steps": "GET /api/rankings?sport=ausl",
+  "expected": "Six rows; wins = losses in total; note says computed; attribution present",
+  "actual": "6 rows, total W 75 / L 75; first Utah Talons; note \"Computed from the season’s game results. Ties are ordered by head-to-h\"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-04",
+  "area": "AUSL API",
+  "desc": "Team page + schedule: record, results, roster (display-only) and attribution; roster/athlete search return nothing instead of inventing players",
+  "steps": "GET /api/team/ausl:6481, /api/schedule/team/ausl:6481, /api/roster/ausl:6481, /api/game/ausl/<id>",
+  "expected": "Talons 16-9 with 27 schedule rows; roster > 10 names; roster endpoint []; game is limited (no plays) with attribution",
+  "actual": "rec 16-9, 27 games, roster 19 (display-only), /roster [], game limited=[object Object], plays 0",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-05",
+  "area": "AUSL API",
+  "desc": "Hub list + bracket: standings list and play-in → Championship Series with the real champion (Utah Talons); the Talons are not mistaken for a Utah-flagged college team",
+  "steps": "GET /api/lists/ausl, /api/playoffs/ausl, /api/lists",
+  "expected": "list kind=standings; bracket complete, champion Talons, 2-0 over Bandits; index lists ten sports incl. AUSL",
+  "actual": "list standings/offseason; bracket complete: 2026 AUSL champion: Utah Talons; Beat Chicago Bandits 2–0 in the best-of-3 AUSL Championship Series; hub sports 10",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-06",
+  "area": "AUSL API",
+  "desc": "AUSL news is real (public RSS searches of theausl.com and mlb.com AUSL coverage) and sports-only",
+  "steps": "GET /api/news?sport=ausl",
+  "expected": "200; items are objects with title+link; no item without a link; source status reported",
+  "actual": "2 items today; sources ausl-ap:ok ausl-reuters:ok ausl-site:ok ausl-mlb:ok",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-10",
+  "area": "AUSL UI",
+  "desc": "Scores (390px): AUSL shows an offseason banner, the last 8 finals with TV and venue, a link out to theausl.com and attribution; not blank",
+  "steps": "Open #/scores with AUSL selected",
+  "expected": "Offseason banner; 8 Gamecast links; Championship Game 2 first; attribution footer; no horizontal scroll",
+  "actual": "8 games; banner true; attribution true",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-scores.png"
+ },
+ {
+  "id": "AU-11",
+  "area": "AUSL UI",
+  "desc": "Watch/stream links are not on the AUSL score cards (only in an opened game)",
+  "steps": "Count watch links on #/scores",
+  "expected": "0 watch links",
+  "actual": "0 watch links",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-12",
+  "area": "AUSL UI",
+  "desc": "Standings tab: six teams ordered by record, labelled computed/not official, source + attribution, offseason note",
+  "steps": "Open #/rankings with AUSL selected",
+  "expected": "Rows Talons, Bandits, Spark, Cascade, Blaze, Volts; \"not an official\"; Wikipedia credit",
+  "actual": "order idx 287,310,334,357,381,402; computed note true",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-standings.png"
+ },
+ {
+  "id": "AU-13",
+  "area": "AUSL UI",
+  "desc": "Team page (Utah Talons): record, Follow/Mute, Schedule/Stats/News/Roster tabs, results incl. playoffs labelled, attribution (not \"from ESPN\")",
+  "steps": "Open #/team/ausl:6481",
+  "expected": "Header 16-9; Follow; four tabs; \"incl. playoffs\"; footer credits Wikipedia/MLB Stats API",
+  "actual": "UTAH TALONS | 16-9 · 1st in the AUSL · AUSL | + Follow | Mute | Schedule | Stats | News | Roster | UPCOMING | 0 · times in MDT | No upcoming games: the season i",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-team.png"
+ },
+ {
+  "id": "AU-14",
+  "area": "AUSL UI",
+  "desc": "Roster tab is display-only: names from the MLB Stats API with no follow stars or player-page links, and credits its source",
+  "steps": "Tap the Roster tab",
+  "expected": "Rows present; no follow-star buttons; no player links; attribution",
+  "actual": "text 651 chars, follow stars 0, player links 0, credit true",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-roster.png"
+ },
+ {
+  "id": "AU-15",
+  "area": "AUSL UI",
+  "desc": "Gamecast (Championship Game 2): final score, venue, TV and a plain \"play-by-play isn't available\" notice with a theausl.com link; no empty tabs/panels, no invented plays",
+  "steps": "Open #/game/ausl/2026072601",
+  "expected": "Talons 6 – 1 Bandits Final; notice; link; attribution; no Plays/Who tab",
+  "actual": "tabs []; theausl.com links 2; notice true",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-gamecast.png"
+ },
+ {
+  "id": "AU-16",
+  "area": "AUSL UI",
+  "desc": "A regular-season game (extra innings / mercy-rule variants) also renders: score, innings label, round-less header",
+  "steps": "Open #/game/ausl/2026071802 (final in 8)",
+  "expected": "Final/8 or Final shown, both teams, no \"undefined\"/NaN",
+  "actual": "SPARK | 14-11 | 12 | – | 4 | Final/8 | BLAZE | 9-16 | Smith Family Stadium · TV: ESPNU | Play-by-play isn’t available for AUSL gam",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-17",
+  "area": "AUSL UI",
+  "desc": "Bracket Buzzer hub has an AUSL card (Standings + \"Play-in → AUSL Championship\") like the other ten sports",
+  "steps": "Open #/rankings/lists",
+  "expected": "AUSL Pro Softball card first with both buttons; ten cards total",
+  "actual": "11 cards; AUSL card present",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-hub.png"
+ },
+ {
+  "id": "AU-18",
+  "area": "AUSL UI",
+  "desc": "Top list page: computed standings with \"How this list is built\", caveats (postseason excluded, Wikipedia volunteer-edited, AUSL terms) and source links",
+  "steps": "Open #/rankings/list/ausl",
+  "expected": "Offseason chip; six rows; method + caveats + links",
+  "actual": "chips/method/caveats present; 1369 chars",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-list.png"
+ },
+ {
+  "id": "AU-19",
+  "area": "AUSL UI",
+  "desc": "Bracket page: \"2026 AUSL champion: Utah Talons\", play-in with a short date (not an ISO timestamp), Championship Series 2–0, format notes; no \"national champion\" wording",
+  "steps": "Open #/rankings/playoffs/ausl",
+  "expected": "Champion card; Play-in Cascade 5 – Bandits 6; series Talons 2 – Bandits 0; Jul 23; no 2026-07 ISO text",
+  "actual": "AUSL PRO SOFTBALL | CHAMPIONSHIP & PLAYOFF BRACKET | 🥎 AUSL | 🏈 NFL | 🏀 NBA | 🏀 WNBA | 🏀 NCAAM | 🏀 NCAAW | ⚾ MLB | ⚾ CBASE | 🥎 Softball | 🤸 Gym | Top list | Brack",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-bracket.png"
+ },
+ {
+  "id": "AU-20",
+  "area": "AUSL UI",
+  "desc": "News page for AUSL renders real AUSL stories (or an honest empty message) and is sports-only",
+  "steps": "Open #/news with AUSL selected",
+  "expected": "Story list or empty-state text; no politics words",
+  "actual": "0 story links, 463 chars",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-news.png"
+ },
+ {
+  "id": "AU-21",
+  "area": "AUSL UI",
+  "desc": "No AUSL news at all → friendly empty state, never a blank page",
+  "steps": "Serve an empty /api/news feed; open #/news",
+  "expected": "Visible explanatory text, no error box",
+  "actual": "AUSL NEWS | MANY OUTLETS, SIDE BY SIDE · YOUR MUTES APPLIED EVERYWHERE | My teams | All AUSL | Straight only | LATEST | 0 headlines · 0 outl",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-news-empty.png"
+ },
+ {
+  "id": "C-04",
+  "area": "Console",
+  "desc": "Console clean through all AUSL pages",
+  "steps": "Review diagnostics",
+  "expected": "No page/console errors, no 4xx/5xx from the app origin",
+  "actual": "no console/page errors, no failed app requests (CDN noise 0)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-30",
+  "area": "AUSL picker",
+  "desc": "Favorites picker: AUSL is a selectable league with six location-first teams (A–Z), no Teams/Players toggle (no followable players), and following a team saves ausl:<id>",
+  "steps": "Settings › Teams; choose AUSL; follow Utah Talons",
+  "expected": "League chip AUSL; six names sorted; no Players toggle; follow = [ausl:6481]",
+  "actual": "chip=true; names found 6/6; sorted=true; players toggle=false",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-picker.png"
+ },
+ {
+  "id": "AU-31",
+  "area": "AUSL picker",
+  "desc": "Following a team stores the id and the Scores page shows it under Favorites",
+  "steps": "Tap Utah Talons; open #/scores",
+  "expected": "follow includes ausl:6481",
+  "actual": "follow=[\"ausl:6481\"]",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-favorite-scores.png"
+ },
+ {
+  "id": "AU-40",
+  "area": "AUSL all-sports",
+  "desc": "All-sports default: a brand-new profile (nothing chosen) sees AUSL in the sport list, the hub and the picker; nothing hidden",
+  "steps": "Fresh profile; Settings › Sports, #/rankings/lists, Settings › Teams",
+  "expected": "AUSL tile on Sports; AUSL card on hub; AUSL group in the all-sports picker",
+  "actual": "sports tile=true; hub card=true; picker mentions AUSL=true",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-allsports.png"
+ },
+ {
+  "id": "AU-50",
+  "area": "AUSL mute",
+  "desc": "NFL only + \"mute every sport I haven't selected\" → AUSL headlines (by \"AUSL\" and \"Athletes Unlimited\") are hidden, NFL stays",
+  "steps": "Serve 3 headlines (1 NFL, 2 AUSL) to #/news with sports=nfl, muteUnselected=true",
+  "expected": "AUSL headlines visible: 0/2, NFL visible",
+  "actual": "visible: NFL: Chiefs beat Bil",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-mute-au-50.png"
+ },
+ {
+  "id": "AU-51",
+  "area": "AUSL mute",
+  "desc": "NFL + AUSL picked with the mute box ticked → AUSL headlines stay visible",
+  "steps": "Serve 3 headlines (1 NFL, 2 AUSL) to #/news with sports=nfl+ausl, muteUnselected=true",
+  "expected": "AUSL headlines visible: 2/2, NFL visible",
+  "actual": "visible: NFL: Chiefs beat Bil | AUSL: Utah Talons sw | Athletes Unlimited S",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-mute-au-51.png"
+ },
+ {
+  "id": "AU-52",
+  "area": "AUSL mute",
+  "desc": "Box unticked → AUSL headlines are visible even though AUSL is not picked",
+  "steps": "Serve 3 headlines (1 NFL, 2 AUSL) to #/news with sports=nfl, muteUnselected=false",
+  "expected": "AUSL headlines visible: 2/2, NFL visible",
+  "actual": "visible: NFL: Chiefs beat Bil | AUSL: Utah Talons sw | Athletes Unlimited S",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-mute-au-52.png"
+ },
+ {
+  "id": "AU-60",
+  "area": "AUSL source down",
+  "desc": "With Wikipedia and the MLB API both unreachable the app serves the saved 2026 snapshot (flagged), never a blank page or 500",
+  "steps": "Start a server with AUSL_WIKI_BASE / AUSL_MLB_BASE pointing at a dead port; hit scoreboard, standings, teams, bracket, game",
+  "expected": "All 200 with data; notice says \"saved copy\"; 6 teams from the built-in list",
+  "actual": "statuses 200/200/200/200/200; 8 games; notice \"ource couldn’t be reached, so this is a saved copy of the 2026 season.\"; teams 6",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-61",
+  "area": "AUSL source down",
+  "desc": "UI with both sources down: Scores still lists games, with the saved-copy note, and the team page loads",
+  "steps": "Open #/scores and #/team/ausl:6481 on the dead-source server",
+  "expected": "Games + saved-copy note; team page header",
+  "actual": "scores: 8 games, saved-copy note=true; team page true",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-ausl-sources-down.png"
+ },
+ {
+  "id": "AU-70",
+  "area": "AUSL compliance",
+  "desc": "Terms/robots: the app never scrapes theausl.com (links only); MLB + Wikipedia are called with a descriptive User-Agent, results are cached; attribution strings are in the code",
+  "steps": "Grep server/ausl.js for hosts fetched; check cache + UA + attribution",
+  "expected": "No theausl.com fetch; only en.wikipedia.org + statsapi.mlb.com; cached(); UA contains the app name; \"CC BY-SA 4.0\" present",
+  "actual": "hosts in provider: https://en.wikipedia.org, https://statsapi.mlb.com, https://straight, https://theausl.com, https://www.mlbstatic.com; theausl.com is link-only",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "AU-71",
+  "area": "AUSL compliance",
+  "desc": "Settings › Sources lists the AUSL news outlets and About credits the data sources",
+  "steps": "GET /api/sources; read About copy",
+  "expected": "Sources include an AUSL entry; About mentions Wikipedia and MLB Stats API",
+  "actual": "5 AUSL sources: ausl-ap, ausl-reuters, ausl-site, ausl-mlb, ausl-gnews-teams",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "S-01",
+  "area": "Service worker",
+  "desc": "SW ss-v29 installs with the new shell (whoplay.js, picker.js at ?v=29); old caches dropped",
+  "steps": "Open app with SW allowed; list caches",
+  "expected": "caches include ss-v29; no ss-v28; whoplay.js?v=29 and picker.js?v=29 cached",
+  "actual": "caches ss-v29; 36 shell files; /whoplay.js?v=29,/picker.js?v=29",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "S-02",
+  "area": "Service worker",
+  "desc": "Offline: the Settings shell and picker still open from cache, and a Gamecast shows the friendly error (not a blank screen)",
+  "steps": "Reload once online; go offline; reload; open Settings › Teams and a game",
+  "expected": "Settings renders; Gamecast shows an error/Try again state or cached content",
+  "actual": "offline settings view 1385 chars; offline game page: \"Couldn’t load data: Request failed (503). Retry\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-offline-game.png"
+ },
+ {
+  "id": "S-03",
+  "area": "Stale client",
+  "desc": "A client still on the previous service worker (ss-v28 cache + old settings) updates cleanly to ss-v29: old cache dropped, no reload loop, new UI served, settings kept",
+  "steps": "Via a pass-through proxy that serves /sw.js as \"ss-v28\" on the first visit (planting a stale ss-v28 cache), then the real sw.js; trigger an update",
+  "expected": "caches become ss-v29 (+img) only; at most 2 main-frame navigations during the update; Mute page has the new checkbox; stored settings intact (v6, follows kept)",
+  "actual": "before: ss-v28; after: ss-v29; main-frame navigations during update: 0; new checkbox present=true; settings v6, follow mlb:2",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-U1",
+  "area": "Big plays",
+  "desc": "Unit: per-sport classification on real ESPN fixtures (+ labelled synthetic edge cases)",
+  "steps": "node tests/bigplay.test.js",
+  "expected": "Exit 0, all assertions pass",
+  "actual": "bigplay.test.js: 458 assertions passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-S1",
+  "area": "Big plays",
+  "desc": "Static: bp animations use only transform/opacity (+ the --bpn counter); the only box-shadow animation is the glow on two cards; reduced-motion rules and no audio",
+  "steps": "Parse the big-play keyframes in styles.css and the client module",
+  "expected": "No layout properties animated; prefers-reduced-motion handled; no Audio/AudioContext",
+  "actual": "9 bp keyframes; non-transform/opacity: []; bpGlow props box-shadow",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-S2",
+  "area": "Big plays",
+  "desc": "Versions: bigplay.js is in the SW shell, imported at ?v=29 by whoplay.js/app.js; server flags are wired for every family",
+  "steps": "grep",
+  "expected": "All present",
+  "actual": "SW shell, whoplay, app, gamecast reference bigplay.js?v=29; run.json untracked",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-API-nfl",
+  "area": "Big plays API",
+  "desc": "NFL: /api/game returns real big-play data (id, tier, headline, sub, side) and plays carry the same bp",
+  "steps": "GET /api/game/nfl/401873011",
+  "expected": "big[] non-empty; every item has id + bp{t,k,h}; each id exists as a play; tiers only big/huge",
+  "actual": "9 big (2 huge); 9 plays carry bp; e.g. \"BIG PASS! 20-YARD PASS\"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-API-cfb",
+  "area": "Big plays API",
+  "desc": "CFB: /api/game returns real big-play data (id, tier, headline, sub, side) and plays carry the same bp",
+  "steps": "GET /api/game/cfb/401871071",
+  "expected": "big[] non-empty; every item has id + bp{t,k,h}; each id exists as a play; tiers only big/huge",
+  "actual": "23 big (3 huge); 23 plays carry bp; e.g. \"BIG PASS! 21-YARD PASS\"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-API-mlb",
+  "area": "Big plays API",
+  "desc": "MLB: /api/game returns real big-play data (id, tier, headline, sub, side) and plays carry the same bp",
+  "steps": "GET /api/game/mlb/401908045",
+  "expected": "big[] non-empty; every item has id + bp{t,k,h}; each id exists as a play; tiers only big/huge",
+  "actual": "4 big (2 huge); 4 plays carry bp; e.g. \"WALK-OFF! WALK-OFF SINGLE\"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-API-nba",
+  "area": "Big plays API",
+  "desc": "NBA: /api/game returns real big-play data (id, tier, headline, sub, side) and plays carry the same bp",
+  "steps": "GET /api/game/nba/401909877",
+  "expected": "big[] non-empty; every item has id + bp{t,k,h}; each id exists as a play; tiers only big/huge",
+  "actual": "40 big (2 huge); 41 plays carry bp; e.g. \"BUZZER-BEATER! GAME-WINNING SHOT\"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-API-nhl",
+  "area": "Big plays API",
+  "desc": "NHL: /api/game returns real big-play data (id, tier, headline, sub, side) and plays carry the same bp",
+  "steps": "GET /api/game/nhl/401892585",
+  "expected": "big[] non-empty; every item has id + bp{t,k,h}; each id exists as a play; tiers only big/huge",
+  "actual": "7 big (1 huge); 7 plays carry bp; e.g. \"OVERTIME GOAL! \"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-API-epl",
+  "area": "Big plays API",
+  "desc": "EPL: /api/game returns real big-play data (id, tier, headline, sub, side) and plays carry the same bp",
+  "steps": "GET /api/game/epl/401879254",
+  "expected": "big[] non-empty; every item has id + bp{t,k,h}; each id exists as a play; tiers only big/huge",
+  "actual": "2 big (2 huge); 2 plays carry bp; e.g. \"GOAL! 58'\"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-API-mls",
+  "area": "Big plays API",
+  "desc": "MLS: /api/game returns real big-play data (id, tier, headline, sub, side) and plays carry the same bp",
+  "steps": "GET /api/game/mls/761890",
+  "expected": "big[] non-empty; every item has id + bp{t,k,h}; each id exists as a play; tiers only big/huge",
+  "actual": "7 big (6 huge); 7 plays carry bp; e.g. \"GOAL! 81'\"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-API-golf",
+  "area": "Big plays API",
+  "desc": "Golf: the leaderboard payload carries big[] only for real eagle-or-better holes (never invented)",
+  "steps": "GET a live/recent golf event",
+  "expected": "big[] is an array; every item names a player, round, hole and k in eagle/albatross/ace",
+  "actual": "8 eagle-or-better holes in event pga-401850978",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-T-nfl",
+  "area": "Big plays UI",
+  "desc": "NFL: a new big play on a live poll pops the callout (headline, sub-line, who, tier), once",
+  "steps": "Open a live game (first render has all-but-latest), then the 10 s poll adds one big play",
+  "expected": "Overlay appears once, shows the new play's headline + player names; no second overlay on the following polls",
+  "actual": "before 0; shown \"BIG PASS!\" / \"20-YARD PASS\" / who \"Brandon Smith · from Aaron Rodgers\" / BIG PLAY · Q3 2:31; auto-hid true; overlays after 2+ more polls: 1; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-T-mlb",
+  "area": "Big plays UI",
+  "desc": "MLB: a new big play on a live poll pops the callout (headline, sub-line, who, tier), once",
+  "steps": "Open a live game (first render has all-but-latest), then the 10 s poll adds one big play",
+  "expected": "Overlay appears once, shows the new play's headline + player names; no second overlay on the following polls",
+  "actual": "before 0; shown \"WALK-OFF!\" / \"WALK-OFF SINGLE\" / who \"Ben Williamson · off Shane Drohan\" / HUGE PLAY · Bottom 12th; auto-hid true; overlays after 2+ more polls: 1; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-T-nba",
+  "area": "Big plays UI",
+  "desc": "NBA: a new big play on a live poll pops the callout (headline, sub-line, who, tier), once",
+  "steps": "Open a live game (first render has all-but-latest), then the 10 s poll adds one big play",
+  "expected": "Overlay appears once, shows the new play's headline + player names; no second overlay on the following polls",
+  "actual": "before 0; shown \"BUZZER-BEATER!\" / \"GAME-WINNING SHOT\" / who \"Jayson Tatum · assist Derrick White\" / HUGE PLAY · OT 0.0; auto-hid true; overlays after 2+ more polls: 1; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-T-nhl",
+  "area": "Big plays UI",
+  "desc": "NHL: a new big play on a live poll pops the callout (headline, sub-line, who, tier), once",
+  "steps": "Open a live game (first render has all-but-latest), then the 10 s poll adds one big play",
+  "expected": "Overlay appears once, shows the new play's headline + player names; no second overlay on the following polls",
+  "actual": "before 0; shown \"OVERTIME GOAL!\" / \"\" / who \"Kent Johnson · assist Adam Fantilli\" / HUGE PLAY · OT 2:22; auto-hid true; overlays after 2+ more polls: 1; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-T-epl",
+  "area": "Big plays UI",
+  "desc": "EPL: a new big play on a live poll pops the callout (headline, sub-line, who, tier), once",
+  "steps": "Open a live game (first render has all-but-latest), then the 10 s poll adds one big play",
+  "expected": "Overlay appears once, shows the new play's headline + player names; no second overlay on the following polls",
+  "actual": "before 0; shown \"GOAL!\" / \"\" / who \"Harvey Barnes · assist Amar Dedic\" / HUGE PLAY · 58'; auto-hid true; overlays after 2+ more polls: 1; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-N1",
+  "area": "Big plays UI",
+  "desc": "No replay: opening an in-progress game with every big play already in it shows nothing (no history spam); a refresh/poll with the same plays shows nothing",
+  "steps": "Open the live game with the full big list, wait 2 polls",
+  "expected": "Zero overlays; every id recorded as seen",
+  "actual": "9 big plays present, overlays 0, /api/game called 3× (initial + polls)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-N2",
+  "area": "Big plays UI",
+  "desc": "Burst: several new big plays in one poll collapse to ONE animation (highest tier, latest), the rest are marked seen",
+  "steps": "Open with 6 fewer big plays, then the poll adds them all",
+  "expected": "1 overlay for the burst; nothing afterwards",
+  "actual": "6 new big plays in one poll → 1 overlay",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-N3",
+  "area": "Big plays UI",
+  "desc": "Not for finished games: a finished game never auto-animates; leaving and returning does not replay",
+  "steps": "Open a finished game, wait for polls scheduling (none), reopen",
+  "expected": "Zero overlays",
+  "actual": "overlays 0",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-RM1",
+  "area": "Big plays UI",
+  "desc": "prefers-reduced-motion: the callout is a static highlighted card (no running animations, no confetti/shake/count-up) and still readable",
+  "steps": "Emulate reduced motion; trigger a huge play",
+  "expected": ".bpo.rm shown; zero running animations inside it; card fully on-screen",
+  "actual": "rm=true, running animations 0, confetti false, count-up false, opacity 1, card x 27–363, \"BIG PASS!\", removed after ~3.6 s: true",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-bp-reduced-motion.png"
+ },
+ {
+  "id": "BP-F-nfl",
+  "area": "Big plays UI",
+  "desc": "NFL finished game: \"Big plays\" chips (huge first); tapping a chip replays that play's callout",
+  "steps": "Open the finished game; tap the first chip; ",
+  "expected": "Chips card present, no auto-overlay on open, tap → overlay with that headline, no horizontal scroll",
+  "actual": "9 chips (9 visible), first \"BOMB Q2 13:17 · Barion Brown · from Tyler Shough\", opened silent (0 overlays), tap → \"BOMB!\"; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-bp-chips-nfl.png"
+ },
+ {
+  "id": "BP-F-nba",
+  "area": "Big plays UI",
+  "desc": "NBA finished game: \"Big plays\" chips (huge first); tapping a chip replays that play's callout; long list capped at 12 with Show all",
+  "steps": "Open the finished game; tap the first chip; tap Show all",
+  "expected": "Chips card present, no auto-overlay on open, tap → overlay with that headline, no horizontal scroll",
+  "actual": "40 chips (12 visible), first \"BUZZER-BEATER Q4 1.0 · Mikel Brown Jr. · assist Keon Ellis\", opened silent (0 overlays), tap → \"BUZZER-BEATER!\"; 40 visible after Show all; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-bp-chips-nba.png"
+ },
+ {
+  "id": "BP-B1",
+  "area": "Big plays UI",
+  "desc": "Play list: big plays carry a star badge beside the play description; plays that are not big do not",
+  "steps": "Open finished NBA, NHL, MLB, EPL and NFL games; count badges in the visible play list",
+  "expected": "Badges appear on listed big plays in each sport whose recent plays include one; every badge sits in a play row",
+  "actual": "nba: 0 badges of 2 listed plays; nhl: 7 badges of 9 listed plays (★ OVERTIME GOAL); mlb: 1 badges of 9 listed plays (★ WALK-OFF); epl: 2 badges of 4 listed plays (★ GOAL); nfl: 0 badges of 8 listed plays; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-bp-badge-nhl.png"
+ },
+ {
+  "id": "BP-FR-nfl",
+  "area": "Big plays UI",
+  "desc": "NFL (huge pass (count-up)): animation frames at 300 ms and 900 ms at 390px; no layout shift, no horizontal scroll, callout inside the viewport",
+  "steps": "Trigger via replay, pause animations at 300 ms and 900 ms, screenshot",
+  "expected": "Callout visible and on-screen in both frames; page layout unchanged vs. before; CLS ≈ 0",
+  "actual": "\"BOMB!\" · 49-YARD PASS; frames 300/900 ms; cards before 62,421,1170,1724 vs during 62,421,1170,1724; page height 4622→4622; CLS 0.0001; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-bp-nfl-300ms.png, screenshots/v23/qa-bp-nfl-900ms.png"
+ },
+ {
+  "id": "BP-FR-cfb",
+  "area": "Big plays UI",
+  "desc": "CFB (huge play): animation frames at 300 ms and 900 ms at 390px; no layout shift, no horizontal scroll, callout inside the viewport",
+  "steps": "Trigger via replay, pause animations at 300 ms and 900 ms, screenshot",
+  "expected": "Callout visible and on-screen in both frames; page layout unchanged vs. before; CLS ≈ 0",
+  "actual": "\"BOMB!\" · 45-YARD PASS; frames 300/900 ms; cards before 62,393,1276,1757 vs during 62,393,1276,1757; page height 5393→5393; CLS 0.0001; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-bp-cfb-300ms.png, screenshots/v23/qa-bp-cfb-900ms.png"
+ },
+ {
+  "id": "BP-FR-mlb",
+  "area": "Big plays UI",
+  "desc": "MLB (walk-off): animation frames at 300 ms and 900 ms at 390px; no layout shift, no horizontal scroll, callout inside the viewport",
+  "steps": "Trigger via replay, pause animations at 300 ms and 900 ms, screenshot",
+  "expected": "Callout visible and on-screen in both frames; page layout unchanged vs. before; CLS ≈ 0",
+  "actual": "\"HOME RUN!\" · TAKES THE LEAD; frames 300/900 ms; cards before 62,403,970,1537 vs during 62,403,970,1537; page height 3912→3912; CLS 0.0000; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-bp-mlb-300ms.png, screenshots/v23/qa-bp-mlb-900ms.png"
+ },
+ {
+  "id": "BP-FR-nba",
+  "area": "Big plays UI",
+  "desc": "NBA (buzzer-beater / three): animation frames at 300 ms and 900 ms at 390px; no layout shift, no horizontal scroll, callout inside the viewport",
+  "steps": "Trigger via replay, pause animations at 300 ms and 900 ms, screenshot",
+  "expected": "Callout visible and on-screen in both frames; page layout unchanged vs. before; CLS ≈ 0",
+  "actual": "\"BUZZER-BEATER!\" · TIES IT AT THE BUZZER; frames 300/900 ms; cards before 62,473,1333,1456 vs during 62,473,1333,1456; page height 3490→3490; CLS 0.0000; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-bp-nba-300ms.png, screenshots/v23/qa-bp-nba-900ms.png"
+ },
+ {
+  "id": "BP-FR-nhl",
+  "area": "Big plays UI",
+  "desc": "NHL (goal): animation frames at 300 ms and 900 ms at 390px; no layout shift, no horizontal scroll, callout inside the viewport",
+  "steps": "Trigger via replay, pause animations at 300 ms and 900 ms, screenshot",
+  "expected": "Callout visible and on-screen in both frames; page layout unchanged vs. before; CLS ≈ 0",
+  "actual": "\"OVERTIME GOAL!\" ; frames 300/900 ms; cards before 62,427,1002,1125 vs during 62,427,1002,1125; page height 4502→4502; CLS 0.0000; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-bp-nhl-300ms.png, screenshots/v23/qa-bp-nhl-900ms.png"
+ },
+ {
+  "id": "BP-FR-epl",
+  "area": "Big plays UI",
+  "desc": "EPL (goal): animation frames at 300 ms and 900 ms at 390px; no layout shift, no horizontal scroll, callout inside the viewport",
+  "steps": "Trigger via replay, pause animations at 300 ms and 900 ms, screenshot",
+  "expected": "Callout visible and on-screen in both frames; page layout unchanged vs. before; CLS ≈ 0",
+  "actual": "\"GOAL!\" ; frames 300/900 ms; cards before 62,376,655,778 vs during 62,376,655,778; page height 2776→2776; CLS 0.0000; scrollWidth 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-bp-epl-300ms.png, screenshots/v23/qa-bp-epl-900ms.png"
+ },
+ {
+  "id": "BP-C1",
+  "area": "Big plays UI",
+  "desc": "Count-up: the yardage number counts up during the animation (e.g. 0 → 49 yards)",
+  "steps": "Replay the NFL 49-yd pass, read the counter at 300 ms and at the end",
+  "expected": "Counter shows a smaller value mid-animation and the true yardage at the end",
+  "actual": "mid 0, end 49 (target 49); screen-reader text \"49\"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-L1",
+  "area": "Big plays UI",
+  "desc": "Navigation: leaving the game removes the overlay at once; it does not block taps (pointer-events: none)",
+  "steps": "Trigger a replay then navigate to #/scores",
+  "expected": "No .bpo after navigation",
+  "actual": "taps pass through overlay: true; overlays after navigation: 0",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-SW",
+  "area": "Big plays",
+  "desc": "Service worker ss-v29 caches bigplay.js in the app shell",
+  "steps": "Open app with SW allowed; list cache keys",
+  "expected": "ss-v29 cache has /bigplay.js?v=29",
+  "actual": "caches ss-v29,scfb-img-cors; bigplay.js cached: true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "BP-LV",
+  "area": "Big plays live",
+  "desc": "Live/recent data: every game in today's scoreboard feed that is live or final returns a well-formed big[] (never errors, never invented); sample counts",
+  "steps": "scripts/live-bigplay-v22.js against :8799",
+  "expected": "PASS for every sport with a game",
+  "actual": "nfl:PASS(15 big/0 huge, post) cfb:PASS(8 big/1 huge, in) mlb:PASS(0 big/0 huge, in) nba:PASS(23 big/0 huge, in) wnba:PASS(15 big/0 huge, post) nhl:PASS(2 big/0 huge, in) mls:PASS(1 big/1 huge, in) epl:PASS(0 big/0 huge, post) nwsl:PASS(4 big/4 huge, post) laliga:PASS(2 big/2 huge, post) bund:PASS(4 big/4 huge, post) seriea:PASS(2 big/2 huge, post) ligue1:PASS(2 big/2 huge, post) ucl:PASS(4 big/4 huge, post) ligamx:PASS(5 big/5 huge, post) cbase:PASS(2 big/0 huge, post) mcbb:NO-GAME wcbb:NO-GAME golf:PASS(0 big/0 huge, in) tennis:PASS(0 big/0 huge, in) ufc:PASS(0 big/0 huge, post) f1:PASS(0 big/0 huge, post) nascar:PASS(0 big/0 huge, post) indy:PASS(0 big/0 huge, post)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "TM-01",
+  "area": "Tab/data match",
+  "desc": "Rankings > NFL > Bracket (the reported defect): saved sport is CFB, page shows the NFL bracket: the NFL chip is highlighted, CFB is not",
+  "steps": "Seed sport=cfb; open #/rankings/playoffs/nfl",
+  "expected": "Exactly one chip is highlighted (NFL); aria-pressed agrees; browser title says NFL; saved sport is untouched",
+  "actual": "highlighted=nfl; pressed=nfl; title=\"Old School Sports · NFL\"; saved sport=cfb; page: NFL | CHAMPIONSHIP & PLAYOFF BRACKET | 🏈 NFL | ⚾ MLB | 🏀 NBA | 🏀 WNBA | 🏀 NCAAM | 🏀 NCAAW | ⚾ CBASE | 🥎 Softball |",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-tm-nfl-bracket-390.png"
+ },
+ {
+  "id": "TM-02",
+  "area": "Tab/data match",
+  "desc": "Top-list pages follow the URL sport for every list sport in the strip: NFL list, MLB list, NBA list, MLB playoffs",
+  "steps": "Open #/rankings/list/<sport> for nfl, mlb, nba",
+  "expected": "The highlighted chip equals the sport in the URL each time",
+  "actual": "nfl→nfl; mlb→mlb; nba→nba; playoffs/mlb→mlb",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "TM-03",
+  "area": "Tab/data match",
+  "desc": "A sport shown that has no chip in the strip highlights nothing (never a wrong sport)",
+  "steps": "Seed sports=[cfb,nfl]; open #/rankings/list/mlb",
+  "expected": "No chip highlighted, strip still present",
+  "actual": "highlighted=nothing; strip visible=true; title=\"Old School Sports · MLB\"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "TM-04",
+  "area": "Tab/data match",
+  "desc": "Hub, in-app navigation, Back button and reload all stay in step: hub shows the saved sport; opening the NFL bracket shows NFL; Back returns to the hub/CFB; reload keeps the page and its chip together",
+  "steps": "Open hub; set hash to the NFL bracket; history.back(); then forward + reload",
+  "expected": "Chip always equals what the page shows (hub = saved sport CFB, bracket = NFL)",
+  "actual": "hub→cfb; bracket→nfl; back(#/rankings/lists)→cfb; forward+reload(#/rankings/playoffs/nfl)→nfl",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "TM-05",
+  "area": "Tab/data match",
+  "desc": "Tapping a chip on the NFL bracket page switches the sport consistently: CFB chip → CFB data + CFB highlighted (saved); MLB chip → the MLB bracket + MLB highlighted",
+  "steps": "Open the NFL bracket; tap CFB; go back; tap MLB",
+  "expected": "Highlighted chip == tapped chip, URL/page follows it, saved sport updates, no stale highlight",
+  "actual": "tap CFB → #/rankings, highlighted cfb, saved cfb; tap MLB → #/rankings/playoffs/mlb, highlighted mlb, saved mlb",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-tm-tap-mlb-390.png"
+ },
+ {
+  "id": "TM-06",
+  "area": "Tab/data match",
+  "desc": "Home, Scores, News (and the Gamecast/Settings pages that hide the strip) agree: the highlighted chip is the saved sport; tapping a chip updates all of them, survives reload",
+  "steps": "Seed sport=nfl; visit #/home #/scores #/news; tap MLB on News; reload; open Scores",
+  "expected": "Highlight == saved sport on each page; after the tap MLB everywhere",
+  "actual": "#/home→nfl; #/scores→nfl; #/news→nfl; tap MLB on News→mlb; reload→mlb; scores→mlb; settings strip hidden=true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "TM-07",
+  "area": "Tab/data match",
+  "desc": "390px: no horizontal scroll on the Rankings pages and the console stays clean",
+  "steps": "Measure scrollWidth on the NFL bracket and MLB list",
+  "expected": "<= 390 and no errors",
+  "actual": "scrollWidth 390/390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-01",
+  "area": "Account sync API",
+  "desc": "Server API end to end on real Neon (throwaway schema): create, read, update with If-Match, stale write gets 409 with current data, lookup summary, wrong code 404, unknown keys dropped, oversize rejected, delete, no-store",
+  "steps": "POST /api/sync, GET/PUT/DELETE /profile, POST /lookup against :8785",
+  "expected": "Each step returns the documented status; stored data contains only allow-listed keys; all responses Cache-Control: no-store",
+  "actual": "status {\"enabled\":true,\"ready\":true}; create 201 code ok; read(lowercase,no dashes) 200 stripped=true; put 200 rev 1→2; stale put 409 (current theme light); lookup 200 {\"sports\":3,\"teams\":1,\"players\":0,\"mutes\":0}; wrong code 404; oversize 400; delete 204, read after 404; no-store=true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-02",
+  "area": "Account sync API",
+  "desc": "Fail soft: with an unreachable database the server still starts and serves the app; /api/sync answers 503 {unavailable:true}; status says enabled but not ready; no connection string in the log",
+  "steps": "GET /api/sync/status, POST /api/sync, GET / on :8783; read its log",
+  "expected": "App 200; sync 503; log has no password",
+  "actual": "status {\"enabled\":true,\"ready\":false} (33 ms for both calls); create 503; app / 200; /api/health 200; connection string in server log: none",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-03",
+  "area": "Account sync",
+  "desc": "Not configured (:8799, no database/pepper): the Account card says \"Sync not available\" (no create button), /api/sync/status says disabled, everything else unchanged",
+  "steps": "Open #/settings on :8799; GET /api/sync/status",
+  "expected": "\"Sync not available\" note, no create button; enabled=false",
+  "actual": "status {\"enabled\":false,\"ready\":false}; \"Sync not available\" shown=true; create button shown=false; scrollWidth 390",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-05",
+  "area": "Account sync UI",
+  "desc": "Create flow (390px): Settings › Account › Create my recovery code shows the code once, Done stays disabled until \"I saved my code\" is ticked, then the card shows \"Backed up · On\"; the server holds the settings; the code is in ss.sync.v1",
+  "steps": "Open #/settings; tap Create; read sheet; tick; tap Done",
+  "expected": "Code matches XXXX-XXXX-XXXX, Done gated, card On, server data == local",
+  "actual": "code shape ok=true; Done disabled before tick=true, after=false; card: \"Backed up / Saved just now / ● On / Show my recovery code / › / Sync now / › / Turn off & \"; stored rev 1; server sports=nfl,mlb,nba; scrollWidth 390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-sy-code-sheet-390.png"
+ },
+ {
+  "id": "SY-06",
+  "area": "Account sync UI",
+  "desc": "Debounced upload: a settings change is sent about 3 s later (not instantly), with If-Match, and the card goes back to \"Saved\"",
+  "steps": "Tap Appearance › Light; read the server at 1 s and at 5 s",
+  "expected": "Server unchanged at 1 s, new theme and rev+1 at 5 s, dirty=false",
+  "actual": "at 1 s: server theme dark, dirty true; at 5.5 s: server theme light, rev 1→2, dirty false",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-07",
+  "area": "Account sync UI",
+  "desc": "Restore on a new device (390px): a fresh browser types the code in lowercase without dashes, sees a summary, chooses \"Use the backup\", and ends up with the same sports, theme and favorites and the Account card On",
+  "steps": "Fresh storage; #/settings/restore; type code; Look up; Use the backup",
+  "expected": "Summary shown; settings equal the backup; linked",
+  "actual": "summary: \"Found a backup / Last saved Oct 29, 2026 / 3 sports · 1 team · 0 players · 0 muted / USE THE BACKUP ON THIS DEVICE / Mer\"; restored theme=light, sports=nfl,mlb,nba, follow=nfl:12; linked=true; scrollWidth 390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-sy-restore-found-390.png"
+ },
+ {
+  "id": "SY-08",
+  "area": "Account sync UI",
+  "desc": "A wrong code gets a plain \"No backup found\" message and links nothing",
+  "steps": "Fresh device; restore screen; type a well-formed but unknown code",
+  "expected": "Message shown, no found card, nothing stored",
+  "actual": "found card shown=false; linked=false; malformed input message: \"That doesn’t look like a code. It’s 12 letters and numbers, \"",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-09",
+  "area": "Account sync UI",
+  "desc": "Two devices edit at once: device B saves a theme change; device A (not yet synced) toggles \"Straight news only\"; A gets a 409, merges, retries; the server ends with BOTH changes and both devices converge after \"Sync now\"",
+  "steps": "B: Appearance › Dark. A: toggle straightOnly. Wait. Check server; tap Sync now on B",
+  "expected": "Server has theme=dark (from B) and straightOnly=false (from A; the app default is true); B pulls both",
+  "actual": "server: theme=dark, straightOnly=false, rev 4; A after merge: theme=dark, straightOnly=false, dirty=false; B after Sync now: theme=dark, straightOnly=false",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-10",
+  "area": "Account sync UI",
+  "desc": "Offline then online: a change made offline is kept (dirty, card says offline) and uploads by itself when the connection returns",
+  "steps": "Context offline; toggle Straight news only; wait; go online",
+  "expected": "dirty while offline; server updated after reconnect",
+  "actual": "offline: dirty=true, card line \"Offline. Changes will save when you’re back online\", server still straightOnly=false; after reconnect: dirty=false, server straightOnly=true",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-sy-offline-390.png"
+ },
+ {
+  "id": "SY-11",
+  "area": "Account sync",
+  "desc": "Service worker never intercepts or caches /api/sync, and sync.js is in the ss-v29 shell",
+  "steps": "Open app with SW allowed; list caches",
+  "expected": "No cached /api/sync* entry; shell has /sync.js",
+  "actual": "caches ss-v29,scfb-img-cors; cached /api/sync entries: 0; sync.js cached: true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-12",
+  "area": "Account sync UI",
+  "desc": "Reset all settings while linked: the confirm text explains the backup, this device unlinks, the server copy is kept and can be restored again",
+  "steps": "Device B: Settings › Reset all settings (accept confirm)",
+  "expected": "Confirm mentions backup; ss.sync.v1 gone; server profile still 200",
+  "actual": "confirm: \"Reset all settings on this device? Your backup is not changed, and this device stops synci\"; linked after reset=false; server profile 200",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-13",
+  "area": "Account sync UI",
+  "desc": "Merge restore keeps what is on the device and adds the backup: a device with its own favorites restores with \"Merge\" and ends with the union",
+  "steps": "Fresh device with sports [mlb,nhl]; restore with Merge",
+  "expected": "Sports are the union of both; linked",
+  "actual": "sports mlb,nhl,nfl,nba; follow mlb:5,nfl:12; linked=true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-14",
+  "area": "Account sync UI",
+  "desc": "Turn off the backup: the server copy is removed, the code stops working, the card goes back to \"Create\"",
+  "steps": "Device A: tap \"Turn off\" (accept confirm)",
+  "expected": "Server 404; no ss.sync.v1; Create button back",
+  "actual": "linked after off=false; server read 404",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-15",
+  "area": "Account sync",
+  "desc": "Console clean on every device page across the sync flows (expected 404 on a wrong-code lookup and 409 on a conflict are not counted)",
+  "steps": "Review diagnostics",
+  "expected": "No page/console errors",
+  "actual": "A: {\"e\":[],\"p\":[],\"f\":[]}; B: {\"e\":[],\"p\":[],\"f\":[]}",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SY-04",
+  "area": "Account sync",
+  "desc": "Production table untouched: the QA used only its throwaway schema (which holds its own profiles table); the live public.profiles (in use since the v1.4.0 deploy) has the same row count and max(updated_at) before and after the whole sync suite, and none of the QA codes' hashes",
+  "steps": "Read-only information_schema + count(*) / max(updated_at) / count(id = qa hash) over HTTPS, before SY-01 and after SY-15",
+  "expected": "Throwaway schema has profiles; public.profiles count and max(updated_at) unchanged; 0 QA rows in public",
+  "actual": "sync_test_690b4f652a.profiles present=true; public.profiles exists=true, rows 1→1, max(updated_at) unchanged; QA code hashes found in public: 0 of 2",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "LC-01",
+  "area": "Logo contrast",
+  "desc": "Audit covers every league in every theme and leaves no logo under 3:1 after the fix",
+  "steps": "Read docs/logo-audit.json (scripts/audit-logo-contrast.js run against the local server)",
+  "expected": "logos ≥ 1500, all catalog team leagues present (incl. cfb, cbase, ausl), failAfter = 0, rule names 3:1",
+  "actual": "1612 logos in 19 leagues; pass every theme 1482, fixed 127, still under 3:1 after fix 0, unmeasured 3; generated 2026-10-29T04:28:54.695Z",
+  "status": "PASS",
+  "evidence": "screenshots/v23/logo-contact-sheet.png"
+ },
+ {
+  "id": "LC-02",
+  "area": "Logo contrast",
+  "desc": "Static wiring: logotone.js is in the ss-v29 shell, the outline classes exist in CSS, the rule constants are 3:1 / 50% edge / 15% body",
+  "steps": "grep sw.js, styles.css, logotone.js",
+  "expected": "All present",
+  "actual": "shell logotone/fuzzy/aliases: true,true,true; css lt-lift/lt-sink: true/true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "LC-03",
+  "area": "Logo contrast",
+  "desc": "Justin's example — Broncos team page › Schedule, dark theme (navy team backdrop): Panthers outlined (lt-lift), Chiefs untouched, every measured logo passes or carries the fix",
+  "steps": "Follow Broncos, open #/schedule/nfl:7 in dark",
+  "expected": "Every [data-lt=\"fixed:*\"] img has lt-lift/lt-sink; Panthers fixed in dark; Chiefs pass; console clean",
+  "actual": "15 measured logos; fixed 1; unfixed failures 0; Panthers fixed:65 lt-lift; Chiefs pass:100; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-lc-broncos-schedule-dark.png"
+ },
+ {
+  "id": "LC-04",
+  "area": "Logo contrast",
+  "desc": "Justin's example — Broncos team page › Schedule, light theme (navy team backdrop): Panthers outlined only if needed, Chiefs untouched, every measured logo passes or carries the fix",
+  "steps": "Follow Broncos, open #/schedule/nfl:7 in light",
+  "expected": "Every [data-lt=\"fixed:*\"] img has lt-lift/lt-sink; Panthers fixed in dark; Chiefs pass; console clean",
+  "actual": "15 measured logos; fixed 4; unfixed failures 0; Panthers pass:98 ; Chiefs pass:100; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-lc-broncos-schedule-light.png"
+ },
+ {
+  "id": "LC-05",
+  "area": "Logo contrast",
+  "desc": "Scores, Standings and Home in dark and light: no measured logo is left failing without its outline",
+  "steps": "Open #/scores, #/standings, #/home in both themes",
+  "expected": "0 unfixed failures",
+  "actual": "dark #/scores: 20 measured, 1 fixed, 0 unfixed; dark #/standings: 8 measured, 1 fixed, 0 unfixed; dark #/home: 8 measured, 1 fixed, 0 unfixed; light #/scores: 20 measured, 5 fixed, 0 unfixed; light #/standings: 8 measured, 1 fixed, 0 unfixed; light #/home: 8 measured, 1 fixed, 0 unfixed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "LC-06",
+  "area": "Logo contrast",
+  "desc": "Team-page header logo sits on its white tile with the light (500) art",
+  "steps": "Open #/team/nfl:7 in dark",
+  "expected": "Hero img src uses /500/ (not 500-dark)",
+  "actual": "first img 500/den.png",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SR-01",
+  "area": "Search",
+  "desc": "Matcher unit tests: accents/punctuation folded, one-or-two-edit typos, consonant-skeleton guard (no mahomes→Mims), team aliases",
+  "steps": "node tests/fuzzy.test.mjs; node tests/picker.test.mjs",
+  "expected": "Exit 0",
+  "actual": "fuzzy.test.mjs: 27 assertions passed | picker.test: 486 assertions passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SR-02",
+  "area": "Search",
+  "desc": "115 known names typed the way people type them (McElroy, Aberg, Djokovich, otani, Niners, Habs, Bama, North Dakota St, Utah Talons …) — players via /api/athletes, teams via the app's picker matcher",
+  "steps": "node scripts/search-check.mjs http://localhost:8799",
+  "expected": "Every expected name inside its top-N",
+  "actual": "116/116 pass",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SR-03",
+  "area": "Search",
+  "desc": "API: FCS teams load (all 128 from ESPN's FCS standings, conference names, division FCS)",
+  "steps": "GET /api/teams?sport=cfb&division=fcs",
+  "expected": "≥ 120 teams, all division FCS, ≥ 12 conferences",
+  "actual": "200; 128 teams in 14 conferences (e.g. United Athletic, Southwestern Athletic, Ivy League, Coastal Athletic Association)",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "SR-04",
+  "area": "Search UI",
+  "desc": "Golf: \"McElroy\" finds Rory McIlroy first (full PGA TOUR + LIV + LPGA + DP World list, not just this week's field)",
+  "steps": "Settings › Teams & players › Golf; type McElroy",
+  "expected": "Row 1 = Rory McIlroy; tours + country shown",
+  "actual": "McElroy → Rory McIlroy (PGA TOUR · DP World · Northern Ireland) | Dermot Mcelroy (DP World · Northern Ireland) | Jamie McLeary (PGA TOUR · DP World · Scotland)",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-sr-golf-mcelroy.png"
+ },
+ {
+  "id": "SR-05",
+  "area": "Search UI",
+  "desc": "Golf \"aberg\" → Ludvig Åberg first; \"nelly korda\" → Nelly Korda; tennis \"djokovich\" → Novak Djokovic; \"coco gauf\" → Coco Gauff",
+  "steps": "Same page, typed queries",
+  "expected": "Expected player is row 1 each time",
+  "actual": "aberg→Ludvig Åberg; nelly korda→Nelly Korda; djokovich→Novak Djokovic; coco gauf→Coco Gauff",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-sr-golf-aberg.png"
+ },
+ {
+  "id": "SR-06",
+  "area": "Search UI",
+  "desc": "College football: an FCS team (\"montana st\", Big Sky) is searchable, followable, and the follow survives a reload (not pruned at boot); its team page opens",
+  "steps": "CFB picker; type; tap to follow; reload; open #/team/<id>",
+  "expected": "Row 1 = Montana State Bobcats (Big Sky · FCS); follow kept after reload; team page renders",
+  "actual": "row1 Montana State Bobcats (MTST · Big Sky · FCS) 147; follow kept after reload=true; team page: MONTANA STATE BOBCATS 7-1 · 1st in Big Sky · Big Sky · FCS ✓ FOLLOWING Mute Sche",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-sr-cfb-fcs.png"
+ },
+ {
+  "id": "SR-07",
+  "area": "Search UI",
+  "desc": "AUSL: \"talons\" and \"Utah Talons\" find the Utah Talons; All-leagues \"niners\" finds the San Francisco 49ers",
+  "steps": "AUSL picker; All leagues picker",
+  "expected": "Row 1 each time",
+  "actual": "talons→Utah Talons; Utah Talons→Utah Talons; niners→San Francisco 49ers",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-sr-ausl-talons.png"
+ },
+ {
+  "id": "SR-08",
+  "area": "Search UI",
+  "desc": "NFL players mode: \"mahomez\" finds Patrick Mahomes; \"jamarr chase\" finds Ja'Marr Chase (every roster indexed)",
+  "steps": "NFL picker › Players; type",
+  "expected": "Expected player in the first 3 rows",
+  "actual": "mahomez→Patrick Mahomes; jamarr chase→Ja'Marr Chase",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-sr-nfl-mahomez.png"
+ },
+ {
+  "id": "SR-09",
+  "area": "Search UI",
+  "desc": "Console clean across the search pages",
+  "steps": "Review diagnostics",
+  "expected": "No page/console errors, no 4xx/5xx from the app origin",
+  "actual": "4 pages clean",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "HS-01",
+  "area": "HS football (static)",
+  "desc": "Catalog + wiring: hsfb is an opt-in news sport with provider hsfb, 🏫 icon, readable accent; hsfb.js is in the ss-v29 shell and imported at ?v=29; server routes exist; key only sent as a header",
+  "steps": "Read catalog.js, sw.js, app.js, server/hsfb.js, server/index.js",
+  "expected": "All present; no \"key=\" in any URL builder",
+  "actual": "catalog hsfb opt-in/provider/icon: true; sw shell hsfb.js?v=29: true; app import: true; status route: true; header key: true; key= in URL: false",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "HS-02",
+  "area": "HS football (unit)",
+  "desc": "Unit tests: WatchESPN parsing (real capture), KSL RSS filter (real capture), badge index, no-key / mocked-key / failing-API module behaviour, opt-in defaults and the HSFB mute chip",
+  "steps": "node tests/hsfb.test.js; tests/migrate.test.mjs; tests/mute-unselected.test.mjs",
+  "expected": "All pass",
+  "actual": "hsfb: 77 assertions passed | migrate v5 (all-sports default): ok | mute-unselected.test: 79 assertions passed",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "HS-03",
+  "area": "HS football (opt-in)",
+  "desc": "Off by default: a brand-new profile (all sports) does not include HSFB — not in settings.sports, not in the top sport strip; the tile says \"off unless picked\"",
+  "steps": "Fresh storage on :8799; skip onboarding; read storage; open Settings › Sports",
+  "expected": "hsfb absent; tile present, not pressed, \"off unless picked\"; all-sports note mentions it",
+  "actual": "sportsChosen=false, 28 sports, hsfb in list=false; strip has HSFB=false; tile pressed=false, text=\"🏫 High School Football National TV games, Utah links and KSL videos (no scores) · off unless picked\"",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-hs-03-settings-tile.png"
+ },
+ {
+  "id": "HS-04",
+  "area": "HS football (opt-in)",
+  "desc": "Turning HSFB on while showing every sport adds it without leaving all-sports mode; turning it off removes only it",
+  "steps": "Fresh profile; Settings › Sports; tap the High School Football tile twice; read storage each time",
+  "expected": "After tap 1: sportsChosen false, all sports + hsfb; after tap 2: hsfb gone, other sports unchanged",
+  "actual": "seeded raw list 0 (hsfb false); tap1 29, chosen=false, hsfb=true, pressed=true; tap2 28, hsfb=false, chosen=false",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-hs-04-optin-on.png"
+ },
+ {
+  "id": "HS-05",
+  "area": "HS football (opt-in)",
+  "desc": "Picked explicitly, HSFB is a normal sport: it shows in the sport strip, and \"Show all sports\" keeps it on",
+  "steps": "Profile sports [nfl, hsfb]; open Home; Settings › Sports › Show all sports",
+  "expected": "HSFB in the strip; after Show all: sportsChosen false, hsfb still in sports",
+  "actual": "HSFB visible on home=true; after Show all: chosen=false, 29 sports, hsfb=true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "NAV-01",
+  "area": "Navigation (route race)",
+  "desc": "A slow Home must never paint over a page the user already moved to: open Home, then go straight to Settings › Sports while Home is still loading",
+  "steps": "Profile sports [nfl, hsfb]; scoreboard + news delayed 2.5s; open #/home; immediately set #/settings/sports; wait 6s",
+  "expected": "Settings › Sports still showing ([data-allsports] / sport tiles); no Home \"Your games\" / \"Coming up\" text",
+  "actual": "hash #/settings/sports; bar \"Sports\"; [data-allsports]=true; 29 sport tiles; home text present=false",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-nav-01-settings-after-home.png"
+ },
+ {
+  "id": "HS-06",
+  "area": "HS football (mute)",
+  "desc": "Mute page: a \"High school football\" chip mutes HS headlines on other sports' feeds (works in all-sports mode too); mute-unselected counts HSFB like any other sport",
+  "steps": "Profile sports [nfl, cfb]; open Settings › Mute; tap the chip; read storage",
+  "expected": "Chip present; muteLeagues gains hsfb; unselected-sports count includes HSFB",
+  "actual": "chip=true; muteLeagues=[\"hsfb\"]; note=\"Muting 27 sports: news and games outside NFL, CFB are hidden.\" (expect 27 incl. HSFB)",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-hs-06-mute.png"
+ },
+ {
+  "id": "HS-07",
+  "area": "HS football (TV)",
+  "desc": "\"On TV nationally\" list (mocked WatchESPN): live first, then upcoming, then replays; teams, network, local date/time with zone, \"Score not available\" on every game; Watch link only to espn.com/watch (a bad link is dropped)",
+  "steps": "Open #/home with HSFB selected on :8781 (America/Denver)",
+  "expected": "4 games, each \"Score not available\"; times end in MDT/MST and equal the browser's own local rendering; watch links only https://www.espn.com/watch/…",
+  "actual": "4 cards; order LIVE,UPCOMING,UPCOMING,REPLAY; all \"Score not available\": true; times match local rendering: true (e.g. \"Thu, Oct 29, 10:03 AM MDT\"); watch links 3: https://www.espn.com/watch/player?id=qa-live https://www.espn.com/watch/player?id=qa-up https://www.espn.com/watch/player?id=qa-rep",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-hs-07-tv-list.png"
+ },
+ {
+  "id": "HS-08",
+  "area": "HS football (KSL, mocked key)",
+  "desc": "Utah games on KSL with a (fake) YouTube key against the mocked Data API: LIVE badge, UPCOMING badge with its start time, past videos plain; volleyball and talk shows filtered out; uploads-playlist video merged; key sent only in the header",
+  "steps": "Open #/home with HSFB on :8781; GET mock /__stats",
+  "expected": "LIVE on QAlive00001, UPCOMING + \"Starts …\" on QAupcom0001, no volleyball/Zone; keyInUrl 0, badKey 0",
+  "actual": "4 videos: QAlive00001=LIVE, QAupcom0001=UPCOMING, QApast00001=-, QAplaylist1=-; upcoming line \"UPCOMING\"; mock stats {\"videos\":1,\"playlistItems\":1,\"keyInUrl\":0,\"badKey\":0,\"rss\":1,\"watch\":1,\"lastIds\":\"QAlive00001,QApast00001,QAplaylist1,QAupcom0001\"}",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-hs-08-ksl-badges.png"
+ },
+ {
+  "id": "HS-09",
+  "area": "HS football (KSL, no key)",
+  "desc": "Fail soft with no YOUTUBE_API_KEY (:8799, live feeds): /api/hsfb/status says youtubeKey false; KSL list shows plain links (or the honest empty state) and no LIVE/UPCOMING badges; TV list renders from live WatchESPN",
+  "steps": "GET /api/hsfb/status, /api/hsfb on :8799; open #/home with HSFB",
+  "expected": "youtubeKey false, badges false, no badge elements in the KSL section, no errors",
+  "actual": "status {\"youtubeKey\":false,\"youtubeApi\":\"off\",\"youtubeError\":null,\"youtubeCallsToday\":0,\"cacheMinutes\":{\"badges\":5,\"uploads\":10,\"rss\":10,\"tv\":5}}; api ksl badges=false, 0 videos; tv 7 games; page: tv 4 (empty state), ksl 0 (empty state), badges 0; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-hs-09-live-nokey.png"
+ },
+ {
+  "id": "HS-10",
+  "area": "HS football (KSL, API error)",
+  "desc": "Fail soft when the YouTube API errors (:8782, fake key, mock returns 500): KSL videos still listed as plain links, no badges, status youtubeApi \"error\"; the key never appears in any response or server log",
+  "steps": "GET /api/hsfb and /api/hsfb/status on :8782; open #/home; grep the server logs for the fake key",
+  "expected": "videos 3, badges false; status error; key absent everywhere",
+  "actual": "api 3 videos, badges=false; status {\"youtubeKey\":true,\"youtubeApi\":\"error\",\"youtubeError\":\"YouTube API HTTP 500\",\"youtubeCallsToday\":2,\"cacheMinutes\":{\"badges\":5,\"uploads\":10,\"rss\":10,\"tv\":5}}; page 3 videos, 0 badges; key found in responses/logs: false",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "HS-11",
+  "area": "HS football (status)",
+  "desc": "/api/hsfb/status returns booleans/status words only — never the key value — with and without a key",
+  "steps": "GET /api/hsfb/status on :8781, :8782, :8799",
+  "expected": "youtubeKey true/true/false; no field contains the key; Cache-Control set",
+  "actual": ":8781 {\"youtubeKey\":true,\"youtubeApi\":\"ok\",\"youtubeError\":null,\"youtubeCallsToday\":2,\"cacheMinutes\":{\"badges\":5,\"uploads\":10,\"rss\":10,\"tv\":5}}; :8782 youtubeKey=true/error; :8799 youtubeKey=false/off; key in any status: false",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "HS-12",
+  "area": "HS football (links)",
+  "desc": "Links tab: UHSAA scoreboard (exact URL), RPI, brackets (+ 2026 class brackets), KSL streams, and Find more: MaxPreps, ESPN 300, 247Sports Composite, On3, NFHS Network — all open in a new tab, neutral labels",
+  "steps": "Open #/rankings with HSFB on :8781",
+  "expected": "All URLs present with target=_blank rel=noopener; no hype words",
+  "actual": "18 links; missing: none; all new-tab+noopener: true; class brackets 7; hype words: false",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-hs-12-links.png"
+ },
+ {
+  "id": "HS-13",
+  "area": "HS football (honesty)",
+  "desc": "\"Not available in the app\" card names exactly what is missing: national scores/schedules, in-app rankings, recruit/star data, stats and rosters, local TV beyond ESPN and KSL (\"TV: not listed\")",
+  "steps": "Open #/rankings and #/home with HSFB on :8781",
+  "expected": "All five items on Links; Home shows the short note",
+  "actual": "missing: none; card: National scores and schedules: No free feed carries them. / Rankings in the app: Use the UHSAA RPI and MaxPreps links instead. / Recruit and star ratings: See ESPN 300, 247Sports or On3. / Stats and rosters: Not in any f",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "HS-14",
+  "area": "HS football (honesty)",
+  "desc": "Never a score: every TV and KSL card says \"Score not available\", no score-like \"21-14\" digits in any card, every API item has score:null (mock and live)",
+  "steps": "Open #/scores on :8781; GET /api/hsfb on :8781 and :8799",
+  "expected": "No score patterns; score null everywhere",
+  "actual": "8 cards, all \"Score not available\": true; score-like text: 0; 15 API items, all score null: true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "HS-15",
+  "area": "HS football (views)",
+  "desc": "Every HSFB view renders at 390px in dark and light: Home, Scores, News, Links — no \"Couldn't load\", no horizontal scroll, no console errors",
+  "steps": "Open #/home, #/scores, #/news, #/rankings on :8781 in both themes",
+  "expected": "All render; width ≤ 392; console clean",
+  "actual": "dark #/home: 2479 chars, w 390; dark #/scores: 1553 chars, w 390; dark #/news: 1381 chars, w 390; dark #/rankings: 1034 chars, w 390; no console/page errors, no failed app requests; light #/home: 2479 chars, w 390; light #/scores: 1553 chars, w 390; light #/news: 1381 chars, w 390; light #/rankings: 1034 chars, w 390; no console/page errors, no failed app requests",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-hs-15-home-light.png"
+ },
+ {
+  "id": "HS-16",
+  "area": "HS football (contrast)",
+  "desc": "Text contrast (v1.5.0 rules): badges, game text, \"Score not available\", link labels/hosts and the accent arrow are ≥ 4.5:1 on their real background in dark and light",
+  "steps": "Measure computed colours on #/home and #/rankings on :8781",
+  "expected": "Every measured element ≥ 4.5:1",
+  "actual": "min 5.7; dark .hs-b.live 6.47, dark .hs-b.up 6.7, dark .hs-b.rep 8.71, dark .hs-teams 16.06, dark .hs-meta 10.47, dark .hs-noscore 10.47, dark .hs-title 16.06, dark .hs-watch 15.74, dark .hs-link b 16.06, dark .hs-link small 10.47, dark .hs-link .go 5.7, dark .hs-na li 16.06, dark .hs-chips .chip 15.79, light .hs-b.live 6.47, light .hs-b.up 6.7, light .hs-b.rep 7.48, light .hs-teams 17.2, light .hs-meta 8.55, light .hs-noscore 8.55, light .hs-title 17.2, light .hs-watch 17.38, light .hs-link b 17.2, light .hs-link small 8.55, light .hs-link .go 6.55, light .hs-na li 17.2, light .hs-chips .chip 17.36",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "HS-17",
+  "area": "HS football (news)",
+  "desc": "HSFB News uses its own straight feed (AP + KSL + Deseret via Google News), filtered to high-school/prep items; the API never errors",
+  "steps": "GET /api/news?sport=hsfb on :8799",
+  "expected": "HTTP 200; items mention high school/prep/UHSAA (or an empty list)",
+  "actual": "HTTP 200; 14 items; off-topic 0",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "R-01",
+  "area": "Regression",
+  "desc": "Home renders at 390px",
+  "steps": "Open #/home",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "3122 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-01-home.png"
+ },
+ {
+  "id": "R-02",
+  "area": "Regression",
+  "desc": "Scores renders at 390px",
+  "steps": "Open #/scores",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "2075 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-02-scores.png"
+ },
+ {
+  "id": "R-03",
+  "area": "Regression",
+  "desc": "News renders at 390px",
+  "steps": "Open #/news",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "10372 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-03-news.png"
+ },
+ {
+  "id": "R-04",
+  "area": "Regression",
+  "desc": "Top 25 (AP poll) renders at 390px",
+  "steps": "Open #/rankings",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1292 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-04-rankings.png"
+ },
+ {
+  "id": "R-05",
+  "area": "Regression",
+  "desc": "JT Top 25 renders at 390px",
+  "steps": "Open #/rankings/grok",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1123 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-05-rankings-grok.png"
+ },
+ {
+  "id": "R-06",
+  "area": "Regression",
+  "desc": "CFB Bracket renders at 390px",
+  "steps": "Open #/rankings/bracket",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1123 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-06-rankings-bracket.png"
+ },
+ {
+  "id": "R-07",
+  "area": "Regression",
+  "desc": "Brackets hub renders at 390px",
+  "steps": "Open #/rankings/lists",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "943 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-07-rankings-lists.png"
+ },
+ {
+  "id": "R-08",
+  "area": "Regression",
+  "desc": "Lists: NBA Top list renders at 390px",
+  "steps": "Open #/rankings/list/nba",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "3378 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-08-rankings-list-nba.png"
+ },
+ {
+  "id": "R-09",
+  "area": "Regression",
+  "desc": "NBA bracket renders at 390px",
+  "steps": "Open #/rankings/playoffs/nba",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "2099 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-09-rankings-playoffs-nba.png"
+ },
+ {
+  "id": "R-10",
+  "area": "Regression",
+  "desc": "Team page (Utah) renders at 390px",
+  "steps": "Open #/team/254",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1000 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-10-team-254.png"
+ },
+ {
+  "id": "R-11",
+  "area": "Regression",
+  "desc": "Schedule (Utah) renders at 390px",
+  "steps": "Open #/schedule/254",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1000 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-11-schedule-254.png"
+ },
+ {
+  "id": "R-12",
+  "area": "Regression",
+  "desc": "Gamecast (NFL) renders at 390px",
+  "steps": "Open #/game/nfl/401873009",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "4344 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-12-game-nfl-401873009.png"
+ },
+ {
+  "id": "R-13",
+  "area": "Regression",
+  "desc": "Settings renders at 390px",
+  "steps": "Open #/settings",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "715 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-13-settings.png"
+ },
+ {
+  "id": "R-14",
+  "area": "Regression",
+  "desc": "Settings › Sports renders at 390px",
+  "steps": "Open #/settings/sports",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1707 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-14-settings-sports.png"
+ },
+ {
+  "id": "R-15",
+  "area": "Regression",
+  "desc": "Settings › Mute renders at 390px",
+  "steps": "Open #/settings/mute",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "563 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-15-settings-mute.png"
+ },
+ {
+  "id": "R-16",
+  "area": "Regression",
+  "desc": "Settings › Sources renders at 390px",
+  "steps": "Open #/settings/sources",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1819 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-16-settings-sources.png"
+ },
+ {
+  "id": "R-17",
+  "area": "Regression",
+  "desc": "Settings › Watch renders at 390px",
+  "steps": "Open #/settings/watch",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "673 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-17-settings-watch.png"
+ },
+ {
+  "id": "R-18",
+  "area": "Regression",
+  "desc": "Settings › Appearance renders at 390px",
+  "steps": "Open #/settings/appearance",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "71 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-18-settings-appearance.png"
+ },
+ {
+  "id": "R-19",
+  "area": "Regression",
+  "desc": "Settings › About renders at 390px",
+  "steps": "Open #/settings/about",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "1574 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-19-settings-about.png"
+ },
+ {
+  "id": "R-20",
+  "area": "Regression",
+  "desc": "Settings › Conferences renders at 390px",
+  "steps": "Open #/settings/conferences",
+  "expected": "Content visible, no \"Couldn't load\" box, no horizontal scroll",
+  "actual": "271 chars, error box=false, scrollWidth=390",
+  "status": "PASS",
+  "evidence": "screenshots/v23/qa-R-20-settings-conferences.png"
+ },
+ {
+  "id": "R-21",
+  "area": "Regression",
+  "desc": "News stays sports-only",
+  "steps": "Read news category config",
+  "expected": "No politics/entertainment category",
+  "actual": "catalog has no political/entertainment category",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "R-22",
+  "area": "Regression",
+  "desc": "Watch links appear only inside an opened game view (not on score cards)",
+  "steps": "Open #/scores; count watch links; open a game",
+  "expected": "No watch/stream links on the scores list",
+  "actual": "0 watch links on the scores list",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "P-01",
+  "area": "All sports",
+  "desc": "A brand-new profile (nothing chosen) still sees every sport; the mute-unselected checkbox is disabled for it",
+  "steps": "Fresh storage; skip onboarding; open Settings › Mute and Sports",
+  "expected": "Sports page shows the all-sports note; Mute checkbox disabled",
+  "actual": "all-sports note=true, checkbox disabled=true; page text: SPORTS\n\nPICK THE SPORTS YOU WANT. SWITCH BETWEEN THEM WITH THE CHIPS AT THE TOP OF EACH TAB.\n\nShowing every sport until ",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "R-24",
+  "area": "Regression",
+  "desc": "Fixed in this release: switches on Settings pages actually toggle (they were silently cancelled by the page-level click handler) — Sources switch flips and is saved",
+  "steps": "Open Settings › Sources; tap the first outlet switch; read storage; tap again",
+  "expected": "Saved value flips each tap",
+  "actual": "nfl-ap: start true, after tap false (stored false), after 2nd tap true",
+  "status": "PASS",
+  "evidence": ""
+ },
+ {
+  "id": "R-23",
+  "area": "Regression",
+  "desc": "Console clean across the smoke checks",
+  "steps": "Review diagnostics",
+  "expected": "No page/console errors, no 4xx/5xx from the app origin",
+  "actual": "no console/page errors, no failed app requests (CDN noise 0)",
+  "status": "PASS",
+  "evidence": ""
+ }
+]
