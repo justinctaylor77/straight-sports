@@ -458,7 +458,7 @@ img.flag, .chip img.flag, .side-teams img.flag { object-fit: cover; border-radiu
 .sc-tbl th { text-align: left; color: var(--muted); font-weight: 600; min-width: 40px; }
 .sc-tbl thead td { color: var(--faint); font-size: 11px; }
 .sc-tbl tr.par td { color: var(--faint); }
-.sc-tbl span { display: inline-grid; place-items: center; width: 22px; height: 22px; }
+.sc-tbl span:not(.scorebook *) { display: inline-grid; place-items: center; width: 22px; height: 22px; }
 .sc-tbl .birdie, .sc-key .birdie { border: 1.5px solid var(--live); border-radius: 50%; }
 .sc-tbl .eagle, .sc-key .eagle { border: 1.5px solid var(--live); border-radius: 50%; box-shadow: 0 0 0 2px var(--surface-2), 0 0 0 3.5px var(--live); }
 .sc-tbl .bogey, .sc-key .bogey { border: 1.5px solid var(--muted); }
@@ -1445,10 +1445,10 @@ img.lt-sink { filter: drop-shadow(1px 0 0 rgba(0,0,0,.8)) drop-shadow(-1px 0 0 r
 /* ---------- v1.7.0 Scorekeeper: paper scorebook sheet ---------- */
 .sc-linkrow { display: flex; justify-content: flex-end; margin: -2px 0 8px; }
 .sc-link { font-weight: 700; }
-.scorebook { --paper: #f6efd9; --paper-2: #efe5c6; --ink: #1d3a8a; --pencil: #8a96b8; --hand: #1a1f2e; --run: rgba(29,58,138,.28); --cur: #fff1a8; --red: #b3261e;
-  font-family: "Courier Prime", "Courier New", ui-monospace, monospace; color: var(--hand); }
-:root[data-theme="dark"] .scorebook { --paper: #23201a; --paper-2: #2c281f; --ink: #9db7ff; --pencil: #5f6a86; --hand: #f3ead2; --run: rgba(157,183,255,.30); --cur: #5a4a10; --red: #ff8a80; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .scorebook { --paper: #23201a; --paper-2: #2c281f; --ink: #9db7ff; --pencil: #5f6a86; --hand: #f3ead2; --run: rgba(157,183,255,.30); --cur: #5a4a10; --red: #ff8a80; } }
+@font-face { font-family: "Caveat"; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/caveat-latin-700-normal.woff2) format("woff2"); }
+/* The sheet is always the same off-white paper (both app themes); only the strip above it follows the theme. */
+.scorebook { --paper: #f6f1e3; --rule: #a9ccb6; --rule-2: #6c9f80; --print: #2b6345; --faint: #b9d4c2; --graphite: #4a4a4a; --graphite-2: #5a5a5a; --hl: rgba(255, 233, 64, .62);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"); --hand: "Caveat", "Segoe Print", "Bradley Hand", cursive; --print-font: "Barlow Condensed", "Arial Narrow", sans-serif; }
 .sc-head { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; color: var(--text); }
 .sc-title { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .sc-title b { font-family: var(--display); font-size: 1.35rem; letter-spacing: .02em; }
@@ -1458,49 +1458,74 @@ img.lt-sink { filter: drop-shadow(1px 0 0 rgba(0,0,0,.8)) drop-shadow(-1px 0 0 r
 @keyframes scPulse { 50% { opacity: .6; } }
 @media (prefers-reduced-motion: reduce) { .sc-live { animation: none; } }
 .sc-seg { margin-bottom: 10px; }
-.sc-note { background: var(--paper); color: var(--hand); border: 1.5px dashed var(--ink); border-radius: 8px; padding: 12px 14px; font-size: .95rem; }
-.sc-grid { overflow-x: auto; -webkit-overflow-scrolling: touch; background: var(--paper); border: 2px solid var(--ink); border-radius: 6px; box-shadow: var(--shadow);
-  background-image: repeating-linear-gradient(0deg, transparent 0 23px, rgba(29,58,138,.04) 23px 24px); }
-.sc-tbl { border-collapse: separate; border-spacing: 0; color: var(--hand); font-size: .78rem; }
-.sc-tbl td, .sc-tbl th { border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 0; text-align: center; }
-.sc-tbl thead td, .sc-tbl thead th { background: var(--paper-2); color: var(--ink); font-weight: 700; padding: 4px 2px; position: sticky; top: 0; }
-.sc-tbl thead td.cur { background: var(--cur); }
-.sc-who { position: sticky; left: 0; z-index: 2; background: var(--paper-2); min-width: 132px; max-width: 132px; text-align: left !important; border-right: 2px solid var(--ink) !important; }
-thead .sc-who { z-index: 3; padding-left: 6px !important; }
-tbody .sc-who { padding: 3px 4px !important; vertical-align: top; }
-.sc-whoin { display: flex; gap: 4px; align-items: flex-start; }
-.sc-ord { font-weight: 700; color: var(--ink); font-size: .9rem; min-width: 12px; }
+.sc-note { background: var(--paper) var(--grain); color: var(--graphite); border: 1px solid var(--rule-2); border-radius: 3px; padding: 10px 14px; font: 700 20px/1.2 var(--hand); box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.sc-paper { background: var(--grain), radial-gradient(120% 90% at 50% 40%, transparent 60%, rgba(160,130,70,.14)), var(--paper); background-color: var(--paper); color: var(--graphite);
+  border-radius: 3px; padding: 8px 8px 10px; box-shadow: 0 1px 2px rgba(0,0,0,.25), 0 6px 18px rgba(0,0,0,.22); }
+.sc-paperhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0 2px 8px; }
+.sc-paperhead .lbl { font: 700 11px/1 var(--print-font); letter-spacing: .14em; color: var(--print); }
+.sc-paperhead .ln { border-bottom: 1px solid var(--rule-2); min-width: 54px; padding: 0 4px; }
+.pc { display: inline-block; font: 700 18px/1 var(--hand); color: var(--graphite); }
+.sc-paperhead .pc { font-size: 21px; }
+.sc-grid { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1.5px solid var(--rule-2); }
+.sc-tbl { border-collapse: separate; border-spacing: 0; color: var(--graphite); }
+.sc-tbl td, .sc-tbl th { border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 0; text-align: center; }
+.sc-tbl thead td, .sc-tbl thead th { background: var(--paper) var(--grain); color: var(--print); font: 700 13px/1 var(--print-font); letter-spacing: .06em; padding: 5px 2px; border-bottom: 1.5px solid var(--rule-2); }
+.sc-tbl thead td.cur { background: linear-gradient(176deg, transparent 12%, var(--hl) 14% 84%, transparent 88%), var(--paper); }
+.sc-who { position: sticky; left: 0; z-index: 2; background: var(--paper) var(--grain); background-color: var(--paper); min-width: 146px; max-width: 146px; text-align: left !important; border-right: 1.5px solid var(--rule-2) !important; }
+thead .sc-who { z-index: 3; display: table-cell; }
+thead .sc-who span { display: inline-block; font-size: 10.5px; letter-spacing: .12em; }
+.lbl-no { width: 30px; padding-left: 3px; } .lbl-pl { width: 84px; } .lbl-pos { width: 24px; text-align: right; }
+tbody .sc-who { padding: 2px 3px !important; vertical-align: top; }
+.sc-whoin { display: flex; gap: 3px; align-items: flex-start; }
+.sc-ord { font: 700 12px/1 var(--print-font); color: var(--print); min-width: 10px; padding-top: 5px; }
 .sc-whoin > div { flex: 1; min-width: 0; }
-.sc-p { display: block; line-height: 1.2; }
-.sc-p b { display: block; font-weight: 700; font-size: .76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sc-p .sc-j { color: var(--ink); font-size: .66rem; margin-right: 4px; }
-.sc-p .sc-pos { font-size: .66rem; color: var(--ink); }
-.sc-p.subp { border-top: 1px dotted var(--pencil); margin-top: 2px; padding-top: 2px; }
-.sc-in { display: block; font-size: .62rem; color: var(--ink); }
-.sc-c { min-width: 58px; width: 58px; vertical-align: top; }
-.sc-c.cur { background: var(--cur); box-shadow: inset 0 0 0 2px var(--red); }
-.sc-ab { position: relative; height: 62px; width: 58px; }
-.sc-ab + .sc-ab { border-top: 1px dashed var(--pencil); }
-.sc-ab.sub { box-shadow: inset 3px 0 0 var(--ink); }
-.sc-dia { position: absolute; left: 9px; top: 6px; width: 40px; height: 40px; }
-.sc-dia .grid { fill: none; stroke: var(--pencil); stroke-width: 1; }
-.sc-dia .ink { fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.sc-dia .run { fill: var(--run); stroke: var(--ink); stroke-width: 2.6; }
-.sc-t { position: absolute; left: 0; right: 0; bottom: 2px; font-family: "Segoe Print", "Bradley Hand", "Comic Neue", "Courier Prime", "Courier New", cursive; font-weight: 700; font-size: .74rem; color: var(--hand); line-height: 1; }
+.sc-p { display: grid; grid-template-columns: 20px 84px 22px; width: 126px; align-items: baseline; line-height: 1.05; font-family: var(--hand); font-weight: 700; color: var(--graphite); }
+.sc-p b { font-size: 19px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.sc-p .sc-j { font-size: 16px; color: var(--graphite-2); display: block; }
+.sc-p .sc-pos { font-size: 16px; color: var(--graphite-2); text-align: right; display: block; }
+.sc-p.subp { border-top: 1px dashed var(--rule); margin-top: 2px; padding-top: 1px; }
+.sc-in { grid-column: 2 / 4; display: block; font-size: 14px; color: var(--graphite-2); }
+.sc-c { min-width: 68px; width: 68px; vertical-align: top; position: relative; }
+.sc-c.cur::before { content: ""; position: absolute; inset: 6px 2px 8px 1px; background: var(--hl); border-radius: 40% 12% 46% 10% / 20% 50% 18% 46%; transform: rotate(-2.5deg) skewX(-4deg); mix-blend-mode: multiply; pointer-events: none; }
+.sc-ab { position: relative; height: 76px; width: 100%; min-width: 68px; }
+.sc-ab + .sc-ab { border-top: 1px dashed var(--rule); }
+.sc-ab.sub { box-shadow: inset 2px 0 0 var(--graphite-2); }
+.sc-cnt { position: absolute; left: 3px; top: 3px; line-height: 0; font-size: 0; }
+.sc-cnt b { display: inline-block; width: 5px; height: 5px; border: 1px solid var(--faint); margin: 0 1px 1px 0; }
+.sc-hint { display: none;  position: absolute; right: 2px; top: 22px; font: 600 7.5px/8px var(--print-font); color: var(--faint); font-style: normal; text-align: right; }
+.sc-dia { position: absolute; left: calc(50% - 22px); top: 8px; width: 44px; height: 44px; overflow: visible; }
+.sc-dia .grid { fill: none; stroke: var(--rule); stroke-width: 1; }
+.sc-dia .ink, .sc-slash .ink, .sc-ring .ink { fill: none; stroke: var(--graphite); stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+.sc-dia .run { fill: rgba(90,90,90,.08); stroke: none; }
+.sc-dia .hatch { fill: none; stroke: var(--graphite-2); stroke-width: 1.1; stroke-linecap: round; opacity: .55; }
+.sc-t { position: absolute; left: 0; right: 0; bottom: 1px; font: 700 19px/1 var(--hand); color: var(--graphite); white-space: nowrap; }
 .kl { display: inline-block; transform: scaleX(-1); }
-.sc-out { position: absolute; right: 2px; top: 2px; width: 14px; height: 14px; border: 1.5px solid var(--red); color: var(--red); border-radius: 50%; font: 700 .6rem/12px system-ui, sans-serif; }
-.sc-rbi { position: absolute; left: 3px; top: 1px; color: var(--red); font-size: .8rem; letter-spacing: -1px; line-height: 1; }
-.sc-n { position: absolute; font-style: normal; font-size: .55rem; color: var(--ink); font-weight: 700; }
-.sc-n.b2 { right: 1px; top: 22px; } .sc-n.b3 { left: 21px; top: 0; } .sc-n.b4 { left: 1px; top: 22px; } .sc-n.b1 { right: 1px; top: 30px; }
-.sc-ab.end::after { content: ""; position: absolute; right: -1px; bottom: -1px; width: 18px; height: 18px; background: linear-gradient(135deg, transparent 46%, var(--ink) 46% 56%, transparent 56%); }
-.sc-q { position: absolute; right: 3px; bottom: 14px; color: var(--red); font-weight: 800; font-style: normal; }
-.sc-up { position: absolute; left: 0; right: 0; bottom: 3px; color: var(--red); font: 800 .65rem/1 system-ui, sans-serif; letter-spacing: .06em; }
-.sc-s { min-width: 30px; font-weight: 700; color: var(--hand); background: var(--paper-2); }
-.sc-f th, .sc-f td { height: 22px; font-weight: 700; }
-.sc-f th { position: sticky; left: 0; background: var(--paper-2); color: var(--ink); padding-left: 6px !important; text-align: left; border-right: 2px solid var(--ink) !important; }
-.sc-pit { margin-top: 10px; overflow-x: auto; background: var(--paper); border: 2px solid var(--ink); border-radius: 6px; font-family: "Courier Prime", "Courier New", ui-monospace, monospace; }
-.sc-pit table { border-collapse: collapse; width: 100%; color: var(--hand); font-size: .8rem; }
-.sc-pit th, .sc-pit td { border-bottom: 1px solid var(--ink); padding: 4px 6px; text-align: center; }
-.sc-pit th { text-align: left; white-space: nowrap; }
-.sc-pit thead { background: var(--paper-2); color: var(--ink); }
+.sc-out { position: absolute; right: 3px; top: 3px; width: 24px; height: 24px; display: grid; place-items: center; }
+.sc-out b { font: 700 16px/1 var(--hand); color: var(--graphite); position: relative; }
+.sc-ring { position: absolute; inset: 0; width: 24px; height: 24px; }
+.sc-rbi { position: absolute; left: 3px; bottom: 22px; display: flex; gap: 1px; }
+.sc-rbi svg { width: 7px; height: 7px; } .sc-rbi circle { fill: var(--graphite); opacity: .85; }
+.sc-n { position: absolute; font: 700 14px/1 var(--hand); font-style: normal; color: var(--graphite-2); }
+.sc-n.b2 { left: calc(50% + 5px); top: 1px; } .sc-n.b3 { left: calc(50% - 36px); top: 18px; } .sc-n.b4 { left: calc(50% - 34px); top: 40px; } .sc-n.b1 { left: calc(50% + 20px); top: 36px; }
+.sc-slash { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.sc-q { position: absolute; right: 12px; bottom: 18px; font: 700 20px/1 var(--hand); color: var(--graphite); font-style: normal; }
+.sc-up { position: absolute; left: 0; right: 0; bottom: 3px; font: 700 16px/1 var(--hand); color: var(--graphite); }
+.sc-s { min-width: 34px; border-left: 0; }
+.sc-tbl tbody .sc-s, .sc-f td { font: 700 19px/1 var(--hand); color: var(--graphite); }
+tbody tr:first-child .sc-s { }
+.sc-tbl td.sc-s:nth-last-child(6) { border-left: 1.5px solid var(--rule-2); }
+.sc-f th, .sc-f td { height: 26px; }
+.sc-tbl tfoot tr:first-child > * { border-top: 1.5px solid var(--rule-2); }
+.sc-f th { position: sticky; left: 0; background: var(--paper) var(--grain); background-color: var(--paper); color: var(--print); font: 700 12px/1 var(--print-font); letter-spacing: .1em; padding-left: 8px !important; text-align: left; border-right: 1.5px solid var(--rule-2) !important; }
+.sc-pit { margin-top: 10px; overflow-x: auto; border: 1.5px solid var(--rule-2); }
+.sc-pit table { border-collapse: collapse; width: 100%; color: var(--graphite); }
+.sc-pit th, .sc-pit td { border-bottom: 1px solid var(--rule); border-right: 1px solid var(--rule); padding: 3px 5px; text-align: center; }
+.sc-pit tbody th { text-align: left; white-space: nowrap; }
+.sc-pit thead th, .sc-pit thead td { color: var(--print); font: 700 11.5px/1 var(--print-font); letter-spacing: .1em; text-align: center; border-bottom: 1.5px solid var(--rule-2); }
+.sc-pit thead th { text-align: left; }
+.sc-pit .pc { font-size: 18px; }
 .sc-key { font-size: .72rem; color: var(--muted); margin: 8px 2px 16px; font-family: system-ui, sans-serif; }
+
+/* The golf scorecard shares the .sc-tbl class; undo its span/th rules inside the baseball paper sheet. */
+.scorebook .sc-tbl th { min-width: 0; font-weight: 700; }
+.scorebook .sc-tbl { font-size: 13px; margin: 0; }

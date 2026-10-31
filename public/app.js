@@ -932,7 +932,7 @@ async function viewScorecard(sp, id, quick) {
   view.innerHTML = scorecardHTML(sc, scState.side, back);
   const g2 = view.querySelector('.sc-grid');
   if (g2 && sx != null) g2.scrollLeft = sx;
-  else if (g2 && sc.live && sc.current && sc.current.side === scState.side) { const c = g2.querySelector('td.sc-c.cur'); if (c) g2.scrollLeft = Math.max(0, c.offsetLeft - 140); }
+  else if (g2 && sc.live && sc.current && sc.current.side === scState.side) { const c = g2.querySelector('td.sc-c.cur'); if (c) { const w = g2.querySelector('tbody .sc-who'); g2.scrollLeft = Math.max(0, c.offsetLeft - (w ? w.offsetWidth : 146) - c.offsetWidth); } }
   if (quick) window.scrollTo(0, y);
   scheduleRefresh(!!sc.live, 10e3);
 }

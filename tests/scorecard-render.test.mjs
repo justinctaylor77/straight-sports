@@ -1,0 +1,22 @@
+// v1.7.0 Scorekeeper renderer (public/scorecard.js): pencil marks are deterministic per play and stay within the hand-wobble limits.
+import { createRequire } from 'module';
+import { rng, cellHTML, sheetHTML } from '../public/scorecard.js';
+const require = createRequire(import.meta.url);
+const S = require('../server/scorecard.js');
+let n = 0; const ok = (c, m) => { if (!c) { console.error('FAIL:', m); process.exit(1); } n++; };
+const a = rng('401908043-57'), b = rng('401908043-57'), c = rng('other');
+const xa = [a(), a(), a()], xb = [b(), b(), b()]; ok(JSON.stringify(xa) === JSON.stringify(xb), 'same seed -> same sequence');
+ok(xa.every((v) => v >= 0 && v < 1), 'rng in [0,1)'); ok(c() !== xa[0], 'different seed -> different sequence');
+const sc = S.build(require('./fixtures/mlb-summary-401908043.json'));
+const cell = sc.teams.away.cells['5|1'][0];
+ok(cellHTML(cell) === cellHTML(cell), 'same play renders identical marks (no jiggle on refresh)');
+const other = { ...cell, playId: cell.playId + '9' }; ok(cellHTML(other) !== cellHTML(cell), 'a different play gets its own wobble');
+const html = sheetHTML(sc, 'away');
+const rots = [...html.matchAll(/rotate\(([-\d.]+)deg\)/g)].map((m) => +m[1]); ok(rots.length > 50 && rots.every((r) => Math.abs(r) <= 2), 'every mark rotated within ±2deg');
+const offs = [...html.matchAll(/translate\(([-\d.]+)px,([-\d.]+)px\)/g)].flatMap((m) => [+m[1], +m[2]]); ok(offs.every((v) => Math.abs(v) <= 1), 'offsets within ±1px');
+const widths = [...html.matchAll(/stroke-width:([\d.]+)px/g)].map((m) => +m[1]); ok(widths.some((w) => w >= 1.6 && w <= 2.2) && widths.filter((w) => w >= 1.6).every((w) => w <= 2.2), 'pencil base-path strokes 1.6-2.2px');
+ok(/class="hatch"/.test(cellHTML(cell)) && /HR/.test(cellHTML(cell)), 'scored HR: hatched diamond');
+ok((cellHTML(cell).match(/<circle/g) || []).length === 2, '2 RBI -> 2 pencil dots');
+ok(html === sheetHTML(sc, 'away'), 'whole sheet deterministic');
+ok(/NO\.<\/span><span class="lbl-pl">PLAYERS<\/span><span class="lbl-pos">POS/.test(html), 'printed NO. / PLAYERS / POS labels');
+console.log(`scorecard-render: ${n} assertions passed`);

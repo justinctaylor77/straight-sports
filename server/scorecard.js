@@ -75,7 +75,7 @@ function build(d, opts = {}) {
   const status = comp.status || {}; const st = (status.type || {});
   const state = st.state || 'pre';
   const sides = {}; // espn team id -> 'home'|'away'
-  const out = { v: 1, sport: opts.sport || 'mlb', id: String(comp.id || (d.header && d.header.id) || ''), state, detail: st.detail || st.shortDetail || '', live: state === 'in', innings: 9, teams: {}, current: null, hasPlays: false };
+  const out = { v: 1, sport: opts.sport || 'mlb', id: String(comp.id || (d.header && d.header.id) || ''), state, detail: st.detail || st.shortDetail || '', live: state === 'in', innings: 9, teams: {}, current: null, hasPlays: false, date: comp.date ? (() => { try { return new Date(comp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }); } catch { return null; } })() : null };
   for (const c of comp.competitors || []) {
     sides[String(c.id)] = c.homeAway;
     out.teams[c.homeAway] = { side: c.homeAway, id: String(c.id), abbr: (c.team && c.team.abbreviation) || '', name: (c.team && (c.team.displayName || c.team.name)) || '', logo: (c.team && ((c.team.logos && c.team.logos[0] && c.team.logos[0].href) || c.team.logo)) || null, score: c.score != null ? String(c.score) : null,
