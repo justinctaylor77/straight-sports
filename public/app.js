@@ -1,18 +1,19 @@
-import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=30';
+import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=31';
 import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, allSportsFor, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, migrate, onSettingsSaved, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=30';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=31';
 import * as GA from './anim.js?v=18';
-import * as BPL from './bigplay.js?v=30';
-import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=30';
+import * as BPL from './bigplay.js?v=31';
+import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=31';
 import * as BD from './backdrop.js';
-import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=30';
+import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=31';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
-import { createLists, FEED as LIST_FEED } from './lists.js?v=30';
-import * as LOGOTONE from './logotone.js?v=30';
-import { search as fuzzySearch, scoreName } from './fuzzy.js?v=30';
-import * as HS from './hsfb.js?v=30';
+import { createLists, FEED as LIST_FEED } from './lists.js?v=31';
+import * as LOGOTONE from './logotone.js?v=31';
+import { search as fuzzySearch, scoreName } from './fuzzy.js?v=31';
+import * as HS from './hsfb.js?v=31';
+import { scorecardHTML } from './scorecard.js?v=31';
 const LOGOS = LOGOTONE.install(document); // v1.5.0: measure each logo against the surface it sits on, outline the ones under 3:1
 
 // ---------------- state ----------------
@@ -914,6 +915,32 @@ async function viewGame(sp, id, quick) {
   scheduleRefresh(castLive, 10e3);
 }
 
+// v1.7.0 Scorekeeper: paper scorebook sheet for a baseball game, filled from ESPN play-by-play by the server.
+// Same live cadence as Gamecast (10s) and the same route guard: a stale response never paints over another screen.
+const scState = { side: null, key: null };
+async function viewScorecard(sp, id, quick) {
+  const rn = rt();
+  const back = `#/game/${sp}/${encodeURIComponent(id)}`;
+  setBar('Scorecard', { back });
+  if (scState.key !== `${sp}:${id}`) Object.assign(scState, { side: null, key: `${sp}:${id}` });
+  if (!quick) paint(`<div class="card"><div class="sk w50"></div><div class="sk w70 sm"></div></div>${SK.rows(9)}`);
+  let sc; try { sc = await api(`/api/scorecard/${sp}/${id}`, 10e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = errBox(e); return; }
+  if (isStale(rn)) return;
+  if (!location.hash.startsWith(`#/scorecard/${sp}/`)) return;
+  if (!scState.side) scState.side = sc.current && sc.live ? sc.current.side : 'away';
+  const grid = view.querySelector('.sc-grid'); const sx = quick && grid ? grid.scrollLeft : null; const y = window.scrollY;
+  view.innerHTML = scorecardHTML(sc, scState.side, back);
+  const g2 = view.querySelector('.sc-grid');
+  if (g2 && sx != null) g2.scrollLeft = sx;
+  else if (g2 && sc.live && sc.current && sc.current.side === scState.side) { const c = g2.querySelector('td.sc-c.cur'); if (c) g2.scrollLeft = Math.max(0, c.offsetLeft - 140); }
+  if (quick) window.scrollTo(0, y);
+  scheduleRefresh(!!sc.live, 10e3);
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('[data-scside]'); if (!b) return;
+  scState.side = b.dataset.scside; route(true);
+});
+
 function gameBackdrop(sp, d) {
   try {
     if (d.home && d.away && d.home.team && d.away.team) {
@@ -1551,7 +1578,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=30" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=31" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
@@ -1758,7 +1785,7 @@ function syncSportUI(name) {
   const lbl = $('#tab4-label'); if (lbl) lbl.textContent = SPORTS[cur].tab4;
   const de = document.documentElement; // non-core sports get their accent from the catalog
   if (CORE.includes(cur)) { delete de.dataset.xa; de.style.removeProperty('--xa'); } else { de.dataset.xa = ''; de.style.setProperty('--xa', SPORTS[cur].accent || '#ff7a1a'); }
-  if (!['team', 'game', 'schedule', 'player'].includes(name)) BD.setSport(cur);
+  if (!['team', 'game', 'schedule', 'player', 'scorecard'].includes(name)) BD.setSport(cur);
   document.title = `Old School Sports · ${SPORTS[cur].short}`;
 }
 // "Play drive": steps the football play tracker through the drive, one play at a time, animating each; any manual tap stops it.
@@ -1829,7 +1856,7 @@ document.addEventListener('keydown', (e) => {
 let refreshLive = false;
 function liveTick() {
   if (document.hidden || $('#sheet') || $('#onb')) return;
-  for (const k of mem.keys()) if (k.startsWith('/api/scoreboard') || k.startsWith('/api/game')) mem.delete(k);
+  for (const k of mem.keys()) if (k.startsWith('/api/scoreboard') || k.startsWith('/api/game') || k.startsWith('/api/scorecard')) mem.delete(k);
   route(true);
 }
 function scheduleRefresh(live, ms = 15e3) {
@@ -1846,13 +1873,13 @@ async function route(silent) {
   view.onclick = view.onchange = view.oninput = view.onsubmit = null;
   const h = location.hash || '#/home';
   const [, name = 'home', arg, arg2] = h.split('/');
-  if (!['team', 'game', 'schedule', 'player'].includes(name)) lastTab = name;
+  if (!['team', 'game', 'schedule', 'player', 'scorecard'].includes(name)) lastTab = name;
   if (!['team', 'schedule', 'player'].includes(name)) { clearTeamTheme(); syncThemeColor(); }
   syncSportUI(name);
   if (!silent) { if (HIST[HIST.length - 2] === h) HIST.pop(); else if (HIST[HIST.length - 1] !== h) HIST.push(h); }
   document.querySelectorAll('.nav a[data-tab]').forEach((a) => a.classList.toggle('active', a.dataset.tab === lastTab));
   document.querySelectorAll('.side-teams a').forEach((a) => a.classList.toggle('active', ['team', 'player', 'schedule'].includes(name) && a.dataset.team === decodeURIComponent(arg || '')));
-  const depth = ['team', 'game', 'schedule', 'player'].includes(name) || (name === 'settings' && arg) ? 1 : 0;
+  const depth = ['team', 'game', 'schedule', 'player', 'scorecard'].includes(name) || (name === 'settings' && arg) ? 1 : 0;
   if (!silent) {
     const cls = depth > prevDepth ? 'push' : depth < prevDepth ? 'pop' : 'fade';
     view.classList.remove('push', 'pop', 'fade'); void view.offsetWidth; view.classList.add(cls); prevDepth = depth;
@@ -1860,7 +1887,7 @@ async function route(silent) {
   }
   const y = scrollY; SILENT = !!silent;
   try {
-    const mutedSp = ['team', 'schedule', 'player'].includes(name) && arg ? sportOfId(decodeURIComponent(arg)) : name === 'game' && arg ? arg : null;
+    const mutedSp = ['team', 'schedule', 'player'].includes(name) && arg ? sportOfId(decodeURIComponent(arg)) : (name === 'game' || name === 'scorecard') && arg ? arg : null;
     if (mutedSp && mutedSports(S).includes(mutedSp)) { setBar(SPORTS[mutedSp].short, { back: '#/home' }); view.innerHTML = `<div class="card panel"><div class="empty">🔇 ${esc(SPORTS[mutedSp].name)} is muted because it isn’t one of your favorite sports.<br/><a class="btn small" href="#/settings/mute">Change in Mute</a></div></div>`; SILENT = false; return; }
     if (name === 'scores') await viewScores();
     else if (name === 'news') await viewNews();
@@ -1869,6 +1896,7 @@ async function route(silent) {
     else if (name === 'schedule' && arg) await viewSchedule(decodeURIComponent(arg));
     else if (name === 'player' && arg) await viewPlayer(decodeURIComponent(arg));
     else if (name === 'game' && arg2) await viewGame(arg, decodeURIComponent(arg2), silent);
+    else if (name === 'scorecard' && arg2) await viewScorecard(arg, decodeURIComponent(arg2), silent);
     else if (name === 'settings') viewSettings(arg);
     else await viewHome();
   } catch (e) { console.error(e); if (!isStale(rn)) view.innerHTML = errBox(e); }

@@ -4,9 +4,9 @@
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ord = (n) => (n == null ? '' : `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)]}`);
 const fmtWhen = (iso) => { const d = new Date(iso); return `${d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`; };
-import { playBlock, latestBanner, whoChips, playText } from './whoplay.js?v=30';
-import { bigChips } from './bigplay.js?v=30';
-import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=30';
+import { playBlock, latestBanner, whoChips, playText } from './whoplay.js?v=31';
+import { bigChips } from './bigplay.js?v=31';
+import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=31';
 const hex = (c, fb) => (c && /^[0-9a-f]{6}$/i.test(c) ? `#${c}` : fb);
 
 export const castState = { tab: 'summary', player: null, sport: null, id: null, fp: null, fd: null, ab: null, sf: 'all' };
@@ -208,7 +208,9 @@ function baseballCast(d, ctx) {
     body += pitchTracker(d, castState) + lineScore(d, { min: 9, extra: ['hits', 'errors'] }) + wpChart(d, ctx);
     if (d.scoring && d.scoring.length) body += `<h2>Scoring plays</h2><div class="card panel gc-scoring">${d.scoring.slice().reverse().map((p) => `<div class="sp"><span class="faint small inn">${esc(p.inning)}</span><div class="small">${playBlock(p, d.heads)}</div><span class="sc">${p.away}–${p.home}</span></div>`).join('')}</div>`;
   }
-  return header(d, ctx) + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Play-by-play'], ['stats', 'Box score']])) + body + footer(d);
+  // v1.7.0 Scorekeeper: link to the paper scorebook sheet (ESPN-fed baseball only; the sheet itself says when ESPN has no play-by-play)
+  const scl = d.sport && d.sport !== 'ausl' && d.id ? `<div class="sc-linkrow" data-an="sclink"><a class="btn small sc-link" data-sc-link href="#/scorecard/${esc(d.sport)}/${esc(d.id)}">📋 Scorecard</a></div>` : '';
+  return header(d, ctx) + scl + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Play-by-play'], ['stats', 'Box score']])) + body + footer(d);
 }
 
 // ---------- golf ----------

@@ -2,6 +2,21 @@
 
 Releases get a vintage-sports nickname plus a version label (service-worker cache version in parentheses).
 
+
+## v1.7.0 "Scorekeeper" (ss-v31) — 2026-10-31
+
+**LOCAL ONLY: not pushed, not deployed.** Live is still v1.6.1 (ss-v30). Report: `QA-REPORT-scorekeeper.md`, results `docs/qa-results-v25.json`.
+
+### Added
+- **Baseball scorecard (Justin: "a link in game cast to open up the sheet … the app fills in the sheet as the game plays out").** MLB and college-baseball Gamecasts get a **📋 Scorecard** link → `#/scorecard/<sport>/<id>`, a classic paper scorebook filled in from ESPN play-by-play.
+  - One sheet per team (Away/Home toggle). Rows = batting-order slots (name, jersey, position; subs listed under the slot they replaced with how/when they entered). Columns = innings 1–9, extended for extra innings.
+  - Each cell: base-path diamond (filled when the runner scored, x where he was put out), shorthand (1B 2B 3B HR BB IBB HBP K, backwards K for called third strike, E-6, FC, SAC, SF8, 6-3, F8, L6, P4, DP/TP), RBI dots, circled out number, slash after the last out of a half. Later steals / wild pitches / errors are written onto the runner's earlier cell.
+  - Footer R/H/E/LOB per inning; AB R H RBI BB K per slot; pitcher lines (IP H R ER BB K PC).
+  - Live: polls every 10s like Gamecast, LIVE badge, current batter's cell highlighted; Final shows the whole sheet; pre-game shows the lineup and "Scorecard fills in once the game starts". A play the parser can't read shows "?" — nothing is guessed.
+  - Cream paper / ink-blue grid / typewriter + handwritten lettering, with a night-paper variant for dark mode (all text ≥ 4.5:1). At 390px the grid scrolls sideways inside its frame with a sticky batter column.
+- Server: `server/scorecard.js` (pure parser) + `GET /api/scorecard/:sport/:id` (baseball only; cached 6s live / 5 min final). Client: `public/scorecard.js` renderer, route guarded with `rt()`/`isStale()`.
+- Tests: `tests/scorecard.test.js` over two real ESPN MLB finals (`tests/fixtures/mlb-summary-401908043.json`, `-401908045.json`, the second 12 innings). QA: `scripts/qa-v25.{js,sh}` (SC-01…SC-10 + full regression), `scripts/live-verify-v25.js` (not run).
+
 ## v1.5.0 "Rabbit Ears" (ss-v28) — 2026-10-28
 
 **LOCAL ONLY: not pushed, not deployed, waiting for Justin's approval.** Live is still v1.4.0 "Hail Mary" (ss-v27). QA: full run 208/210; the 2 failures (SY-04 outdated expectation, SY-08 flaky tap) were fixed and pass in filtered reruns. Report: `QA-REPORT-rabbit-ears.md`.

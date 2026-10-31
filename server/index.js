@@ -132,6 +132,11 @@ app.get(['/api/grok-top25', '/api/jt-top25'], top25);
 app.get(['/api/grok-top25/history', '/api/jt-top25/history'], top25Hist);
 app.get('/api/players/:sport', wrap((req) => { const s = sportOf(req); if (!['golf', 'tennis'].includes(s) && kindOf(s) !== 'event') throw bad('players: golf, tennis or event sports'); return SP.players(s); }));
 app.get('/api/game/:sport/:id', wrap((req) => { const s = sportOf(req); if (!s) throw bad('unknown sport'); if (!/^[a-z]{0,4}-?\d+$/.test(req.params.id)) throw bad('bad id'); return SP.gamecast(s, req.params.id).then((d) => WATCH.attach(s, d)); }));
+// v1.7.0 Scorekeeper: paper scorebook sheet built from the same ESPN summary play-by-play the Gamecast uses (server/scorecard.js).
+const SCORECARD = require('./scorecard');
+app.get('/api/scorecard/:sport/:id', wrap((req) => { const s = sportOf(req); const sp = s && SP.SPORTS[s]; if (!sp || sp.family !== 'baseball' || s === 'ausl' || !sp.path) throw bad('scorecard: baseball only'); const id = String(req.params.id).replace(/\D/g, ''); if (!/^\d{4,12}$/.test(id)) throw bad('bad id');
+  const key = `scorecard:${s}:${id}`; const prev = cache.get(key); const live = prev && prev.value && prev.value.state === 'in';
+  return cached(key, live ? 6e3 : (prev && prev.value && prev.value.state === 'post' ? 5 * 60e3 : 60e3), async () => SCORECARD.build(await fetchJSON(`https://site.api.espn.com/apis/site/v2/sports/${sp.path}/summary?event=${id}`), { sport: s })); }));
 app.get('/api/team/:id', wrap((req) => SP.teamPage(req.params.id).then((d) => { const m = String(req.params.id).match(/^([a-z0-9]+):/); return WATCH.attach(m ? m[1] : 'cfb', d); })));
 const TICKETS = require('./tickets')({ cached, fetchJSON });
 const PEOPLE = require('./people')({ cached, fetchJSON, SP, TICKETS });
