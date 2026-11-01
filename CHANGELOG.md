@@ -182,3 +182,4 @@ Fast, focused fixes for two things Justin reported right after the bracket launc
 ## v1.0.0 "Playoff Push" (ss-v22) — retro-named
 Playoff Bracket page: My Bracket (JT), AP Projected, Official CFP (shows "not released yet" until the committee's first ranking).
 - Oct 31 2026 05:49 PM MT: v1.7.0 Scorekeeper deployed (db901f6, ss-v31), live verify 19/19
+- Oct 31 2026 07:00 PM MT: v1.7.1 deployed (3058409, ss-v32), live verify 24/24
