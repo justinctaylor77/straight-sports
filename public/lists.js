@@ -106,10 +106,11 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
     return `<h2>${p.preseason ? 'Preseason' : 'Latest'} ${esc(p.name)}</h2><div class="card gk-list lb-list">${p.rows.slice(0, 10).map((r) => row(r, { ...d, kind: 'poll' })).join('')}</div>
       <p class="faint small">${esc(p.headline || p.name)}${p.date ? ` · ${esc(fmtDay(p.date))}` : ''}. <a href="#/rankings/list/${esc(d.sport)}">Full list ›</a></p>`;
   }
-  function stageSection(sec, kind) {
+  function stageSection(sec, kind, sport) {
+    const scl = (g) => (g.contestId && g.state === 'final' && (sport === 'softball' || sport === 'cbase') ? `<a class="lb-sc" data-sc-link href="#/scorecard/${esc(sport)}/n${esc(g.contestId)}" title="Scorecard">📋</a>` : '');
     const adv = sec.advancer; const tm = sec.teams || [];
     const games = (sec.games || []).map((g) => { const [a, b] = g.slots || []; const nm = (s) => (s && s.team ? s.team.short || s.team.name : (s && s.label) || 'TBD');
-      return `<div class="lb-g"><span class="faint">${esc(g.date || '')}</span><span class="${a && a.winner ? 'w' : ''}">${esc(nm(a))} <b>${a && a.score != null ? esc(a.score) : ''}</b></span><span class="${b && b.winner ? 'w' : ''}">${esc(nm(b))} <b>${b && b.score != null ? esc(b.score) : ''}</b></span></div>`; }).join('');
+      return `<div class="lb-g"><span class="faint">${esc(g.date || '')}</span><span class="${a && a.winner ? 'w' : ''}">${esc(nm(a))} <b>${a && a.score != null ? esc(a.score) : ''}</b></span><span class="${b && b.winner ? 'w' : ''}">${esc(nm(b))} <b>${b && b.score != null ? esc(b.score) : ''}</b></span>${scl(g)}</div>`; }).join('');
     return `<div class="card br-game lb-sec"><div class="host">${esc(sec.name)}${sec.complete ? '' : ' · in progress'}</div>
       ${tm.map((x) => `<div class="bt ${adv && x.team && adv.id && x.team.id === adv.id ? 'win' : ''} ${hlCls(x.team)}" style="--tc:#${esc((x.team && x.team.color) || '888')}"><span class="sd">${x.seed != null ? esc(x.seed) : ''}</span><img crossorigin="anonymous" src="${esc(logo(x.team))}" alt="" loading="lazy" /><span class="n"><b>${esc((x.team && (x.team.short || x.team.name)) || 'TBD')}</b><small>${x.team && x.team.hl && x.team.hl.spot ? esc(x.team.hl.spot === 'utah' ? 'Utah' : 'BYU') : x.team && x.team.hl && x.team.hl.big12 ? 'Big 12' : adv && x.team && x.team.id && x.team.id === adv.id ? 'Advanced' : ''}</small></span><span class="lb-sc" title="${kind === 'series' ? 'series wins' : 'wins'}">${x.wins != null ? esc(x.wins) : ''}</span></div>`).join('')}
       ${games ? `<details class="lb-games"><summary>${(sec.games || []).length} game${(sec.games || []).length === 1 ? '' : 's'}</summary>${games}</details>` : ''}</div>`;
@@ -117,7 +118,7 @@ export function makeRender({ logo = (t) => (t ? t.logo : ''), myTeamIds = () => 
   function stagesBody(d, stageId) {
     const st = d.stages || []; const cur = st.find((s) => s.id === stageId) || st[0];
     return `<div class="gk-sub"><div class="seg" role="tablist">${st.map((s) => `<button role="tab" data-lbstage="${esc(s.id)}" aria-selected="${s === cur}" class="${s === cur ? 'on' : ''}">${esc(s.name.replace(/^Men’s College World Series$/, 'Men’s CWS').replace(/ \(best of 3\)/, ''))}</button>`).join('')}</div></div>
-      <h2>${esc(cur.name)}</h2><div class="lb-secs">${(cur.sections || []).map((s) => stageSection(s, cur.kind)).join('') || '<div class="card empty">No games in this round.</div>'}</div>`;
+      <h2>${esc(cur.name)}</h2><div class="lb-secs">${(cur.sections || []).map((s) => stageSection(s, cur.kind, d.sport)).join('') || '<div class="card empty">No games in this round.</div>'}</div>`;
   }
   function champCard(d) {
     const c = d.champion; if (!c) return '';

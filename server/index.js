@@ -61,6 +61,30 @@ const wrap = (fn) => async (req, res) => {
 };
 const bad = (msg) => Object.assign(new Error(msg), { status: 400 });
 
+// v1.7.1: NCAA.com school logos send no CORS headers, so <img crossorigin> (needed for logo-contrast pixel sampling) fails.
+// Proxy them same-origin; only ncaa.com school-logo paths are allowed (no open proxy).
+const NCAA_LOGO_RE = /^\/sites\/default\/files\/images\/logos\/schools\/[\w\/.-]+\.(png|svg|gif|jpe?g)$/i;
+const logoCache = new Map();
+app.get('/api/ncaa-logo', async (req, res) => {
+  const p = String(req.query.p || '');
+  if (!NCAA_LOGO_RE.test(p) || p.includes('..')) return res.status(400).end();
+  try {
+    let hit = logoCache.get(p);
+    if (!hit) {
+      // sport-suffixed variants (e.g. "south-fla-wsb.70.png") often 503 at NCAA.com's CDN; fall back to the plain school logo
+      const alts = [p, p.replace(/-(wsb|bsb|wbb|mbb|wvb|wso|mso|fb)(\.\d+)?(\.\w+)$/i, '$2$3')].filter((x, i, a) => a.indexOf(x) === i);
+      for (const u of alts) {
+        const r = await fetch(`https://www.ncaa.com${u}`, { headers: { 'User-Agent': UA } }).catch(() => null);
+        if (r && r.ok && /^image\//.test(r.headers.get('content-type') || 'image/png')) { hit = { type: r.headers.get('content-type') || 'image/png', buf: Buffer.from(await r.arrayBuffer()) }; break; }
+      }
+      // last resort: transparent 1x1 (no broken-image icon, no console error); not cached so a later request can retry
+      if (!hit) return res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=600', 'Access-Control-Allow-Origin': '*' }).send(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64'));
+      if (logoCache.size > 2000) logoCache.clear();
+      logoCache.set(p, hit);
+    }
+    res.set({ 'Content-Type': hit.type, 'Cache-Control': 'public, max-age=604800', 'Access-Control-Allow-Origin': '*' }).send(hit.buf);
+  } catch (e) { res.status(502).end(); }
+});
 app.get('/api/sports', (req, res) => res.json(Object.values(SP.SPORTS).map(({ id, name, short, kind, group }) => ({ id, name, short, kind, group }))));
 const kindOf = (s) => (SP.SPORTS[s] || {}).kind;
 app.get('/api/teams', wrap((req) => { const s = sportOf(req); if (!s || kindOf(s) !== 'team') throw bad('teams: team sports only'); return SP.getTeams(s, { division: String(req.query.division || '') === 'fcs' ? 'fcs' : '' }); }));
@@ -133,10 +157,9 @@ app.get(['/api/grok-top25/history', '/api/jt-top25/history'], top25Hist);
 app.get('/api/players/:sport', wrap((req) => { const s = sportOf(req); if (!['golf', 'tennis'].includes(s) && kindOf(s) !== 'event') throw bad('players: golf, tennis or event sports'); return SP.players(s); }));
 app.get('/api/game/:sport/:id', wrap((req) => { const s = sportOf(req); if (!s) throw bad('unknown sport'); if (!/^[a-z]{0,4}-?\d+$/.test(req.params.id)) throw bad('bad id'); return SP.gamecast(s, req.params.id).then((d) => WATCH.attach(s, d)); }));
 // v1.7.0 Scorekeeper: paper scorebook sheet built from the same ESPN summary play-by-play the Gamecast uses (server/scorecard.js).
-const SCORECARD = require('./scorecard');
-app.get('/api/scorecard/:sport/:id', wrap((req) => { const s = sportOf(req); const sp = s && SP.SPORTS[s]; if (!sp || sp.family !== 'baseball' || s === 'ausl' || !sp.path) throw bad('scorecard: baseball only'); const id = String(req.params.id).replace(/\D/g, ''); if (!/^\d{4,12}$/.test(id)) throw bad('bad id');
-  const key = `scorecard:${s}:${id}`; const prev = cache.get(key); const live = prev && prev.value && prev.value.state === 'in';
-  return cached(key, live ? 6e3 : (prev && prev.value && prev.value.state === 'post' ? 5 * 60e3 : 60e3), async () => SCORECARD.build(await fetchJSON(`https://site.api.espn.com/apis/site/v2/sports/${sp.path}/summary?event=${id}`), { sport: s })); }));
+const SCREC = require('./scorecard-route')({ cached, cache, fetchJSON, SP, FEEDS });
+app.get('/api/scorecard/:sport/:id', wrap((req) => SCREC.route(req))); // v1.7.1: mlb, cbase (+NCAA fallback), softball (NCAA.com), ausl (no pbp)
+app.get('/api/scorecards/:sport', wrap((req) => SCREC.games(String(req.params.sport))));
 app.get('/api/team/:id', wrap((req) => SP.teamPage(req.params.id).then((d) => { const m = String(req.params.id).match(/^([a-z0-9]+):/); return WATCH.attach(m ? m[1] : 'cfb', d); })));
 const TICKETS = require('./tickets')({ cached, fetchJSON });
 const PEOPLE = require('./people')({ cached, fetchJSON, SP, TICKETS });

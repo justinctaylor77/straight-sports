@@ -4,9 +4,9 @@
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ord = (n) => (n == null ? '' : `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)]}`);
 const fmtWhen = (iso) => { const d = new Date(iso); return `${d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`; };
-import { playBlock, latestBanner, whoChips, playText } from './whoplay.js?v=31';
-import { bigChips } from './bigplay.js?v=31';
-import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=31';
+import { playBlock, latestBanner, whoChips, playText } from './whoplay.js?v=32';
+import { bigChips } from './bigplay.js?v=32';
+import { fieldInner, FIELD, teamColors, footballPlays, pitchTracker, hockeyShots, basketballShots, soccerShots, golfLeaders, golfHoleStrip, tennisCourt, racingPodium } from './plays.js?v=32';
 const hex = (c, fb) => (c && /^[0-9a-f]{6}$/i.test(c) ? `#${c}` : fb);
 
 export const castState = { tab: 'summary', player: null, sport: null, id: null, fp: null, fd: null, ab: null, sf: 'all' };
@@ -209,7 +209,7 @@ function baseballCast(d, ctx) {
     if (d.scoring && d.scoring.length) body += `<h2>Scoring plays</h2><div class="card panel gc-scoring">${d.scoring.slice().reverse().map((p) => `<div class="sp"><span class="faint small inn">${esc(p.inning)}</span><div class="small">${playBlock(p, d.heads)}</div><span class="sc">${p.away}–${p.home}</span></div>`).join('')}</div>`;
   }
   // v1.7.0 Scorekeeper: link to the paper scorebook sheet (ESPN-fed baseball only; the sheet itself says when ESPN has no play-by-play)
-  const scl = d.sport && d.sport !== 'ausl' && d.id ? `<div class="sc-linkrow" data-an="sclink"><a class="btn small sc-link" data-sc-link href="#/scorecard/${esc(d.sport)}/${esc(d.id)}">📋 Scorecard</a></div>` : '';
+  const scl = scLink(d);
   return header(d, ctx) + scl + (d.state === 'pre' ? '' : tabs([['summary', 'Summary'], ['plays', 'Play-by-play'], ['stats', 'Box score']])) + body + footer(d);
 }
 
@@ -350,10 +350,13 @@ function yourPlayers(d, ctx) {
     <div class="ypl">${g.labels.map((l, i) => `<span><small>${esc(l)}</small>${esc(r.stats[i] ?? '')}</span>`).join('')}</div></div></div>`).join('')}</div>`;
 }
 // A game whose provider has results but no play-by-play or box score (AUSL): say so plainly, show only what is real, link to the official page.
+// v1.7.1: every baseball/softball league gets the Scorecard link (AUSL's sheet says it has no play-by-play to fill in)
+const SC_SPORTS = ['mlb', 'cbase', 'softball', 'ausl'];
+const scLink = (d) => (d && SC_SPORTS.includes(d.sport) && d.id ? `<div class="sc-linkrow" data-an="sclink"><a class="btn small sc-link" data-sc-link href="#/scorecard/${esc(d.sport)}/${esc(d.id)}">📋 Scorecard</a></div>` : '');
 function limitedCast(d, ctx) {
   const L = d.limited; const row = (k, v) => (v ? `<div class="r"><span>${esc(k)}</span><b>${esc(v)}</b></div>` : '');
   const facts = [row('Venue', d.venue), row('TV', d.broadcast), row('Round', d.note), row('Status', d.detail)].join('');
-  return header(d, ctx) + `<div class="card gc-limited" role="note"><h3>${esc(L.title)}</h3><p>${esc(L.text)}</p>${L.link && L.link.url ? `<a class="btn" href="${esc(L.link.url)}" target="_blank" rel="noopener noreferrer">${esc(L.link.label)} ↗</a>` : ''}</div>`
+  return header(d, ctx) + scLink(d) + `<div class="card gc-limited" role="note"><h3>${esc(L.title)}</h3><p>${esc(L.text)}</p>${L.link && L.link.url ? `<a class="btn" href="${esc(L.link.url)}" target="_blank" rel="noopener noreferrer">${esc(L.link.label)} ↗</a>` : ''}</div>`
     + (facts ? `<div class="stat-groups"><div class="card"><h4>Game info</h4>${facts}</div></div>` : '') + footer(d);
 }
 function genericCast(d, ctx) {

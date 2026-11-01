@@ -58,9 +58,10 @@ const STATS = ['AB', 'R', 'H', 'RBI', 'BB', 'K'];
 const pen = (v, seed) => (v === '' || v == null ? '' : `<span class="pc" style="${wob(rng(seed))}">${esc(v)}</span>`);
 export function sheetHTML(sc, side) {
   const T = sc.teams && sc.teams[side]; if (!T) return '<div class="card empty">No sheet for this team.</div>';
-  const P = sc.people || {}; const n = Math.max(9, sc.innings || 9); const inns = Array.from({ length: n }, (_, i) => i + 1);
+  const P = sc.people || {}; const n = Math.max(sc.regulation || 9, sc.innings || 0); /* softball/AUSL: 7, extras extend */ const inns = Array.from({ length: n }, (_, i) => i + 1);
   const cur = sc.live && sc.current && sc.current.side === side ? sc.current : null;
-  const rows = T.slots.map((sl) => {
+  const slots = T.slots.length ? T.slots : Array.from({ length: 9 }, (_, i) => ({ order: i + 1, players: [] })); // no lineup source: blank rows, nothing invented
+  const rows = slots.map((sl) => {
     const ppl = sl.players.map((id) => P[id]).filter(Boolean);
     const who = ppl.map((p, i) => { const r = rng(`p|${p.id || p.name}`); return `<div class="sc-p${i ? ' subp' : ''}"><span class="sc-j" style="${wob(r)}">${p.jersey ? esc(p.jersey) : ''}</span><b style="${wob(r)}">${esc(p.short || p.name)}</b><span class="sc-pos" style="${wob(r)}">${esc(p.pos || '')}</span>${i && p.enter ? `<small class="sc-in" style="${wob(r)}">${esc(p.enter.how)} ${p.enter.inn}</small>` : ''}</div>`; }).join('');
     const tot = (k) => { let s = 0; let any = false; for (const p of ppl) { const v = p.stats && p.stats[k]; if (v != null && v !== '' && !isNaN(+v)) { s += +v; any = true; } } return any ? s : ''; };
@@ -74,16 +75,17 @@ export function sheetHTML(sc, side) {
   return `<div class="sc-paper">${title}<div class="sc-grid" data-sc-side="${side}"><table class="sc-tbl"><thead><tr><th class="sc-who"><span class="lbl-no">NO.</span><span class="lbl-pl">PLAYERS</span><span class="lbl-pos">POS</span></th>${inns.map((i) => `<td class="${cur && cur.inn === i ? 'cur' : ''}">${i}</td>`).join('')}${STATS.map((k) => `<td class="sc-s">${k}</td>`).join('')}</tr></thead><tbody>${rows}</tbody><tfoot>${foot}</tfoot></table></div>${pit}</div>`;
 }
 // Whole page: app-styled title strip, LIVE/FINAL badge and Away/Home toggle outside the paper; the sheet (or the plain pre-game note) on paper.
-export function scorecardHTML(sc, side, back) {
+export function scorecardHTML(sc, side, back, backLabel = 'Gamecast') {
   const A = sc.teams.away || {}, H = sc.teams.home || {};
   const badge = sc.live ? '<span class="sc-live" data-sc-live>LIVE</span>' : sc.state === 'post' ? '<span class="sc-fin">FINAL</span>' : '';
-  const head = `<div class="sc-head"><a class="btn small ghost" href="${esc(back)}">‹ Gamecast</a><div class="sc-title"><b>${esc(A.abbr)} ${A.score != null && sc.state !== 'pre' ? esc(A.score) : ''} · ${esc(H.abbr)} ${H.score != null && sc.state !== 'pre' ? esc(H.score) : ''}</b><small>${esc(sc.detail || '')}</small></div>${badge}</div>`;
+  const head = `<div class="sc-head"><a class="btn small ghost" href="${esc(back)}">‹ ${esc(backLabel)}</a><div class="sc-title"><b>${esc(A.abbr)} ${A.score != null && sc.state !== 'pre' ? esc(A.score) : ''} · ${esc(H.abbr)} ${H.score != null && sc.state !== 'pre' ? esc(H.score) : ''}</b><small>${esc(sc.detail || '')}</small></div>${badge}</div>`;
   const seg = `<div class="seg sc-seg" role="tablist">${['away', 'home'].map((s) => `<button data-scside="${s}" class="${side === s ? 'on' : ''}" role="tab" aria-selected="${side === s}">${esc((sc.teams[s] || {}).abbr || s)} ${s === 'away' ? 'Away' : 'Home'}</button>`).join('')}</div>`;
   const hasLineup = ['away', 'home'].some((s) => sc.teams[s] && sc.teams[s].slots.length);
   let body;
   if (!sc.hasPlays && sc.state === 'pre') body = `<p class="sc-note" data-sc-note>Scorecard fills in once the game starts.</p>${hasLineup ? sheetHTML(sc, side) : ''}`;
-  else if (!sc.hasPlays) body = `<p class="sc-note" data-sc-note>ESPN has no play-by-play for this game yet, so the scorecard can’t be filled in.</p>${hasLineup ? sheetHTML(sc, side) : ''}`;
+  else if (sc.note) body = `<p class="sc-note" data-sc-note>${esc(sc.note)}.</p>${sheetHTML(sc, side)}`;
+  else if (!sc.hasPlays) body = `<p class="sc-note" data-sc-note>${esc(sc.source || 'ESPN')} has no play-by-play for this game yet, so the scorecard can’t be filled in.</p>${hasLineup ? sheetHTML(sc, side) : ''}`;
   else body = sheetHTML(sc, side);
-  const key = '<p class="sc-key">Pencil path = bases reached · shaded diamond = scored · circled number = out · dots = RBI · backwards K = called third strike · ? = play text not readable</p>';
-  return `<div class="scorebook" data-sc-state="${esc(sc.state)}">${head}${seg}${body}${sc.hasPlays ? key : ''}</div>`;
+  const key = `<p class="sc-key">Pencil path = bases reached · shaded diamond = scored · circled number = out · dots = RBI · backwards K = called third strike · ? = play text not readable${sc.innings > (sc.regulation || 9) ? ' · ITB = extra-inning tiebreaker runner placed on second' : ''}</p>`;
+  return `<div class="scorebook" data-sc-state="${esc(sc.state)}">${head}${seg}${body}${sc.hasPlays ? key : ''}<p class="sc-src" data-sc-src>Source: ${esc(sc.source || 'ESPN')}${sc.regulation && sc.regulation !== 9 ? ` · ${sc.regulation}-inning game` : ''}</p></div>`;
 }

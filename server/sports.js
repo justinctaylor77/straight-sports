@@ -903,6 +903,6 @@ module.exports = function makeSports({ cached, cache, fetchJSON }) {
       return { sport, cols: COLS.map(([l]) => l), groups, season: d.seasons && d.seasons[0] && d.seasons[0].displayName };
     });
   }
-  return { SPORTS, AUSL, getTeams, eventBoard, roster, athleteSearch, polls, eventPlayers, teamScoreboard, golfBoard, tennisBoard, tennisRankings, players, standings, gamecast, teamPage, normTeam, normEvent };
+  return { SPORTS, AUSL, NCAAPBP, getTeams, eventBoard, roster, athleteSearch, polls, eventPlayers, teamScoreboard, golfBoard, tennisBoard, tennisRankings, players, standings, gamecast, teamPage, normTeam, normEvent };
 };
 module.exports.SPORTS = SPORTS;

@@ -7,7 +7,7 @@
  */
 const PW = require('./playwho');
 const BASE = () => (process.env.NCAA_API_BASE || 'https://ncaa-api.henrygd.me').replace(/\/$/, '');
-const PATHS = { cfb: 'football/fbs', cbase: 'baseball/d1', mcbb: 'basketball-men/d1', wcbb: 'basketball-women/d1' };
+const PATHS = { cfb: 'football/fbs', cbase: 'baseball/d1', softball: 'softball/d1', mcbb: 'basketball-men/d1', wcbb: 'basketball-women/d1' };
 const fold = PW.fold;
 const clean = (s) => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
 

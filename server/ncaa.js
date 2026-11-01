@@ -32,7 +32,7 @@ const teamSlot = (t, resolve) => {
   const name = clean(t.nameShort || t.nameFull);
   const r = resolve ? resolve(name, clean(t.nameFull), t.seoname) : null;
   const team = r ? { id: r.id, espnId: r.espnId, name: r.name, short: name, abbr: r.abbr, logo: r.logo, logoDark: r.logoDark, color: r.color }
-    : { id: null, name: clean(t.nameFull) || name, short: name, abbr: '', logo: t.logoUrl ? `https://www.ncaa.com${t.logoUrl}` : '', logoDark: '', color: null };
+    : { id: null, name: clean(t.nameFull) || name, short: name, abbr: '', logo: t.logoUrl ? `/api/ncaa-logo?p=${encodeURIComponent(t.logoUrl)}` : '', logoDark: '', color: null };
   return { team, seed: t.seed || null, label: null, score: toNum(t.score), winner: !!t.isWinner };
 };
 const stateOf = (g) => (g.gameState === 'F' ? 'final' : g.gameState === 'I' || /live|progress/i.test(g.statusCodeDisplay || '') ? 'live' : 'upcoming');
@@ -107,7 +107,7 @@ function seriesBracket(champ, resolve) {
       return { id: `sec${sid}`, name: secTitle[sid] || `Section ${sid}`,
         teams: [...teams.entries()].map(([k, t]) => ({ team: t, seed: seeds.get(k) || null, wins: wins.get(k) || 0 })).sort((a, b) => (a.seed || 99) - (b.seed || 99) || b.wins - a.wins),
         advancer: adv ? teams.get(adv) : null, complete,
-        games: shown.map((g) => ({ id: g.id, date: dateLabel(g.date), state: g.state, slots: g.slots })) };
+        games: shown.map((g) => ({ id: g.id, contestId: g.contestId || null, date: dateLabel(g.date), state: g.state, slots: g.slots })) };
     });
     stages.push({ id: `st${st}`, name: stageNames[st], kind: st === 2 || st === 4 ? 'series' : 'double-elim', sections });
   }

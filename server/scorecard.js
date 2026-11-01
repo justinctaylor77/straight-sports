@@ -18,7 +18,16 @@ function cleanText(t) {
   return s.replace(/\.\s*$/, '');
 }
 // Split "A singled to left, B scored, C to third" -> clauses (a comma followed by a capitalised name starts a new clause).
-const clauses = (s) => s.split(/,\s+(?=[A-ZÀ-Ý])/).map((x) => x.trim()).filter(Boolean);
+const clauses = (s) => s.split(/(?:,|;)\s+(?=[A-ZÀ-Ý])/).map((x) => x.trim()).filter(Boolean).flatMap((c) => {
+  // "J. Schaffner and O. Hull scored" -> two runner clauses sharing the predicate (only when both halves look like names)
+  const m = c.match(/^((?:[A-ZÀ-Ý][\w.'’\-]*\s?){1,3}) and ((?:[A-ZÀ-Ý][\w.'’\-]*\s?){1,3}) ((?:scored|to |advanced|stole).*)$/);
+  if (m) return [`${m[1].trim()} ${m[3]}`, `${m[2].trim()} ${m[3]}`];
+  // NCAA.com chains a runner's moves: "Williams advanced to third, out at home ..." -> the last move decides the diamond
+  const k = c.match(/^((?:[A-ZÀ-Ý][\w.'’\-]*\s?){1,4}?) (?:advanced|stole|to) [^,]+, ((?:out at|advanced|scored|stole|caught|picked)[^]*)$/);
+  return k ? [`${k[1].trim()} ${k[2].split(/,\s+(?=[a-z])/).pop()}`] : [c];
+});
+// ESPN MLB tags plays with type.type ('play-result'); ESPN college feeds only carry type.text ('Play Result').
+const tkind = (p) => (p && p.type && (p.type.type || String(p.type.text || '').toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, ''))) || '';
 
 // Batter result from the first clause. Returns { text, kind: 'hit'|'reach'|'out'|'unk', base, looking, dp, sac }
 function batterResult(c) {
@@ -31,6 +40,9 @@ function batterResult(c) {
     const looking = /struck out looking|called out on strikes/.test(f);
     if (/(reached|safe at) first on (wild pitch|passed ball)|reached on (wild pitch|passed ball)/.test(f)) return { text: `K-${/passed/.test(f) ? 'PB' : 'WP'}`, kind: 'reach', base: 1, looking };
     if (/double play/.test(f)) return { text: 'K DP', kind: 'out', looking, dp: true };
+    if (/dropped third strike|dropped 3rd strike/.test(f) && /(reached|safe)/.test(f)) return { text: 'K-D3', kind: 'reach', base: 1, looking };
+    // NCAA.com: "struck out swinging, reached first on a wild pitch / passed ball / error" (uncaught third strike)
+    if (/struck out/.test(f) && /reached (?:first|on)|safe at first/.test(f)) return { text: /wild pitch/.test(f) ? 'K-WP' : /passed ball/.test(f) ? 'K-PB' : /error/.test(f) ? 'K-E' : 'K-D3', kind: 'reach', base: 1, looking };
     return { text: 'K', kind: 'out', looking };
   }
   if (/\bhomered\b|home run/.test(f)) return { text: 'HR', kind: 'hit', base: 4 };
@@ -46,11 +58,11 @@ function batterResult(c) {
     const p = afterTo(c); return { text: `SAC ${p === 3 ? '3U' : p ? `${p}-3` : ''}`.trim(), kind: 'out', sac: true };
   }
   if (/fielder s choice/.test(f)) return { text: 'FC', kind: 'reach', base: 1 };
-  if (/error/.test(f) && /(safe at|reached)/.test(f)) { const b = /safe at second/.test(f) ? 2 : /safe at third/.test(f) ? 3 : 1; return { text: `E-${errPos(c) || '?'}`, kind: 'reach', base: b }; }
+  if (/error/.test(f) && /(safe at|reached)/.test(f) && !/fielder s choice/.test(f)) { const b = /safe at second/.test(f) ? 2 : /safe at third/.test(f) ? 3 : 1; return { text: `E-${errPos(c) || '?'}`, kind: 'reach', base: b }; }
   if (/grounded out|bunted out|grounds out|grounded into/.test(f)) { const q = seqOf(c); if (q.length > 1) return { text: q.join('-'), kind: 'out' }; const p = afterTo(c); return p ? { text: p === 3 ? '3U' : `${p}-3`, kind: 'out' } : { text: '?', kind: 'unk' }; }
   if (/flied out|fouled out|fly out/.test(f)) { const p = afterTo(c); return p ? { text: `F${p}`, kind: 'out' } : { text: '?', kind: 'unk' }; }
   if (/lined out|lines out/.test(f)) { const p = afterTo(c); return p ? { text: `L${p}`, kind: 'out' } : { text: '?', kind: 'unk' }; }
-  if (/popped out|pops out|bunt popped/.test(f)) { const p = afterTo(c); return p ? { text: `P${p}`, kind: 'out' } : { text: '?', kind: 'unk' }; }
+  if (/popped out|popped up|pops out|pops up|bunt popped|infield fly/.test(f)) { const p = afterTo(c); return p ? { text: `P${p}`, kind: 'out' } : { text: '?', kind: 'unk' }; }
   return { text: '?', kind: 'unk' };
 }
 
@@ -75,7 +87,7 @@ function build(d, opts = {}) {
   const status = comp.status || {}; const st = (status.type || {});
   const state = st.state || 'pre';
   const sides = {}; // espn team id -> 'home'|'away'
-  const out = { v: 1, sport: opts.sport || 'mlb', id: String(comp.id || (d.header && d.header.id) || ''), state, detail: st.detail || st.shortDetail || '', live: state === 'in', innings: 9, teams: {}, current: null, hasPlays: false, date: comp.date ? (() => { try { return new Date(comp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }); } catch { return null; } })() : null };
+  const out = { v: 1, sport: opts.sport || 'mlb', id: String(comp.id || (d.header && d.header.id) || ''), state, detail: st.detail || st.shortDetail || '', live: state === 'in', innings: opts.innings || 9, regulation: opts.innings || 9, source: opts.source || 'ESPN', note: null, teams: {}, current: null, hasPlays: false, date: comp.date ? (() => { try { return new Date(comp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }); } catch { return null; } })() : null };
   for (const c of comp.competitors || []) {
     sides[String(c.id)] = c.homeAway;
     out.teams[c.homeAway] = { side: c.homeAway, id: String(c.id), abbr: (c.team && c.team.abbreviation) || '', name: (c.team && (c.team.displayName || c.team.name)) || '', logo: (c.team && ((c.team.logos && c.team.logos[0] && c.team.logos[0].href) || c.team.logo)) || null, score: c.score != null ? String(c.score) : null,
@@ -114,14 +126,16 @@ function build(d, opts = {}) {
 
   // ---- walk the play-by-play
   const plays = (d.plays || []).filter((p) => p && p.type && p.period);
-  const results = plays.filter((p) => p.type.type === 'play-result');
+  const results = plays.filter((p) => tkind(p) === 'play-result');
+  // ESPN marks who is on base after each play; text-only sources (NCAA.com) don't, so the text alone moves runners there
+  const hasOcc = plays.some((p) => (p.participants || []).some((x) => /^on(First|Second|Third)$/.test(x.type)));
   out.hasPlays = results.length > 0;
   let half = null; let runners = []; let outs = 0; let lastCell = null;
   const cellsOf = (side, slot, inn) => { const T = out.teams[side]; const k = `${slot}|${inn}`; return T.cells[k] || (T.cells[k] = []); };
   const halfStats = {}; // side|inn -> { lob }
   const closeHalf = () => { if (!half) return; if (lastCell) lastCell.end = true; halfStats[`${half.side}|${half.inn}`] = { lob: runners.length }; };
   const lastSlotPid = {}; // side|slot -> pid of last batter there
-  const findRunner = (name) => { const n = fold(name); const c = runners.filter((r) => { const p = people[r.pid] || {}; return fold(p.name) === n || fold(p.name).endsWith(' ' + n) || fold(p.short).endsWith(' ' + n) || (n && fold(p.name).split(' ').slice(-1)[0] === n.split(' ').slice(-1)[0] && n.split(' ').length === 1); }); return c.length === 1 ? c[0] : (c.length > 1 ? c[c.length - 1] : null); };
+  const findRunner = (name) => { const n = fold(name); const c = runners.filter((r) => { const p = people[r.pid] || {}; return fold(p.name) === n || fold(p.name).endsWith(' ' + n) || fold(p.short) === n || fold(p.short).endsWith(' ' + n) || (n && fold(p.name).split(' ').slice(-1)[0] === n.split(' ').slice(-1)[0] && n.split(' ').length === 1); }); return c.length === 1 ? c[0] : (c.length > 1 ? c[c.length - 1] : null); };
   const reach = (cell, b) => { for (let i = (cell.path.length ? Math.max(...cell.path) : 0) + 1; i <= Math.min(b, 4); i++) cell.path.push(i); if (b >= 4) cell.scored = true; };
   for (const p of results) {
     const inn = p.period.number; const side = p.period.type === 'Top' ? 'away' : 'home';
@@ -153,13 +167,19 @@ function build(d, opts = {}) {
       cellsOf(side, slot, inn).push(cell); lastCell = cell; runnerCls = cs.filter((_, i) => i !== bi);
       if (br.kind === 'out') { cell.out = ++outs; if (br.gdp) { /* runner out is usually the first out of a GDP: renumber below */ } }
       if (br.base) reach(cell, br.base);
+      { const adv = br.base && fold(cs[bi] || '').match(/advanced to (second|third|home)/); if (adv) { reach(cell, BASE[adv[1]]); if (/error/.test(fold(cs[bi]))) cell.notes.push({ base: BASE[adv[1]], how: 'E' }); } }
       if (br.base === 4) { cell.rbi += 1; }
       if (br.base && br.base < 4) runners.push({ pid: bid, cell });
     }
     let unread = false; let gdpRunnerOut = false;
     for (const c of runnerCls) {
       const rc = runnerClause(c); if (!rc) { unread = true; continue; }
-      const r = findRunner(rc.name);
+      let r = findRunner(rc.name);
+      // extra innings: a runner the text moves who never batted this half is the placed tiebreaker runner (MLB / softball
+      // international tiebreaker, starts on second). Drawn as "placed" (not a hit), and only when the text names her/him.
+      if (!r && inn > out.regulation && !half.placed) { const who = byName(side, rc.name); const sl = who && who.order; if (who && sl) {
+        const pc = { pid: who.id, slot: sl, inn, text: 'ITB', kind: 'placed', looking: false, path: [1, 2], scored: false, out: null, outAt: null, rbi: 0, notes: [], end: false, sub: false, playId: `${p.id}-itb` };
+        cellsOf(side, sl, inn).unshift(pc); half.placed = true; r = { pid: who.id, cell: pc }; runners.push(r); } }
       if (!r) { unread = true; continue; }
       if (rc.out) {
         r.cell.out = ++outs; r.cell.outAt = rc.stay ? (r.cell.path.length ? Math.max(...r.cell.path) : 0) + 1 : rc.base; if (rc.note) r.cell.notes.push({ base: rc.base, how: rc.note });
@@ -172,7 +192,7 @@ function build(d, opts = {}) {
     if (unread && cell) cell.unread = true;
     // reconcile base positions with ESPN's own on-base participants (authoritative after the play)
     const on = { onFirst: 1, onSecond: 2, onThird: 3 }; const occ = parts.filter((x) => on[x.type]);
-    if (occ.length || bid) {
+    if (hasOcc && (occ.length || bid)) {
       for (const o of occ) { const id = String(o.athlete.id); const r = runners.find((x) => x.pid === id); if (r) { if (!r.cell.path.length || Math.max(...r.cell.path) < on[o.type]) reach(r.cell, on[o.type]); } }
       const ids = new Set(occ.map((o) => String(o.athlete.id)));
       // runners ESPN no longer shows on base and the text did not account for: remove (no path invented)
@@ -190,9 +210,9 @@ function build(d, opts = {}) {
   }
   // current batter (live): the newest "Start Batter/Pitcher" that has no play-result for that at-bat yet
   if (state === 'in') {
-    let lastStart = null; for (const p of plays) if (p.type.type === 'start-batterpitcher') lastStart = p;
+    let lastStart = null; for (const p of plays) if (tkind(p) === 'start-batterpitcher') lastStart = p;
     if (lastStart) {
-      const done = plays.some((p) => p.atBatId === lastStart.atBatId && (p.type.type === 'play-result' || p.type.type === 'end-batterpitcher') && (p.participants || []).some((x) => x.type === 'batter'));
+      const done = plays.some((p) => p.atBatId === lastStart.atBatId && (tkind(p) === 'play-result' || tkind(p) === 'end-batterpitcher') && (p.participants || []).some((x) => x.type === 'batter'));
       const b = (lastStart.participants || []).find((x) => x.type === 'batter');
       if (!done && b) { const pid = String(b.athlete.id); const side = lastStart.period.type === 'Top' ? 'away' : 'home'; out.current = { side, slot: slotOf(pid) || lastStart.batOrder || null, inn: lastStart.period.number, pid }; }
     }
@@ -201,4 +221,4 @@ function build(d, opts = {}) {
   return out;
 }
 
-module.exports = { build, batterResult, runnerClause, cleanText, clauses, fold };
+module.exports = { tkind, build, batterResult, runnerClause, cleanText, clauses, fold };

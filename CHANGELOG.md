@@ -3,9 +3,32 @@
 Releases get a vintage-sports nickname plus a version label (service-worker cache version in parentheses).
 
 
+## v1.7.1 "Scorekeeper, every league" (ss-v32) — 2026-10-31
+
+**LOCAL ONLY: not pushed, not deployed.** Live is v1.7.0 (ss-v31). Report: `QA-REPORT-scorekeeper-1.7.1.md`, results `docs/qa-results-v26.json`.
+
+### Added (Justin: "Make sure to add this to all baseball softball leagues")
+- The scorecard now covers **every baseball/softball league in the app**: MLB, college baseball, college softball, and AUSL Pro Softball.
+  - **College baseball:** ESPN play-by-play first. If ESPN has no plays for a started game, it falls back to NCAA.com play-by-play and box score. `n<contestId>` ids go straight to NCAA.com.
+  - **College softball (NCAA.com, via the ncaa-api proxy):** the sheet is filled from NCAA.com play-by-play plus the box-score lineup. It reaches 7 innings and extends for extra innings.
+    - Reached from a new "Scorecards" game list on the softball Scores tab (the last 7 days of games, otherwise the latest bracket finals) and a 📋 link on finished bracket games.
+    - The FLEX/DP 10th starter is folded out of the 9-row lineup.
+  - **AUSL:** a Gamecast link opens a blank 7-inning sheet (longer for extra innings) with the teams, the score and the note "Play-by-play isn't available for this league, so the sheet can't fill in". No plays or lineups are invented.
+- **Softball wording:** slap hits score as hits.
+  - "Struck out …, reached first on a wild pitch / passed ball / error" is drawn as K-WP / K-PB / K-E / K-D3.
+  - "reached on an error" is drawn as E.
+  - Chained runner clauses ("advanced to third, out at home") are read correctly.
+- **Extra-inning tiebreaker runner:** drawn as a placed runner (ITB, dashed cell), not a hit. The key gains an ITB entry when a game goes past regulation.
+- A source line under the sheet ("Source: NCAA.com · 7-inning game").
+- New server/scorecard-route.js (per-league routing, `/api/scorecards/:sport` game list) and tests/scorecard-leagues.test.js (real ESPN college baseball and real NCAA.com softball fixtures).
+
 ## v1.7.0 "Scorekeeper" (ss-v31) — 2026-10-31
 
 **LOCAL ONLY: not pushed, not deployed.** Live is still v1.6.1 (ss-v30). Report: `QA-REPORT-scorekeeper.md`, results `docs/qa-results-v25.json`.
+
+
+### Fixed
+- **NCAA.com logos load without CORS errors:** NCAA.com school logos (no CORS headers) were requested with `<img crossorigin>` (needed by the logo-contrast pixel sampling), so 3+ console errors appeared on softball bracket/scorecard pages. New same-origin `/api/ncaa-logo?p=` proxy (only `/sites/default/files/images/logos/schools/*` paths; cached; CORS header) used by `server/ncaa.js`. Sport-suffixed variants (`*-wsb.70.png`) 503 at NCAA.com's CDN, so the proxy falls back to the plain school logo, then a transparent 1×1.
 
 ### Added
 - **Baseball scorecard (Justin: "a link in game cast to open up the sheet … the app fills in the sheet as the game plays out").** MLB and college-baseball Gamecasts get a **📋 Scorecard** link → `#/scorecard/<sport>/<id>`, a classic paper scorebook filled in from ESPN play-by-play.

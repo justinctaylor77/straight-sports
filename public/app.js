@@ -1,19 +1,19 @@
-import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=31';
+import { buildGroups, subGroups, leagueTeams, fullName } from './picker.js?v=32';
 import { LEAGUE_MUTES, mutedSports, DEFAULTS, SPORTS, SPORT_IDS, allSportsFor, CORE, sportOfId, isAthleteId, loadSettings, saveSettings, migrate, onSettingsSaved, teamMatcher, buildMuteFilter, cluster, timeAgo, itemText, tokens, similar } from './lib.js';
 import { GROUPS as SPORT_GROUPS } from './catalog.js';
-import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=31';
+import { renderGamecast, castTitle, castState, golfRow, tennisMatch, eventCard } from './gamecast.js?v=32';
 import * as GA from './anim.js?v=18';
-import * as BPL from './bigplay.js?v=31';
-import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=31';
+import * as BPL from './bigplay.js?v=32';
+import { createSyncClient, formatCode, normalizeCode } from './sync.js?v=32';
 import * as BD from './backdrop.js';
-import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=31';
+import { scheduleSections, playerHero, playerTabs, playerBody } from './people.js?v=32';
 import { applyTeamTheme, clearTeamTheme } from './teamtheme.js';
 import { watchButtons, PROVIDERS } from './watch.js';
-import { createLists, FEED as LIST_FEED } from './lists.js?v=31';
-import * as LOGOTONE from './logotone.js?v=31';
-import { search as fuzzySearch, scoreName } from './fuzzy.js?v=31';
-import * as HS from './hsfb.js?v=31';
-import { scorecardHTML } from './scorecard.js?v=31';
+import { createLists, FEED as LIST_FEED } from './lists.js?v=32';
+import * as LOGOTONE from './logotone.js?v=32';
+import { search as fuzzySearch, scoreName } from './fuzzy.js?v=32';
+import * as HS from './hsfb.js?v=32';
+import { scorecardHTML } from './scorecard.js?v=32';
 const LOGOS = LOGOTONE.install(document); // v1.5.0: measure each logo against the surface it sits on, outline the ones under 3:1
 
 // ---------------- state ----------------
@@ -442,6 +442,15 @@ async function homeTennis(today) {
 }
 
 let scoresMode = null; let scoresWeek = ''; let golfLeague = 'pga'; let tennisT = ''; let tennisDraw = "Men's Singles";
+// v1.7.1: college softball has no ESPN scoreboard, so its Scores tab lists NCAA.com games that have a Scorecard.
+async function scoresSoftball(rn) {
+  paint(LT('Scores') + SK.rows(6));
+  let d; try { d = await api('/api/scorecards/softball', 60e3); } catch (e) { if (isStale(rn)) return; view.innerHTML = LT('Scores') + errBox(e); return; }
+  if (isStale(rn)) return;
+  const row = (g) => `<a class="br-row sc-gamerow" data-sc-link href="#/scorecard/softball/${esc(g.id)}"><span class="n"><b>${esc(g.away.name)} ${g.away.score != null && g.state !== 'pre' ? esc(g.away.score) : ''}</b> @ <b>${esc(g.home.name)} ${g.home.score != null && g.state !== 'pre' ? esc(g.home.score) : ''}</b><small class="faint"> · ${esc(g.date || '')}${g.detail ? ` · ${esc(g.detail)}` : ''}</small></span><span class="btn small">📋 Scorecard</span></a>`;
+  view.innerHTML = LT('Scores') + `<div class="card empty">College softball has no ESPN scoreboard. These games come from NCAA.com, and each opens a paper scorecard filled from its play-by-play (7 innings).</div>`
+    + `<h2>${d.recent ? 'Last 7 days' : 'No games in the last 7 days — latest postseason games'}</h2><div class="card br-list sc-games" data-sc-games>${(d.games || []).map(row).join('') || '<div class="empty">No games found.</div>'}</div><p class="faint small">Source: ${esc(d.source || 'NCAA.com')}</p>`;
+}
 async function viewScores(quick) {
   const rn = rt();
   const sp = S.sport;
@@ -450,6 +459,7 @@ async function viewScores(quick) {
   if (sp === 'tennis') return scoresTennis(quick);
   if (eventSport(sp)) return scoresEvents(quick);
   if (hsSport(sp)) return scoresHsfb();
+  if (sp === 'softball') return scoresSoftball(rn);
   if (newsSport(sp)) { view.innerHTML = LT('Scores') + `<div class="card empty">${esc(SPORTS[sp].name)} is headlines-only — ESPN’s free feeds have no ${esc(SPORTS[sp].name.toLowerCase())} scoreboard. <a href="#/news">Read the news ›</a></div>`; return; }
   await ensureTeams(sp);
   if (isStale(rn)) return;
@@ -920,7 +930,8 @@ async function viewGame(sp, id, quick) {
 const scState = { side: null, key: null };
 async function viewScorecard(sp, id, quick) {
   const rn = rt();
-  const back = `#/game/${sp}/${encodeURIComponent(id)}`;
+  const viaList = sp === 'softball'; // college softball has no Gamecast: its scorecards are listed on the Scores tab
+  const back = viaList ? '#/scores' : `#/game/${sp}/${encodeURIComponent(id)}`;
   setBar('Scorecard', { back });
   if (scState.key !== `${sp}:${id}`) Object.assign(scState, { side: null, key: `${sp}:${id}` });
   if (!quick) paint(`<div class="card"><div class="sk w50"></div><div class="sk w70 sm"></div></div>${SK.rows(9)}`);
@@ -929,7 +940,7 @@ async function viewScorecard(sp, id, quick) {
   if (!location.hash.startsWith(`#/scorecard/${sp}/`)) return;
   if (!scState.side) scState.side = sc.current && sc.live ? sc.current.side : 'away';
   const grid = view.querySelector('.sc-grid'); const sx = quick && grid ? grid.scrollLeft : null; const y = window.scrollY;
-  view.innerHTML = scorecardHTML(sc, scState.side, back);
+  view.innerHTML = scorecardHTML(sc, scState.side, back, viaList ? 'Games' : 'Gamecast');
   const g2 = view.querySelector('.sc-grid');
   if (g2 && sx != null) g2.scrollLeft = sx;
   else if (g2 && sc.live && sc.current && sc.current.side === scState.side) { const c = g2.querySelector('td.sc-c.cur'); if (c) { const w = g2.querySelector('tbody .sc-who'); g2.scrollLeft = Math.max(0, c.offsetLeft - (w ? w.offsetWidth : 146) - c.offsetWidth); } }
@@ -1578,7 +1589,7 @@ function openOnboarding(start = 0) {
       <div class="dots">${rep(STEPS, (i) => `<button class="dot" data-go="${i}" aria-label="Step ${i + 1}"></button>`)}</div>
       <button class="onb-link" data-nav="skip">Skip</button></div>
     <div class="onb-viewport"><div class="onb-track">
-      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=31" alt="" /></div>
+      <section class="slide s-welcome"><div class="hero-logo mark"><img src="/icons/mark-192.png?v=32" alt="" /></div>
         <h1>Old School <b>Sports</b></h1><p class="pitch">Scores, Gamecast and headlines from many outlets for just the sports you pick — football, baseball, basketball, hockey, soccer, golf, tennis, MMA and racing — without the hot takes, ads, or leagues you didn’t ask for.</p>
         <ul class="feat"><li><span class="fi">🏈</span><div><b>Your teams and players first</b><small>Games, Gamecast, leaderboards and news for who you pick.</small></div></li>
           <li><span class="fi">📰</span><div><b>Many sources, side by side</b><small>See how different outlets cover the same story.</small></div></li>
