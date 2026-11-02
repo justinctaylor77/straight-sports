@@ -1,5 +1,5 @@
 // Service worker: app shell cache-first, API network-first (offline fallback), logos stale-while-revalidate.
-const VERSION = 'ss-v32';
+const VERSION = 'ss-v33';
 const IMG = 'scfb-img-cors';
 const SHELL = ['/', '/index.html', '/styles.css?v=32', '/app.js?v=32', '/lib.js', '/gamecast.js?v=32', '/scorecard.js?v=32', '/plays.js?v=32', '/whoplay.js?v=32', '/bigplay.js?v=32', '/sync.js?v=32', '/picker.js?v=32', '/anim.js?v=18', '/teamtheme.js', '/backdrop.js', '/catalog.js', '/lists.js?v=32', '/watch.js', '/people.js?v=32', '/logotone.js?v=32', '/fuzzy.js?v=32', '/hsfb.js?v=32', '/aliases.js?v=32', '/fonts/barlow-condensed-600.woff2', '/fonts/barlow-condensed-700.woff2', '/fonts/barlow-condensed-800.woff2', '/fonts/caveat-latin-700-normal.woff2', '/manifest.webmanifest', '/icons/mark-96.png?v=32', '/icons/mark-192.png?v=32', '/icons/logo-full-640.png?v=32', '/icons/apple-touch-icon.png?v=32', '/icons/favicon-32.png?v=32', '/icons/favicon-16.png?v=32', '/icons/icon-maskable-512.png?v=32', '/favicon.ico?v=32', '/icons/icon-192.png?v=32', '/icons/icon-512.png?v=32'];
 // Cache each shell file on its own: one failing file must not stop the new version from installing (a stuck install = users stay on old code).
